@@ -1,4 +1,2 @@
-import { createEventBus } from "./eventBus";
-
-export type { CallbackFn as EventBusCallbackFn } from "./types";
-export const eventBus = createEventBus();
+export { createEventBus } from "./eventBus";
+export type { CallbackFn as EventBusCallbackFn, UnregisterFn } from "./types";

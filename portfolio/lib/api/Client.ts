@@ -13,9 +13,8 @@ export class Client implements ClientInterface {
     });
   }
 
-  async get<T = unknown>(url: string): Promise<T> {
-    const { data } = await this.axios.get<T>(url);
-    return data;
+  async get<T = unknown>(url: string): Promise<AxiosResponse<T>> {
+    return this.axios.get<T>(url);
   }
 
   async post<T = unknown>(url: string, payload: unknown): Promise<AxiosResponse<T>> {

@@ -14,7 +14,7 @@ export default function useChat(): UseChat {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await chatClient.post({ "chatInput": message });
+        const response = await chatClient.post("webhooks", { "chatInput": message });
         setData(response);
         return response;
       } catch (e) {

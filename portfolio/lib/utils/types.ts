@@ -1,5 +1,13 @@
 import type { ClientInfoRequest } from '@lib/hooks/types';
 
+export interface UserInfoItem {
+  label: string;
+  value: string;
+}
+
+/** Array of { label, value } for display (e.g. location, ip, browser, os, device, botRisk, referer). */
+export type UserInfo = UserInfoItem[];
+
 /** Parsed UA result from ua-parser-js (subset we use). */
 export interface ParsedUA {
   ua: string;
@@ -8,26 +16,4 @@ export interface ParsedUA {
   device: { type?: string; vendor?: string; model?: string };
   engine: { name?: string; version?: string };
   cpu: { architecture?: string };
-}
-
-/** User info collected on init: API client info + parsed user-agent. */
-export interface UserInfo {
-  /** From the info API (Cloudflare Worker). */
-  client: ClientInfoRequest | null;
-  /** From ua-parser-js. */
-  ua: ParsedUA;
-}
-
-/**
- * Collects user info from API client data and the UA parser result.
- * Run when the page loads with data from useClientInfo and UAParser.
- */
-export function collectUserInfo(
-  clientInfo: ClientInfoRequest | null,
-  parsedUA: ParsedUA
-): UserInfo {
-  return {
-    client: clientInfo,
-    ua: parsedUA,
-  };
 }
