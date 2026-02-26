@@ -7,13 +7,10 @@ import {
 } from '@/components/ui/shadcn-io/terminal';
 
 import Repl from "@/app/components/Repl/Repl"
-
-import { UAParser } from 'ua-parser-js';
-
-const parser = new UAParser();
-console.log(parser.getBrowser());
+import { useInitStorage } from '@app/hooks/useInitStorage';
 
 export default function Home() {
+  useInitStorage();
 
   return (
     <main className="bg-background flex justify-center w-full h-screen">
