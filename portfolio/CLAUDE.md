@@ -1,0 +1,7 @@
+# Workflow Rules
+
+After completing any implementation task:
+1. Run `npx tsc --noEmit` to verify the code compiles with no type errors.
+2. Run `npm test` to verify all tests pass.
+
+Never ask the user to commit code. Do not suggest git commits unless the user explicitly requests one.
