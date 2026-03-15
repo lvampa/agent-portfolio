@@ -3,25 +3,29 @@ import { CallbackFn, UnregisterFn, EventBus } from "./types";
 export function createEventBus<TMap extends Record<string, unknown>>(): EventBus<TMap> {
   const handlers = new Map<string, CallbackFn[]>();
 
-  function on<K extends keyof TMap>(eventName: K, callback: (payload: TMap[K]) => void): UnregisterFn {
-    const key = eventName as string;
-    const eventHandlers = handlers.get(key) ?? [];
-    eventHandlers.push(callback as CallbackFn);
-    handlers.set(key, eventHandlers);
+  function on<K extends string & keyof TMap>(eventName: K, callback: (payload: TMap[K]) => void): UnregisterFn {
+    const eventHandlers = handlers.get(eventName) ?? [];
+
+    if (eventHandlers.includes(callback)) {
+      return () => off(eventName, callback);
+    }
+
+    eventHandlers.push(callback);
+    handlers.set(eventName, eventHandlers);
     return () => off(eventName, callback);
   }
 
-  function off<K extends keyof TMap>(eventName: K, callback: (payload: TMap[K]) => void) {
-    const key = eventName as string;
-    const eventHandlers = handlers.get(key);
+  function off<K extends string & keyof TMap>(eventName: K, callback: (payload: TMap[K]) => void): void {
+    const eventHandlers = handlers.get(eventName);
+
     if (eventHandlers) {
-      eventHandlers.splice(eventHandlers.indexOf(callback as CallbackFn) >>> 0, 1);
+      eventHandlers.splice(eventHandlers.indexOf(callback) >>> 0, 1);
     }
   }
 
-  function emit<K extends keyof TMap>(eventName: K, payload: TMap[K]) {
-    const key = eventName as string;
-    const eventHandlers = handlers.get(key);
+  function emit<K extends string & keyof TMap>(eventName: K, payload: TMap[K]): void {
+    const eventHandlers = handlers.get(eventName);
+
     if (eventHandlers) {
       eventHandlers.slice().forEach(async (handler) => {
         await handler(payload);

@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Client } from '../client';
+import { Client } from '../Client';
 
 jest.mock('axios');
 
@@ -36,14 +36,11 @@ describe('Client', () => {
       mockPost.mockResolvedValue({ data: response });
 
       const client = new Client('https://example.com/webhook');
-      const result = await client.post({ message: 'Hello' });
+      const result = await client.post('', { message: 'Hello' });
 
       expect(mockPost).toHaveBeenCalledTimes(1);
-      expect(mockPost).toHaveBeenCalledWith(
-        'https://example.com/webhook',
-        { message: 'Hello' }
-      );
-      expect(result).toEqual(response);
+      expect(mockPost).toHaveBeenCalledWith('', { message: 'Hello' });
+      expect(result.data).toEqual(response);
     });
 
     test('propagates axios errors', async () => {
@@ -52,7 +49,7 @@ describe('Client', () => {
 
       const client = new Client('https://example.com/webhook');
 
-      await expect(client.post({ message: 'Hi' })).rejects.toThrow('Network Error');
+      await expect(client.post('', { message: 'Hi' })).rejects.toThrow('Network Error');
     });
 
     test('returns typed response when generic is provided', async () => {
@@ -60,11 +57,11 @@ describe('Client', () => {
       mockPost.mockResolvedValue({ data: response });
 
       const client = new Client('https://example.com/webhook');
-      const result = await client.post<{ id: number; text: string }>({ message: 'Hi' });
+      const result = await client.post<{ id: number; text: string }>('', { message: 'Hi' });
 
-      expect(result).toEqual(response);
-      expect(result.id).toBe(1);
-      expect(result.text).toBe('typed');
+      expect(result.data).toEqual(response);
+      expect(result.data.id).toBe(1);
+      expect(result.data.text).toBe('typed');
     });
   });
 });

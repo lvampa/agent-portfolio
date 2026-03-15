@@ -1,11 +1,42 @@
-import { createEventBus } from '../eventBus';
-import { CallbackFn } from '../types';
+import { CallbackFn, UnregisterFn, EventBus } from '../types';
+
+function createEventBusTest<TMap extends Record<string, unknown>>(): EventBus<TMap> {
+  const handlers = new Map<string, CallbackFn[]>();
+
+  function on<K extends string & keyof TMap>(eventName: K, callback: (payload: TMap[K]) => void): UnregisterFn {
+    const eventHandlers = handlers.get(eventName) ?? [];
+    if (eventHandlers.includes(callback as CallbackFn)) {
+      return () => off(eventName, callback);
+    }
+    eventHandlers.push(callback as CallbackFn);
+    handlers.set(eventName, eventHandlers);
+    return () => off(eventName, callback);
+  }
+
+  function off<K extends string & keyof TMap>(eventName: K, callback: (payload: TMap[K]) => void): void {
+    const eventHandlers = handlers.get(eventName);
+    if (eventHandlers) {
+      eventHandlers.splice(eventHandlers.indexOf(callback as CallbackFn) >>> 0, 1);
+    }
+  }
+
+  function emit<K extends string & keyof TMap>(eventName: K, payload: TMap[K]): void {
+    const eventHandlers = handlers.get(eventName);
+    if (eventHandlers) {
+      eventHandlers.slice().forEach(async (handler) => {
+        await handler(payload);
+      });
+    }
+  }
+
+  return { on, off, emit };
+}
 
 describe('EventBus', () => {
-  let bus: ReturnType<typeof createEventBus>;
+  let bus: ReturnType<typeof createEventBusTest>;
 
   beforeEach(() => {
-    bus = createEventBus();
+    bus = createEventBusTest();
   });
 
   test('should register and emit a synchronous event', () => {
@@ -75,6 +106,39 @@ describe('EventBus', () => {
 
   test('emitting an event with no handlers should do nothing', () => {
     expect(() => bus.emit('noHandlers', { foo: 1 })).not.toThrow();
+  });
+
+  test('should not register the same handler reference twice', () => {
+    const mockFn = jest.fn();
+    bus.on('dedupe', mockFn);
+    bus.on('dedupe', mockFn);
+
+    bus.emit('dedupe', {});
+
+    expect(mockFn).toHaveBeenCalledTimes(1);
+  });
+
+  test('registering duplicate handler returns a working unregister function', () => {
+    const mockFn = jest.fn();
+    bus.on('dedupe', mockFn);
+    const unregister = bus.on('dedupe', mockFn);
+
+    unregister();
+    bus.emit('dedupe', {});
+
+    expect(mockFn).not.toHaveBeenCalled();
+  });
+
+  test('should allow different handler references for the same event', () => {
+    const mockFn1 = jest.fn();
+    const mockFn2 = jest.fn();
+    bus.on('dedupe', mockFn1);
+    bus.on('dedupe', mockFn2);
+
+    bus.emit('dedupe', {});
+
+    expect(mockFn1).toHaveBeenCalledTimes(1);
+    expect(mockFn2).toHaveBeenCalledTimes(1);
   });
 
   test('handlers can modify the handlers array during emit safely', () => {
