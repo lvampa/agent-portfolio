@@ -56,6 +56,11 @@ variable "n8n_timezone" {
   default     = "America/New_York"
 }
 
+variable "n8n_webhook_url" {
+  description = "n8n webhook URL (e.g. https://n8n.example.com)"
+  type        = string
+}
+
 # Cloudflare DNS – A record for EC2 (n8n) origin
 variable "cloudflare_api_token" {
   description = "Cloudflare API token (DNS edit permission for the zone)"

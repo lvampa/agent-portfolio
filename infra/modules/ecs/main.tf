@@ -31,6 +31,14 @@ resource "aws_ecs_task_definition" "n8n" {
   memory                   = "768"
   execution_role_arn       = aws_iam_role.ecs_execution.arn
 
+  volume {
+    name = "n8n-data"
+    efs_volume_configuration {
+      file_system_id = var.efs_id
+      root_directory = "/"
+    }
+  }
+
   container_definitions = jsonencode([
     {
       name         = "caddy"
@@ -66,6 +74,13 @@ resource "aws_ecs_task_definition" "n8n" {
         { name = "WEBHOOK_URL", value = var.n8n_webhook_url },
         { name = "GENERIC_TIMEZONE", value = var.n8n_timezone },
         { name = "N8N_SECURE_COOKIE", value = "false" }
+      ]
+      mountPoints = [
+        {
+          sourceVolume  = "n8n-data"
+          containerPath = "/home/node/.n8n"
+          readOnly      = false
+        }
       ]
       logConfiguration = {
         logDriver = "awslogs"

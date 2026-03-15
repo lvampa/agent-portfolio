@@ -78,3 +78,41 @@ resource "aws_eip_association" "this" {
   instance_id   = aws_instance.ecs.id
   allocation_id = aws_eip.this.id
 }
+
+# EFS file system for n8n persistent data
+resource "aws_efs_file_system" "n8n" {
+  creation_token = "${var.project_name}-n8n"
+  encrypted      = true
+  tags = {
+    Name = "${var.project_name}-n8n-efs"
+  }
+}
+
+# Security group allowing NFS inbound from the EC2 security group
+resource "aws_security_group" "efs" {
+  name        = "${var.project_name}-efs-sg"
+  description = "EFS: NFS (2049) from EC2 instances"
+  vpc_id      = var.vpc_id
+
+  ingress {
+    from_port       = 2049
+    to_port         = 2049
+    protocol        = "tcp"
+    security_groups = [var.security_group_id]
+    description     = "NFS from EC2 SG"
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+}
+
+# Mount target in the same subnet as the EC2 instance
+resource "aws_efs_mount_target" "n8n" {
+  file_system_id  = aws_efs_file_system.n8n.id
+  subnet_id       = var.subnet_ids[0]
+  security_groups = [aws_security_group.efs.id]
+}

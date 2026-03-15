@@ -5,6 +5,18 @@ module "vpc" {
 }
 
 # ECS cluster, task (Caddy + n8n), and service – no ALB; Caddy in task proxies HTTP (bridge network mode)
+# ec2 and ecs are split to avoid a circular dependency:
+# ec2 needs ecs_cluster_name (derived directly) and ecs needs efs_id (from ec2).
+module "ec2" {
+  source            = "./modules/ec2"
+  project_name      = var.project_name
+  subnet_ids        = module.vpc.public_subnet_ids
+  security_group_id = module.vpc.security_group_id
+  ec2_keypair_name  = var.ec2_keypair_name
+  ecs_cluster_name  = "${var.project_name}-cluster"
+  vpc_id            = module.vpc.vpc_id
+}
+
 module "ecs" {
   source                  = "./modules/ecs"
   project_name            = var.project_name
@@ -15,16 +27,7 @@ module "ecs" {
   n8n_encryption_key      = var.n8n_encryption_key
   n8n_webhook_url         = var.n8n_webhook_url
   n8n_timezone            = var.n8n_timezone
-}
-
-# ECS capacity: EC2 in public subnets (t3.micro via module default)
-module "ec2" {
-  source            = "./modules/ec2"
-  project_name      = var.project_name
-  subnet_ids        = module.vpc.public_subnet_ids
-  security_group_id = module.vpc.security_group_id
-  ec2_keypair_name  = var.ec2_keypair_name
-  ecs_cluster_name  = module.ecs.ecs_cluster_name
+  efs_id                  = module.ec2.efs_id
 }
 
 # Static frontend: S3 bucket with public read, index.html

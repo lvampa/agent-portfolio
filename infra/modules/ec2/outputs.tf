@@ -17,3 +17,8 @@ output "elastic_ip" {
   description = "Elastic IP address (same as public_ip)"
   value       = aws_eip.this.public_ip
 }
+
+output "efs_id" {
+  description = "EFS file system ID for n8n persistent data"
+  value       = aws_efs_file_system.n8n.id
+}
