@@ -25,25 +25,6 @@ variable "home_ip_cidr" {
   type        = string
 }
 
-# Certificate paths for ACM import (Cloudflare origin cert). Do not commit certs/ – see infra/README.md
-variable "cert_body_path" {
-  description = "Path to certificate body (PEM). e.g. certs/certificate.pem"
-  type        = string
-  default     = "certs/certificate.pem"
-}
-
-variable "cert_chain_path" {
-  description = "Path to certificate chain (PEM). e.g. certs/chain.pem"
-  type        = string
-  default     = "certs/chain.pem"
-}
-
-variable "cert_private_key_path" {
-  description = "Path to private key (PEM). e.g. certs/private.key"
-  type        = string
-  default     = "certs/private.key"
-}
-
 # n8n container env – set secrets in tfvars (gitignored)
 variable "n8n_basic_auth_active" {
   description = "Enable n8n basic auth"

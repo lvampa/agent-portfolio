@@ -1,16 +1,16 @@
-# Single EC2 instance for ECS capacity (n8n task); Caddy on host terminates SSL -> host:5678
+# Single EC2 instance for ECS capacity (n8n task); Caddy on host proxies HTTP -> host:5678
 
 data "cloudflare_ip_ranges" "web" {}
 
-# HTTPS on EC2 only from Cloudflare IPs
-resource "aws_security_group_rule" "cloudflare_https" {
+# HTTP on EC2 only from Cloudflare IPs
+resource "aws_security_group_rule" "cloudflare_http" {
   type              = "ingress"
-  from_port         = 443
-  to_port           = 443
+  from_port         = 80
+  to_port           = 80
   protocol          = "tcp"
   cidr_blocks       = data.cloudflare_ip_ranges.web.ipv4_cidrs
   security_group_id = var.security_group_id
-  description       = "HTTPS from Cloudflare IPs"
+  description       = "HTTP from Cloudflare IPs"
 }
 
 data "aws_ami" "ecs" {
@@ -65,10 +65,7 @@ resource "aws_instance" "ecs" {
   associate_public_ip_address = true
 
   user_data_base64 = base64encode(templatefile("${path.module}/user_data.sh", {
-    ecs_cluster_name     = var.ecs_cluster_name
-    cert_body_b64        = var.cert_body_b64
-    cert_chain_b64      = var.cert_chain_b64
-    cert_private_key_b64 = var.cert_private_key_b64
+    ecs_cluster_name = var.ecs_cluster_name
   }))
 
   tags = {

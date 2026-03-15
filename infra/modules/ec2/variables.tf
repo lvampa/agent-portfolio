@@ -8,7 +8,7 @@ variable "subnet_ids" {
 }
 
 variable "security_group_id" {
-  description = "Security group (SSH from home IP, 443 from Cloudflare)"
+  description = "Security group (SSH from home IP, 80 from Cloudflare)"
   type        = string
 }
 
@@ -28,21 +28,3 @@ variable "ecs_cluster_name" {
   type        = string
 }
 
-# Cert contents as base64 (from your local cert files in root)
-variable "cert_body_b64" {
-  description = "Certificate body (PEM) base64-encoded"
-  type        = string
-  sensitive   = true
-}
-
-variable "cert_chain_b64" {
-  description = "Certificate chain (PEM) base64-encoded"
-  type        = string
-  sensitive   = true
-}
-
-variable "cert_private_key_b64" {
-  description = "Private key (PEM) base64-encoded"
-  type        = string
-  sensitive   = true
-}

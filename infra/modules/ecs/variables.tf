@@ -34,3 +34,8 @@ variable "n8n_timezone" {
   description = "n8n timezone"
   type        = string
 }
+
+variable "n8n_webhook_url" {
+  description = "n8n webhook url"
+  type        = string
+}
