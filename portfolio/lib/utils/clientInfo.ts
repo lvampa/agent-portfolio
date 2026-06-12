@@ -1,8 +1,9 @@
-import { UAParser } from 'ua-parser-js';
-import type { UserInfo, ParsedUA } from './types';
 import type { ClientInfo, ClientInfoRequest } from '@lib/hooks/types';
+import { UAParser } from 'ua-parser-js';
 
-export type { UserInfo, UserInfoItem, ParsedUA } from './types';
+import type { ParsedUA, UserInfo } from './types';
+
+export type { ParsedUA, UserInfo, UserInfoItem } from './types';
 
 /**
  * Parse the current browser user agent. Returns null when run outside the browser (e.g. SSR).
@@ -20,7 +21,8 @@ export function getParsedUA(): ParsedUA | null {
   };
 }
 
-const BOT_UA_PATTERNS = /bot|crawler|spider|headless|curl|wget|python|java|scraper|phantom|selenium/i;
+const BOT_UA_PATTERNS =
+  /bot|crawler|spider|headless|curl|wget|python|java|scraper|phantom|selenium/i;
 
 function getBotRisk(parsedUA: ParsedUA): 'low' | 'high' {
   const ua = parsedUA.ua ?? '';

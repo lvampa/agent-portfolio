@@ -1,5 +1,6 @@
-import { buildUserInfoForUi, getParsedUA } from '../clientInfo';
 import type { ClientInfo } from '@lib/hooks/types';
+
+import { buildUserInfoForUi, getParsedUA } from '../clientInfo';
 
 describe('getParsedUA', () => {
   test('returns ParsedUA shape when run in browser (jsdom)', () => {
@@ -54,7 +55,7 @@ describe('buildUserInfoForUi', () => {
     const result = buildUserInfoForUi(userInfo);
     expect(result).not.toBeNull();
     expect(result).toHaveLength(7);
-    const byLabel = Object.fromEntries((result!).map(({ label, value }) => [label, value]));
+    const byLabel = Object.fromEntries(result!.map(({ label, value }) => [label, value]));
     expect(byLabel.location).toBe('Seattle, US');
     expect(byLabel.ip).toBe('1.2.3.4');
     expect(byLabel.browser).toBe('Chrome 120.0');
@@ -78,7 +79,7 @@ describe('buildUserInfoForUi', () => {
     };
     const result = buildUserInfoForUi(userInfo);
     expect(result).not.toBeNull();
-    const byLabel = Object.fromEntries((result!).map(({ label, value }) => [label, value]));
+    const byLabel = Object.fromEntries(result!.map(({ label, value }) => [label, value]));
     expect(byLabel.location).toBe('Unknown');
     expect(byLabel.ip).toBe('');
     expect(byLabel.browser).toBe('Unknown');

@@ -1,8 +1,9 @@
-"use client";
+'use client';
 
-import { cn } from "@/lib/utils";
-import { motion, MotionProps } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { motion, type MotionProps } from 'motion/react';
+import { useEffect, useRef, useState } from 'react';
+
+import { cn } from '@/lib/utils';
 
 interface AnimatedSpanProps extends MotionProps {
   children: React.ReactNode;
@@ -10,17 +11,12 @@ interface AnimatedSpanProps extends MotionProps {
   className?: string;
 }
 
-export const AnimatedSpan = ({
-  children,
-  delay = 0,
-  className,
-  ...props
-}: AnimatedSpanProps) => (
+export const AnimatedSpan = ({ children, delay = 0, className, ...props }: AnimatedSpanProps) => (
   <motion.div
     initial={{ opacity: 0, y: -5 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.3, delay: delay / 1000 }}
-    className={cn("grid tracking-tight", className)}
+    className={cn('grid tracking-tight', className)}
     {...props}
   >
     {children}
@@ -33,6 +29,8 @@ interface TypingAnimationProps extends MotionProps {
   duration?: number;
   delay?: number;
   as?: React.ElementType;
+  onStart?: () => void;
+  onComplete?: () => void;
 }
 
 export const TypingAnimation = ({
@@ -40,31 +38,36 @@ export const TypingAnimation = ({
   className,
   duration = 60,
   delay = 0,
-  as: Component = "span",
+  as: Component = 'span',
+  onStart,
+  onComplete,
   ...props
 }: TypingAnimationProps) => {
-  if (typeof children !== "string") {
-    throw new Error("TypingAnimation: children must be a string. Received:");
+  if (typeof children !== 'string') {
+    throw new Error('TypingAnimation: children must be a string. Received:');
   }
 
   const MotionComponent = motion.create(Component, {
     forwardMotionProps: true,
   });
 
-  const [displayedText, setDisplayedText] = useState<string>("");
+  const [displayedText, setDisplayedText] = useState<string>('');
   const [started, setStarted] = useState(false);
   const elementRef = useRef<HTMLElement | null>(null);
+  const onCompleteCalledRef = useRef(false);
 
   useEffect(() => {
     const startTimeout = setTimeout(() => {
       setStarted(true);
+      onStart?.();
     }, delay);
     return () => clearTimeout(startTimeout);
-  }, [delay]);
+  }, [delay, onStart]);
 
   useEffect(() => {
     if (!started) return;
 
+    onCompleteCalledRef.current = false;
     let i = 0;
     const typingEffect = setInterval(() => {
       if (i < children.length) {
@@ -72,20 +75,24 @@ export const TypingAnimation = ({
         i++;
       } else {
         clearInterval(typingEffect);
+        if (!onCompleteCalledRef.current) {
+          onCompleteCalledRef.current = true;
+          onComplete?.();
+        }
       }
     }, duration);
 
     return () => {
       clearInterval(typingEffect);
+      if (!onCompleteCalledRef.current && onComplete) {
+        onCompleteCalledRef.current = true;
+        onComplete();
+      }
     };
-  }, [children, duration, started]);
+  }, [children, duration, started, onComplete]);
 
   return (
-    <MotionComponent
-      ref={elementRef}
-      className={cn("tracking-tight", className)}
-      {...props}
-    >
+    <MotionComponent ref={elementRef} className={cn('tracking-tight', className)} {...props}>
       {displayedText}
     </MotionComponent>
   );
@@ -96,10 +103,10 @@ interface TerminalProps {
   className?: string;
 }
 
-export const Terminal = ({ children, className }: TerminalProps) => {
-  return (
-    <section className="w-full max-w-5xl m-4 text-white">
-      <div className="p-4 grid gap-y-1 overflow-auto color-text font-medium leading-loose">{children}</div>
-    </section>
-  );
-};
+export const Terminal = ({ children, className }: TerminalProps) => (
+  <section className={cn('text-terminal m-4 w-full max-w-5xl', className)}>
+    <div className="grid gap-y-1 overflow-auto p-4 leading-loose font-medium text-inherit">
+      {children}
+    </div>
+  </section>
+);

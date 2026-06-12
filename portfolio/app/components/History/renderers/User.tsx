@@ -1,10 +1,10 @@
-import { useAnimation } from "@app/contexts/AnimationContext";
-import { CommandPrompt } from "@components/ui/command-prompt";
-import { TypingAnimation } from "@components/ui/shadcn-io/terminal";
-import { type UserInfo, type UserInfoItem } from "@lib/utils/types";
-import React from "react";
+import { useAnimation } from '@app/contexts/AnimationContext';
+import { CommandPrompt } from '@components/ui/command-prompt';
+import { TypingAnimation } from '@components/ui/shadcn-io/terminal';
+import { type UserInfo, type UserInfoItem } from '@lib/utils/types';
+import React from 'react';
 
-import { type HistoryItem } from "../types";
+import { type HistoryItem } from '../types';
 
 export const User: React.FC<{ item: HistoryItem }> = ({ item }) => {
   const userInfoItems: UserInfo = JSON.parse(item.value);
@@ -29,10 +29,10 @@ export const User: React.FC<{ item: HistoryItem }> = ({ item }) => {
             onStart={startAnimation}
             onComplete={endAnimation}
           >
-            {item.label + ": " + item.value}
+            {item.label + ': ' + item.value}
           </TypingAnimation>
         </div>
       ))}
     </div>
-  )
-}
+  );
+};

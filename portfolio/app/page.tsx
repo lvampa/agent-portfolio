@@ -27,7 +27,7 @@ export default function Home() {
   }, [hasLoaded, isLoading, userInfo]);
 
   return (
-    <main className="flex justify-center w-full h-screen">
+    <main className="flex h-screen w-full justify-center">
       <Terminal>
         <AnimationProvider>
           <Repl />

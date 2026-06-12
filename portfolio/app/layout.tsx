@@ -19,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${dosFont.variable} font-sans antialiased bg-background`}>
+      <body className={`${dosFont.variable} bg-background font-sans antialiased`}>
         <EventBusProvider>
           <HistoryProvider>{children}</HistoryProvider>
         </EventBusProvider>

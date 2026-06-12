@@ -1,6 +1,6 @@
-import React from "react";
+import React from 'react';
 
-import { type HistoryItem } from "../types";
+import { type HistoryItem } from '../types';
 
 export const Message: React.FC<{ item: HistoryItem }> = ({ item }) => (
   <div>

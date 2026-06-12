@@ -34,7 +34,7 @@ const eslintConfig = defineConfig([
         { selector: 'typeLike', format: ['PascalCase'] },
       ],
       'no-console': 'warn',
-      'eqeqeq': ['error', 'always'],
+      eqeqeq: ['error', 'always'],
     },
   },
   globalIgnores(['.next/**', 'out/**', 'build/**', 'next-env.d.ts', '**/__tests__/**']),

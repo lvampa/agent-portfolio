@@ -1,9 +1,12 @@
-import { type CallbackFn, type EventBus,type UnregisterFn } from "./types";
+import { type CallbackFn, type EventBus, type UnregisterFn } from './types';
 
 export function createEventBus<TMap extends Record<string, unknown>>(): EventBus<TMap> {
   const handlers = new Map<string, CallbackFn[]>();
 
-  function on<K extends string & keyof TMap>(eventName: K, callback: (payload: TMap[K]) => void): UnregisterFn {
+  function on<K extends string & keyof TMap>(
+    eventName: K,
+    callback: (payload: TMap[K]) => void,
+  ): UnregisterFn {
     const eventHandlers = handlers.get(eventName) ?? [];
     const cb = callback as CallbackFn;
 
@@ -16,7 +19,10 @@ export function createEventBus<TMap extends Record<string, unknown>>(): EventBus
     return () => off(eventName, callback);
   }
 
-  function off<K extends string & keyof TMap>(eventName: K, callback: (payload: TMap[K]) => void): void {
+  function off<K extends string & keyof TMap>(
+    eventName: K,
+    callback: (payload: TMap[K]) => void,
+  ): void {
     const eventHandlers = handlers.get(eventName);
 
     if (eventHandlers) {

@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
 import { infoClient } from '@lib/api';
 import { getParsedUA } from '@lib/utils/clientInfo';
+import { useEffect, useMemo, useState } from 'react';
+
 import type { ClientInfoRequest, UseClientInfo } from './types';
 
 export function useClientInfo(): UseClientInfo {

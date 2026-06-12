@@ -1,5 +1,6 @@
-import axios, { AxiosInstance, AxiosResponse } from 'axios';
-import { ClientInterface } from './types';
+import axios, { type AxiosInstance, type AxiosResponse } from 'axios';
+
+import { type ClientInterface } from './types';
 
 export class Client implements ClientInterface {
   private readonly axios: AxiosInstance;

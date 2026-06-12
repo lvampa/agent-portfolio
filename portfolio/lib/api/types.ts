@@ -1,4 +1,4 @@
-import { AxiosResponse } from "axios";
+import { type AxiosResponse } from 'axios';
 
 export interface ClientInterface {
   post<T = unknown>(url: string, payload: unknown): Promise<AxiosResponse<T>>;

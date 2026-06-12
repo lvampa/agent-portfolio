@@ -27,11 +27,7 @@ export function AnimationProvider({ children }: { children: React.ReactNode }) {
     endAnimation,
   };
 
-  return (
-    <AnimationContext.Provider value={value}>
-      {children}
-    </AnimationContext.Provider>
-  );
+  return <AnimationContext.Provider value={value}>{children}</AnimationContext.Provider>;
 }
 
 export function useAnimation(): AnimationContextValue {

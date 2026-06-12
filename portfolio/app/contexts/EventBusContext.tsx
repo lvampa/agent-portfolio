@@ -11,11 +11,7 @@ const EventBusContext = createContext<EventBusInstance | null>(null);
 export function EventBusProvider({ children }: { children: React.ReactNode }) {
   const [bus] = useState<EventBusInstance>(() => createEventBus<EventMap>());
 
-  return (
-    <EventBusContext.Provider value={bus}>
-      {children}
-    </EventBusContext.Provider>
-  );
+  return <EventBusContext.Provider value={bus}>{children}</EventBusContext.Provider>;
 }
 
 export function useEventBus(): EventBusInstance {
