@@ -1,9 +1,8 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
-
 import type { HistoryItem } from '@app/components/History';
 import { storage } from '@lib/storage';
+import React, { createContext, startTransition, useContext, useEffect, useState } from 'react';
 
 interface HistoryContextValue {
   items: HistoryItem[];
@@ -19,8 +18,10 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const stored = storage.load<HistoryItem>();
-    setItems(stored);
-    setHasLoaded(true);
+    startTransition(() => {
+      setItems(stored);
+      setHasLoaded(true);
+    });
   }, []);
 
   function append(item: HistoryItem) {
