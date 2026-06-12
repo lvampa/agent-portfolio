@@ -1,19 +1,29 @@
 'use client'
 
-import {
-  Terminal,
-  TypingAnimation,
-  AnimatedSpan,
-} from '@/components/ui/shadcn-io/terminal';
+import { EVENTS } from "@app/constants/events";
+import { AnimationProvider } from "@app/contexts/AnimationContext";
+import { useEventBus } from "@app/contexts/EventBusContext";
+import { useInitStorage } from '@app/hooks/useInitStorage';
+import { useClientInfo } from "@lib/hooks/useClientInfo";
+import { useEffect } from "react";
 
 import Repl from "@/app/components/Repl/Repl"
-import { useInitStorage } from '@app/hooks/useInitStorage';
+import { Terminal } from '@/components/ui/shadcn-io/terminal';
 
 export default function Home() {
+  const eventBus = useEventBus();
   useInitStorage();
 
+  const { userInfo, isLoading } = useClientInfo();
+
+  useEffect(() => {
+    if (!isLoading && userInfo.request && userInfo.parsedUA) {
+      eventBus.emit(EVENTS.PAGE_LOAD, userInfo)
+    }
+  }, [isLoading, userInfo]);
+
   return (
-    <main className="bg-background flex justify-center w-full h-screen">
+    <main className="flex justify-center w-full h-screen">
       <Terminal>
         {/*<AnimatedSpan delay={0}>C: \ { ">" } npm install shadcn-ui</AnimatedSpan>*/}
         {/*<TypingAnimation delay={1000} duration={100}>*/}
@@ -26,7 +36,9 @@ export default function Home() {
         {/*</TypingAnimation>*/}
         {/*<AnimatedSpan delay={6500}>🚀 Server ready at http://localhost:3000</AnimatedSpan>*/}
 
-        <Repl />
+        <AnimationProvider>
+          <Repl />
+        </AnimationProvider>
       </Terminal>
     </main>
   );

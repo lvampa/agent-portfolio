@@ -1,39 +1,39 @@
-import { useEffect, useState } from "react";
-import ReplInput from "@/app/components/Repl/ReplInput";
-import ReplLoading from "@/app/components/Repl/ReplLoading";
 import { History } from "@app/components/History";
-import { eventBus } from "@/lib/event-bus";
+import { HISTORY_ITEM_TYPES,type HistoryItem } from "@app/components/History";
+import { InputForm } from "@app/components/Repl/InputForm";
 import { EVENTS } from "@app/constants/events";
-import { HistoryItem, HISTORY_ITEM_TYPES } from "@app/components/History";
+import { useAnimation } from "@app/contexts/AnimationContext";
+import { useEventBus } from "@app/contexts/EventBusContext";
 import useChat from "@lib/hooks/useChat";
-import { EventBusSubmitEvent } from "@app/types/events";
+import { useEffect } from "react";
+
+import ReplLoading from "@/app/components/Repl/ReplLoading";
 
 export default function Repl() {
+  const eventBus = useEventBus();
   const { isLoading, sendMessage } = useChat();
+  const { isAnimating } = useAnimation();
 
   useEffect(() => {
-    const unRegisterFn = eventBus.on(EVENTS.SUBMIT, (data) => executeReplCommand(data));
-    return () => unRegisterFn();
-  }, []);
-
-
-  function executeReplCommand(data: EventBusSubmitEvent) {
-    if (data?.message) {
-      sendMessage(data.message).then((result) => {
-        if (Array.isArray(result)) {
-          result.forEach((item: any) => {
-            const itemData: HistoryItem = {
-              message: item?.output ?? "",
-              type: HISTORY_ITEM_TYPES.RESULT
-            }
-            debugger
-            eventBus.emit(EVENTS.EXECUTION_COMPLETE, itemData);
-          });
-        }
-        }
-      )
+    function executeReplCommand(data: HistoryItem) {
+      if (data?.value) {
+        sendMessage(data.value).then((result) => {
+          if (Array.isArray(result)) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            result.forEach((item: any) => {
+              const itemData: HistoryItem = {
+                value: item?.output ?? "",
+                type: HISTORY_ITEM_TYPES.MESSAGE
+              };
+              eventBus.emit(EVENTS.CHAT_RESULT, itemData);
+            });
+          }
+        });
+      }
     }
-  }
+    const unRegisterFn = eventBus.on(EVENTS.SUBMIT, executeReplCommand);
+    return () => unRegisterFn();
+  }, [sendMessage]);
 
   return (
     <div>
@@ -41,8 +41,8 @@ export default function Repl() {
       <ReplLoading
         isVisible={ isLoading }
       />
-      <ReplInput
-        isVisible={ !isLoading }
+      <InputForm
+        isVisible={!isLoading && !isAnimating}
       />
     </div>
   );

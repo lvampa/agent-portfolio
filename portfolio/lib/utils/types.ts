@@ -1,5 +1,3 @@
-import type { ClientInfoRequest } from '@lib/hooks/types';
-
 export interface UserInfoItem {
   label: string;
   value: string;

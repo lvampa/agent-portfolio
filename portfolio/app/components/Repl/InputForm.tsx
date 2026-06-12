@@ -1,20 +1,24 @@
+import { HISTORY_ITEM_TYPES } from "@app/components/History"
+import { EVENTS } from "@app/constants/events"
+import { useEventBus } from "@app/contexts/EventBusContext"
+import React, { useEffect, useRef, useState } from "react"
+
 import { CommandPrompt } from "@/components/ui/command-prompt"
 import { Input } from "@/components/ui/input"
-import React, { useEffect, useRef, useState } from "react"
-import { eventBus } from "@app/event-bus"
-import { EVENTS } from "@app/constants/events"
-import { HISTORY_ITEM_TYPES } from "@app/components/History"
 
-// TODO - form validation
-// @doc - Component emits submit event on form submit.
 export function InputForm({isVisible}: {
   isVisible: boolean;
 }) {
+  const eventBus = useEventBus();
   const [value, setValue] = useState("")
   const inputElementRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
+    function handleClickOnPage() {
+      inputElementRef.current?.focus();
+    }
     document.addEventListener("click", handleClickOnPage);
+    return () => document.removeEventListener("click", handleClickOnPage);
   }, []);
 
   if (!isVisible) {
@@ -26,10 +30,6 @@ export function InputForm({isVisible}: {
     setValue("");
 
     eventBus.emit(EVENTS.SUBMIT, { value, type: HISTORY_ITEM_TYPES.COMMAND });
-  }
-
-  function handleClickOnPage() {
-    inputElementRef.current?.focus();
   }
 
   return (

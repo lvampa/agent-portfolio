@@ -1,4 +1,5 @@
 import * as React from "react";
+
 import { cn } from "@/lib/utils";
 
 export interface CommandPromptProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -6,8 +7,8 @@ export interface CommandPromptProps extends React.HTMLAttributes<HTMLDivElement>
   prompt?: string;
 }
 
-const CommandPrompt = React.forwardRef<HTMLDivElement, CommandPromptProps>(
-  ({ className, children, prompt = "$", ...props }, ref) => (
+export const CommandPrompt = React.forwardRef<HTMLDivElement, CommandPromptProps>(
+  ({ className, children, prompt = "C:\\Users\\unknown >", ...props }, ref) => (
     <div
       ref={ref}
       className={cn("flex gap-3", className)}
@@ -21,7 +22,4 @@ const CommandPrompt = React.forwardRef<HTMLDivElement, CommandPromptProps>(
     </div>
   )
 );
-
-CommandPrompt.displayName = "CommandPrompt";
-
-export { CommandPrompt };
+CommandPrompt.displayName = 'CommandPrompt';
