@@ -1,49 +1,48 @@
-import { History } from "@app/components/History";
-import { HISTORY_ITEM_TYPES,type HistoryItem } from "@app/components/History";
-import { InputForm } from "@app/components/Repl/InputForm";
-import { EVENTS } from "@app/constants/events";
-import { useAnimation } from "@app/contexts/AnimationContext";
-import { useEventBus } from "@app/contexts/EventBusContext";
-import useChat from "@lib/hooks/useChat";
-import { useEffect } from "react";
+import type { HistoryItem } from '@app/components/History';
+import { History, HISTORY_ITEM_TYPES } from '@app/components/History';
+import { EVENTS } from '@app/constants/events';
+import { useAnimation } from '@app/contexts/AnimationContext';
+import { useEventBus } from '@app/contexts/EventBusContext';
+import { useHistory } from '@app/contexts/HistoryContext';
+import useChat from '@lib/hooks/useChat';
+import { useEffect } from 'react';
 
-import ReplLoading from "@/app/components/Repl/ReplLoading";
+import { InputForm } from './InputForm';
+import ReplLoading from './ReplLoading';
 
+/** Bridges user input to the chat API and records both the command and the response in history. */
 export default function Repl() {
   const eventBus = useEventBus();
   const { isLoading, sendMessage } = useChat();
   const { isAnimating } = useAnimation();
+  const { append } = useHistory();
 
   useEffect(() => {
-    function executeReplCommand(data: HistoryItem) {
-      if (data?.value) {
-        sendMessage(data.value).then((result) => {
-          if (Array.isArray(result)) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            result.forEach((item: any) => {
-              const itemData: HistoryItem = {
-                value: item?.output ?? "",
-                type: HISTORY_ITEM_TYPES.MESSAGE
-              };
-              eventBus.emit(EVENTS.CHAT_RESULT, itemData);
-            });
-          }
+    async function handleSubmit(command: HistoryItem) {
+      append({ value: command.value, type: HISTORY_ITEM_TYPES.COMMAND });
+
+      const result = await sendMessage(command.value);
+
+      if (Array.isArray(result)) {
+        result.forEach((item: unknown) => {
+          const output =
+            typeof item === 'object' && item !== null && 'output' in item
+              ? String((item as { output: unknown }).output)
+              : '';
+          append({ value: output, type: HISTORY_ITEM_TYPES.MESSAGE });
         });
       }
     }
-    const unRegisterFn = eventBus.on(EVENTS.SUBMIT, executeReplCommand);
-    return () => unRegisterFn();
-  }, [sendMessage]);
+
+    const unregister = eventBus.on(EVENTS.SUBMIT, handleSubmit);
+    return () => unregister();
+  }, [sendMessage, append]);
 
   return (
     <div>
       <History />
-      <ReplLoading
-        isVisible={ isLoading }
-      />
-      <InputForm
-        isVisible={!isLoading && !isAnimating}
-      />
+      <ReplLoading isVisible={isLoading} />
+      <InputForm isVisible={!isLoading && !isAnimating} />
     </div>
   );
 }
