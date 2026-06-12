@@ -1,9 +1,6 @@
-import { type HISTORY_ITEM_TYPES } from './constants';
+import type { z } from 'zod';
 
-export type HistoryItemType = (typeof HISTORY_ITEM_TYPES)[keyof typeof HISTORY_ITEM_TYPES];
+import type { HistoryItemSchema, HistoryItemTypeSchema } from './schemas';
 
-export interface HistoryItem {
-  value: string;
-  type: HistoryItemType;
-  animate?: boolean;
-}
+export type HistoryItemType = z.infer<typeof HistoryItemTypeSchema>;
+export type HistoryItem = z.infer<typeof HistoryItemSchema>;
