@@ -1,6 +1,5 @@
-import { EVENTS } from "../constants/events"
+import type { HistoryItem } from '@app/components/History';
 
-export interface EventBusSubmitEvent {
-  type: typeof EVENTS.SUBMIT;
-  message: string;
+export interface EventMap extends Record<string, unknown> {
+  submit: HistoryItem;
 }
