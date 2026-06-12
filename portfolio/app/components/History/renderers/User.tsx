@@ -2,7 +2,6 @@ import { useAnimation } from '@app/contexts/AnimationContext';
 import { CommandPrompt } from '@components/ui/command-prompt';
 import { TypingAnimation } from '@components/ui/shadcn-io/terminal';
 import { UserInfoSchema } from '@lib/utils/schemas';
-import type { UserInfoItem } from '@lib/utils/types';
 import React from 'react';
 
 import { type HistoryItem } from '../types';
@@ -29,7 +28,7 @@ export const User: React.FC<{ item: HistoryItem }> = ({ item }) => {
           Loading Client Information . . . .
         </TypingAnimation>
       </CommandPrompt>
-      {parsed.data.map((infoItem: UserInfoItem) => (
+      {parsed.data.map((infoItem) => (
         <div key={infoItem.value}>
           <TypingAnimation
             delay={2500}
