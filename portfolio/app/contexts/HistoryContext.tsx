@@ -1,6 +1,7 @@
 'use client';
 
 import type { HistoryItem } from '@app/components/History';
+import { HistoryItemSchema } from '@app/components/History/schemas';
 import { storage } from '@lib/storage';
 import React, { createContext, startTransition, useContext, useEffect, useState } from 'react';
 
@@ -17,7 +18,7 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
   const [hasLoaded, setHasLoaded] = useState(false);
 
   useEffect(() => {
-    const stored = storage.load<HistoryItem>();
+    const stored = storage.load(HistoryItemSchema);
     startTransition(() => {
       setItems(stored);
       setHasLoaded(true);
