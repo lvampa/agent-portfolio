@@ -1,8 +1,8 @@
 'use client';
 
+import { chatClient } from '@lib/api';
 import { useCallback, useState } from 'react';
 
-import { chatClient } from '@lib/api';
 import type { UseChat } from './types';
 
 export default function useChat(): UseChat {

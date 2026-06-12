@@ -1,6 +1,5 @@
-import React from 'react';
-
 import { useHistory } from '@app/contexts/HistoryContext';
+import React from 'react';
 
 import { renderers } from './constants';
 import type { HistoryItem } from './types';

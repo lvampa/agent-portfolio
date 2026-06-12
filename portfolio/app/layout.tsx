@@ -1,10 +1,9 @@
-import localFont from 'next/font/local';
-import React from 'react';
+import './globals.css';
 
 import { EventBusProvider } from '@app/contexts/EventBusContext';
 import { HistoryProvider } from '@app/contexts/HistoryContext';
-
-import './globals.css';
+import localFont from 'next/font/local';
+import React from 'react';
 
 const dosFont = localFont({
   src: '../public/fonts/PerfectDOSVGA437.ttf',
