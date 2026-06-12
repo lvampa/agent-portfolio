@@ -1,6 +1,5 @@
-import type { z } from 'zod';
-
 import type { ParsedUA } from '@lib/utils/types';
+import type { z } from 'zod';
 
 import type { ChatResponseSchema, ClientInfoRequestSchema } from './schemas';
 
