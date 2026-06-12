@@ -1,4 +1,8 @@
-import { ChatResponseItemSchema, ChatResponseSchema, ClientInfoRequestSchema } from '@lib/hooks/schemas';
+import {
+  ChatResponseItemSchema,
+  ChatResponseSchema,
+  ClientInfoRequestSchema,
+} from '@lib/hooks/schemas';
 
 describe('ClientInfoRequestSchema', () => {
   const validRequest = {
@@ -26,13 +30,19 @@ describe('ClientInfoRequestSchema', () => {
 
   test('accepts null for nullable fields', () => {
     expect(
-      ClientInfoRequestSchema.safeParse({ ...validRequest, ip: null, country: null, userAgent: null }).success,
+      ClientInfoRequestSchema.safeParse({
+        ...validRequest,
+        ip: null,
+        country: null,
+        userAgent: null,
+      }).success,
     ).toBe(true);
   });
 
   test('accepts numeric latitude/longitude', () => {
     expect(
-      ClientInfoRequestSchema.safeParse({ ...validRequest, latitude: 40.7, longitude: -74.0 }).success,
+      ClientInfoRequestSchema.safeParse({ ...validRequest, latitude: 40.7, longitude: -74.0 })
+        .success,
     ).toBe(true);
   });
 

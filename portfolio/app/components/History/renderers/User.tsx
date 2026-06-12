@@ -1,16 +1,24 @@
 import { useAnimation } from '@app/contexts/AnimationContext';
 import { CommandPrompt } from '@components/ui/command-prompt';
 import { TypingAnimation } from '@components/ui/shadcn-io/terminal';
-import { type UserInfo, type UserInfoItem } from '@lib/utils/types';
+import { UserInfoSchema } from '@lib/utils/schemas';
+import type { UserInfoItem } from '@lib/utils/types';
 import React from 'react';
 
 import { type HistoryItem } from '../types';
 
 export const User: React.FC<{ item: HistoryItem }> = ({ item }) => {
-  const userInfoItems: UserInfo = JSON.parse(item.value);
   const { startAnimation, endAnimation } = useAnimation();
 
-  if (!userInfoItems.length) {
+  let rawValue: unknown;
+  try {
+    rawValue = JSON.parse(item.value);
+  } catch {
+    return null;
+  }
+
+  const parsed = UserInfoSchema.safeParse(rawValue);
+  if (!parsed.success || !parsed.data.length) {
     return null;
   }
 
@@ -21,15 +29,15 @@ export const User: React.FC<{ item: HistoryItem }> = ({ item }) => {
           Loading Client Information . . . .
         </TypingAnimation>
       </CommandPrompt>
-      {userInfoItems.map((item: UserInfoItem) => (
-        <div key={item.value}>
+      {parsed.data.map((infoItem: UserInfoItem) => (
+        <div key={infoItem.value}>
           <TypingAnimation
             delay={2500}
             duration={10}
             onStart={startAnimation}
             onComplete={endAnimation}
           >
-            {item.label + ': ' + item.value}
+            {infoItem.label + ': ' + infoItem.value}
           </TypingAnimation>
         </div>
       ))}

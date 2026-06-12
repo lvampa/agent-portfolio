@@ -15,9 +15,7 @@ describe('HistoryItemTypeSchema', () => {
 
 describe('HistoryItemSchema', () => {
   test('accepts valid history item', () => {
-    expect(
-      HistoryItemSchema.safeParse({ value: 'hello', type: 'command' }).success,
-    ).toBe(true);
+    expect(HistoryItemSchema.safeParse({ value: 'hello', type: 'command' }).success).toBe(true);
   });
 
   test('accepts item with animate flag', () => {
@@ -27,9 +25,7 @@ describe('HistoryItemSchema', () => {
   });
 
   test('rejects item with unknown type', () => {
-    expect(
-      HistoryItemSchema.safeParse({ value: 'hi', type: 'bogus' }).success,
-    ).toBe(false);
+    expect(HistoryItemSchema.safeParse({ value: 'hi', type: 'bogus' }).success).toBe(false);
   });
 
   test('rejects item missing value', () => {

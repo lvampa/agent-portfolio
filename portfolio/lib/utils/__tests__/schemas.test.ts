@@ -26,7 +26,10 @@ describe('ParsedUASchema', () => {
   });
 
   test('rejects non-string ua field', () => {
-    expect(ParsedUASchema.safeParse({ ua: 123, browser: {}, os: {}, device: {}, engine: {}, cpu: {} }).success).toBe(false);
+    expect(
+      ParsedUASchema.safeParse({ ua: 123, browser: {}, os: {}, device: {}, engine: {}, cpu: {} })
+        .success,
+    ).toBe(false);
   });
 });
 

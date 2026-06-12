@@ -23,20 +23,16 @@ export default function Repl() {
 
       const result = await sendMessage(command.value);
 
-      if (Array.isArray(result)) {
-        result.forEach((item: unknown) => {
-          const output =
-            typeof item === 'object' && item !== null && 'output' in item
-              ? String((item as { output: unknown }).output)
-              : '';
-          append({ value: output, type: HISTORY_ITEM_TYPES.MESSAGE });
+      if (result) {
+        result.forEach((item) => {
+          append({ value: item.output, type: HISTORY_ITEM_TYPES.MESSAGE });
         });
       }
     }
 
     const unregister = eventBus.on(EVENTS.SUBMIT, handleSubmit);
     return () => unregister();
-  }, [sendMessage, append]);
+  }, [eventBus, sendMessage, append]);
 
   return (
     <div>
