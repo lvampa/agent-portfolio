@@ -1,4 +1,4 @@
-name: Deploy frontend to S3
+name: Deploy frontend to Cloudflare Pages
 
 on:
   push:
@@ -8,7 +8,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write
       contents: read
     steps:
       - name: Checkout
@@ -27,12 +26,9 @@ jobs:
           npm ci
           npm run build
 
-      - name: Configure AWS deployment role
-        uses: aws-actions/configure-aws-credentials@v2
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
         with:
-          role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/${{ secrets.DEPLOYMENT_ROLE }}
-          aws-region: ${{ vars.AWS_REGION }}
-
-      - name: Sync to S3
-        run: |
-          aws s3 sync portfolio/out s3://${{ vars.S3_BUCKET }} --delete
+          apiTokenSecret: CF_API_TOKEN
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy portfolio/out --project-name=${{ vars.CF_PAGES_PROJECT }}
