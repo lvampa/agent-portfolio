@@ -78,7 +78,3 @@ variable "cloudflare_a_record_name" {
   type        = string
 }
 
-variable "cloudflare_frontend_record_name" {
-  description = "DNS name for the frontend CNAME to CloudFront (e.g. 'www' or 'app')"
-  type        = string
-}

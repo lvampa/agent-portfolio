@@ -75,13 +75,6 @@ Update `infra/terraform.tfvars` with your values:
 - `ec2_keypair_name`
 - `home_ip_cidr` (for SSH access)
 
-### Required local cert files
-
-Before applying infrastructure, place the TLS files here:
-
-- `infra/modules/ec2/file/origin.pem`
-- `infra/modules/ec2/file/origin.key`
-
 ### Plan and apply
 
 ```bash

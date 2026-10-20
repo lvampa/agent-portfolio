@@ -40,7 +40,3 @@ variable "n8n_webhook_url" {
   type        = string
 }
 
-variable "efs_id" {
-  description = "EFS file system ID for n8n persistent data"
-  type        = string
-}

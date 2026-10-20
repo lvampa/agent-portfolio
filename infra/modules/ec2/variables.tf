@@ -20,7 +20,7 @@ variable "ec2_keypair_name" {
 variable "instance_type" {
   description = "EC2 instance type"
   type        = string
-  default     = "t3.micro"
+  default     = "t4g.micro"
 }
 
 variable "ecs_cluster_name" {
@@ -28,8 +28,4 @@ variable "ecs_cluster_name" {
   type        = string
 }
 
-variable "vpc_id" {
-  description = "VPC ID (for EFS security group)"
-  type        = string
-}
 

@@ -32,11 +32,8 @@ resource "aws_ecs_task_definition" "n8n" {
   execution_role_arn       = aws_iam_role.ecs_execution.arn
 
   volume {
-    name = "n8n-data"
-    efs_volume_configuration {
-      file_system_id = var.efs_id
-      root_directory = "/"
-    }
+    name      = "n8n-data"
+    host_path = "/opt/n8n-data"
   }
 
   container_definitions = jsonencode([
