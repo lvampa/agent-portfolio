@@ -30,6 +30,7 @@ variable "n8n_encryption_key" {
   description = "n8n encryption key (long random string for credentials encryption)"
   type        = string
   sensitive   = true
+  ephemeral   = true
 }
 
 variable "n8n_timezone" {

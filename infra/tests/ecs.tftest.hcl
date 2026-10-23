@@ -23,6 +23,25 @@ run "plans" {
   }
 
   assert {
+    condition     = aws_ssm_parameter.n8n_encryption_key.type == "SecureString"
+    error_message = "The encryption key must be stored encrypted."
+  }
+
+  assert {
+    condition = alltrue(flatten([
+      for c in jsondecode(aws_ecs_task_definition.n8n.container_definitions) : [
+        for e in try(c.environment, []) : e.name != "N8N_ENCRYPTION_KEY"
+      ]
+    ]))
+    error_message = "The encryption key must not be a plain environment variable."
+  }
+
+  assert {
+    condition     = one([for c in jsondecode(aws_ecs_task_definition.n8n.container_definitions) : c if c.name == "n8n"]).secrets[0].valueFrom == aws_ssm_parameter.n8n_encryption_key.name
+    error_message = "n8n must read its encryption key from SSM."
+  }
+
+  assert {
     condition     = aws_ecs_service.n8n.deployment_minimum_healthy_percent == 0
     error_message = "One instance with host port 80 can't run two tasks, so the old task must stop first."
   }

@@ -22,6 +22,28 @@ resource "aws_iam_role_policy_attachment" "ecs_execution" {
   policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
 }
 
+# Write-only, so the key never lands in state. Bump value_wo_version to rotate it.
+resource "aws_ssm_parameter" "n8n_encryption_key" {
+  name             = "/${var.project_name}/n8n/encryption-key"
+  type             = "SecureString"
+  value_wo         = var.n8n_encryption_key
+  value_wo_version = 1
+}
+
+resource "aws_iam_role_policy" "ecs_execution_read_encryption_key" {
+  name = "read-n8n-encryption-key"
+  role = aws_iam_role.ecs_execution.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect   = "Allow"
+      Action   = "ssm:GetParameters"
+      Resource = aws_ssm_parameter.n8n_encryption_key.arn
+    }]
+  })
+}
+
 # The api host only serves webhooks, so the editor is reachable on the admin host alone.
 # The http:// prefix stops Caddy from requesting certificates; Cloudflare terminates HTTPS.
 locals {
@@ -84,8 +106,10 @@ resource "aws_ecs_task_definition" "n8n" {
       image        = "n8nio/n8n:2.45.3"
       essential    = true
       portMappings = [{ containerPort = 5678, protocol = "tcp" }]
+      secrets = [
+        { name = "N8N_ENCRYPTION_KEY", valueFrom = aws_ssm_parameter.n8n_encryption_key.name }
+      ]
       environment = [
-        { name = "N8N_ENCRYPTION_KEY", value = var.n8n_encryption_key },
         { name = "N8N_WEBHOOK_URL", value = "https://${var.api_hostname}/" },
         { name = "N8N_EDITOR_BASE_URL", value = "https://${var.admin_hostname}/" },
         { name = "N8N_HOST", value = var.admin_hostname },
