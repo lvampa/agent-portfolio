@@ -13,17 +13,8 @@ resource "aws_security_group_rule" "cloudflare_http" {
   description       = "HTTP from Cloudflare IPs"
 }
 
-data "aws_ami" "ecs" {
-  most_recent = true
-  owners      = ["amazon"]
-  filter {
-    name   = "name"
-    values = ["amzn2-ami-ecs-hvm-*-arm64-ebs"]
-  }
-  filter {
-    name   = "architecture"
-    values = ["arm64"]
-  }
+locals {
+  snapshot_tag = { Snapshot = "n8n-data" }
 }
 
 # IAM role for ECS container instance
@@ -60,7 +51,7 @@ resource "aws_eip" "this" {
 
 # Single EC2 instance (no ASG)
 resource "aws_instance" "ecs" {
-  ami                         = data.aws_ami.ecs.id
+  ami                         = var.ami_id
   instance_type               = var.instance_type
   key_name                    = var.ec2_keypair_name
   subnet_id                   = var.subnet_ids[0]
@@ -72,6 +63,16 @@ resource "aws_instance" "ecs" {
     ecs_cluster_name = var.ecs_cluster_name
   }))
 
+  # Hop limit 1 keeps bridge-mode containers from reaching the instance role's credentials.
+  metadata_options {
+    http_tokens                 = "required"
+    http_put_response_hop_limit = 1
+  }
+
+  root_block_device {
+    tags = local.snapshot_tag
+  }
+
   tags = {
     Name = "${var.project_name}-ecs-instance"
   }
@@ -81,5 +82,49 @@ resource "aws_instance" "ecs" {
 resource "aws_eip_association" "this" {
   instance_id   = aws_instance.ecs.id
   allocation_id = aws_eip.this.id
+}
+
+resource "aws_iam_role" "dlm" {
+  name = "${var.project_name}-dlm"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "dlm.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "dlm" {
+  role       = aws_iam_role.dlm.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSDataLifecycleManagerServiceRole"
+}
+
+resource "aws_dlm_lifecycle_policy" "n8n_data" {
+  description        = "${var.project_name} n8n data daily snapshots"
+  execution_role_arn = aws_iam_role.dlm.arn
+  state              = "ENABLED"
+
+  policy_details {
+    resource_types = ["VOLUME"]
+    target_tags    = local.snapshot_tag
+
+    schedule {
+      name      = "daily"
+      copy_tags = true
+
+      create_rule {
+        interval      = 24
+        interval_unit = "HOURS"
+        times         = ["05:00"]
+      }
+
+      retain_rule {
+        count = 7
+      }
+    }
+  }
 }
 
