@@ -14,7 +14,7 @@ resource "aws_internet_gateway" "this" {
   }
 }
 
-# Public subnets (ALB, ECS, EC2 capacity)
+# Public subnets for the EC2 instance
 resource "aws_subnet" "public" {
   count                   = 2
   vpc_id                  = aws_vpc.this.id
@@ -45,11 +45,11 @@ resource "aws_route" "internet_access" {
   gateway_id             = aws_internet_gateway.this.id
 }
 
-# Security group for EC2: SSH and HTTPS rules added via aws_security_group_rule (VPC + EC2 modules)
+# Security group for EC2: SSH and HTTP rules added via aws_security_group_rule (VPC + EC2 modules)
 # so we avoid perpetual plan drift from mixing inline ingress with standalone rules.
 resource "aws_security_group" "ecs_sg" {
   name        = "${var.project_name}-ec2-sg"
-  description = "EC2: SSH from home IP, HTTPS from allowed CIDRs; all outbound"
+  description = "EC2: SSH from home IP, HTTP from Cloudflare; all outbound"
   vpc_id      = aws_vpc.this.id
 
   egress {

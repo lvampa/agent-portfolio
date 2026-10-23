@@ -3,11 +3,6 @@ output "vpc_id" {
   value       = aws_vpc.this.id
 }
 
-output "vpc_cidr" {
-  description = "VPC CIDR block (for ALB egress to EC2 only)"
-  value       = aws_vpc.this.cidr_block
-}
-
 output "public_subnet_ids" {
   value = aws_subnet.public[*].id
 }

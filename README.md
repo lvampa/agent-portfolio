@@ -58,9 +58,9 @@ npm run lint
 The `infra` project provisions core AWS resources through modules:
 
 - VPC + public subnets + security group
-- EFS filesystem and mount targets
-- EC2 instance (with IAM profile and Elastic IP)
-- ECS module is present but currently commented out in root `main.tf`
+- EC2 instance (with IAM profile, Elastic IP, and daily disk snapshots)
+- ECS cluster running Caddy and n8n on that instance
+- Cloudflare DNS records for the api and admin hostnames
 
 ### Configure AWS profile
 

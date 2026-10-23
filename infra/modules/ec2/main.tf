@@ -1,4 +1,4 @@
-# Single EC2 instance for ECS capacity (n8n task); Caddy on host proxies HTTP -> host:5678
+# Single EC2 instance for ECS capacity. The n8n task's Caddy container listens on host port 80.
 
 data "cloudflare_ip_ranges" "web" {}
 

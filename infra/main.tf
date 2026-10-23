@@ -4,7 +4,6 @@ module "vpc" {
   home_ip_cidr = var.home_ip_cidr
 }
 
-# ECS cluster, task (Caddy + n8n), and service – no ALB; Caddy in task proxies HTTP (bridge network mode)
 module "ec2" {
   source            = "./modules/ec2"
   project_name      = var.project_name
@@ -14,6 +13,7 @@ module "ec2" {
   ecs_cluster_name  = "${var.project_name}-cluster"
 }
 
+# ECS cluster, task (Caddy + n8n), and service. No load balancer; Caddy in the task routes by host.
 module "ecs" {
   source             = "./modules/ecs"
   project_name       = var.project_name

@@ -1,35 +1,23 @@
 # Infrastructure
 
 Highlights:
-- N8N on AWS using single EC2 with Docker (Caddy for SSL + n8n). 
-- SSL termination with Cloudflare. Origin server cert from Cloudflare.
-- HTTPS only with Cloudflare IP whitelist.
-- SSH whitelist from home IP.
-- Cloudflare DNS A record for n8n subdomain using EC2 static IP.
+- n8n on one arm64 EC2 instance, run by ECS as a single task with Caddy and n8n.
+- Cloudflare terminates HTTPS and forwards plain HTTP to the instance.
+- Port 80 only accepts Cloudflare's IP ranges, and SSH only accepts your home IP.
+- `api_hostname` serves only n8n webhooks, and `admin_hostname` serves the editor.
+- n8n data lives on the instance disk at `/opt/n8n-data`, with daily snapshots kept for 7 days.
+- The n8n encryption key is a write-only SSM parameter, so it never lands in state.
 
 ## Technologies
 
-- **AWS** – VPC, EC2
+- **AWS** – VPC, EC2, ECS, SSM Parameter Store, Data Lifecycle Manager, S3 (state)
 - **OpenTofu** – IaC (`tofu` CLI)
-- **CloudFlare** - DNS, SSL
+- **Cloudflare** – DNS, HTTPS
 
 ## Setup
 
-Before running OpenTofu: create `infra/certs/` with your TLS files, and set required variables in `terraform.tfvars` (or another `*.tfvars` file). Do not commit `certs/` or real `*.tfvars`; both are in `.gitignore`.
-
-### Certs
-
-OpenTofu reads your local cert files and embeds them (base64) in the EC2 user_data. At first boot the instance writes them to `/opt/certs` and Caddy uses them for TLS.
-
-**File layout** (under `infra/certs/`):
-
-| File | Meaning |
-|------|---------|
-| `certificate.pem` | Cloudflare origin certificate body |
-| `chain.pem` | Certificate chain |
-| `private.key` | Private key for the origin cert |
-
-Create the origin cert in Cloudflare: **SSL/TLS** → **Origin Server** → **Create Certificate**. Save the certificate, private key, and chain to the paths above. Paths can be overridden with `cert_body_path`, `cert_chain_path`, and `cert_private_key_path` (defaults are `certs/certificate.pem`, `certs/chain.pem`, `certs/private.key`).
+Set the required variables in `terraform.tfvars`, or another `*.tfvars` file.
+Real `*.tfvars` files are in `.gitignore`.
 
 ### Variables
 
@@ -39,10 +27,10 @@ Set these in `terraform.tfvars` (or your chosen `*.tfvars` file).
 
 | Variable | Meaning |
 |----------|---------|
-| `ec2_keypair_name` | Name of the EC2 key pair used for SSH |
+| `ec2_keypair_name` | Name of the EC2 key pair used for SSH. Key pairs are per region, so create it in `us-east-2`. |
 | `home_ip_cidr` | Your IP in CIDR form (e.g. `1.2.3.4/32`) so the security group allows SSH only from you |
 
-**Cloudflare (DNS A record for EC2):**
+**Cloudflare (DNS records for both hostnames):**
 
 | Variable | Meaning |
 |----------|---------|
@@ -78,7 +66,20 @@ tofu plan
 tofu apply
 ```
 
-Outputs: `ec2_instance_id`, `ec2_elastic_ip`, `ec2_public_ip`, `ec2_public_dns`. The instance has an Elastic IP attached (static); use it for the DNS A record and SSH: `ssh -i your-key.pem ec2-user@<ec2_elastic_ip>`.
+Outputs: `ec2_instance_id`, `ec2_elastic_ip`, `ec2_public_dns`.
+SSH in with `ssh -i your-key.pem ec2-user@<ec2_elastic_ip>`.
+
+After the first apply, open `https://<admin_hostname>` right away and create the owner account.
+Until then, anyone who reaches the editor can claim it.
+
+## Tests
+
+The tests use mock providers, so they need no AWS credentials:
+
+```bash
+tofu init -backend=false
+tofu test
+```
 
 ## Networking diagram
 
