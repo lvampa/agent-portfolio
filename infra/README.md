@@ -4,6 +4,7 @@ Highlights:
 - n8n on one arm64 EC2 instance, run by ECS as a single task with Caddy and n8n.
 - Cloudflare terminates HTTPS and forwards plain HTTP to the instance.
 - Port 80 only accepts Cloudflare's IP ranges, and SSH only accepts your home IP.
+- A Cloudflare firewall rule blocks `admin_hostname` for everyone except your home IP.
 - `api_hostname` serves only n8n webhooks, and `admin_hostname` serves the editor.
 - n8n data lives on the instance disk at `/opt/n8n-data`, with daily snapshots kept for 7 days.
 - The n8n encryption key is a write-only SSM parameter, so it never lands in state.
@@ -34,7 +35,7 @@ Set these in `terraform.tfvars` (or your chosen `*.tfvars` file).
 
 | Variable | Meaning |
 |----------|---------|
-| `cloudflare_api_token` | API token with DNS edit on the zone (sensitive) |
+| `cloudflare_api_token` | API token with **DNS: Edit** and **Zone WAF: Edit** on the zone (sensitive) |
 | `cloudflare_zone_id` | Zone ID from Cloudflare dashboard → zone Overview |
 | `api_hostname` | Hostname for n8n webhooks, e.g. `api.example.com`. Only `/webhook/*` and `/webhook-test/*` are served. |
 | `admin_hostname` | Hostname for the n8n editor, e.g. `admin.example.com` |
