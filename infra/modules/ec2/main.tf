@@ -1,18 +1,5 @@
 # Single EC2 instance for ECS capacity. The n8n task's Caddy container listens on host port 80.
 
-data "cloudflare_ip_ranges" "web" {}
-
-# HTTP on EC2 only from Cloudflare IPs
-resource "aws_security_group_rule" "cloudflare_http" {
-  type              = "ingress"
-  from_port         = 80
-  to_port           = 80
-  protocol          = "tcp"
-  cidr_blocks       = data.cloudflare_ip_ranges.web.ipv4_cidrs
-  security_group_id = var.security_group_id
-  description       = "HTTP from Cloudflare IPs"
-}
-
 locals {
   snapshot_tag = { Snapshot = "n8n-data" }
 }

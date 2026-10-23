@@ -70,5 +70,17 @@ resource "aws_security_group_rule" "ssh" {
   description       = "SSH from home IP"
 }
 
+data "cloudflare_ip_ranges" "web" {}
+
+# HTTP on EC2 only from Cloudflare IPs
+resource "aws_security_group_rule" "cloudflare_http" {
+  type              = "ingress"
+  from_port         = 80
+  to_port           = 80
+  protocol          = "tcp"
+  cidr_blocks       = data.cloudflare_ip_ranges.web.ipv4_cidrs
+  security_group_id = aws_security_group.ecs_sg.id
+  description       = "HTTP from Cloudflare IPs"
+}
 
 data "aws_availability_zones" "available" {}

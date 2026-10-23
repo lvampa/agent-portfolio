@@ -6,14 +6,6 @@ mock_provider "aws" {
   }
 }
 
-mock_provider "cloudflare" {
-  mock_data "cloudflare_ip_ranges" {
-    defaults = {
-      ipv4_cidrs = ["173.245.48.0/20"]
-    }
-  }
-}
-
 variables {
   project_name      = "test"
   subnet_ids        = ["subnet-0123456789abcdef0"]

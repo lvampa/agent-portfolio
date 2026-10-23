@@ -49,7 +49,7 @@ variable "admin_hostname" {
   type        = string
 }
 
-# Cloudflare DNS – A record for EC2 (n8n) origin
+# Cloudflare zone and API access
 variable "cloudflare_api_token" {
   description = "Cloudflare API token (DNS edit permission for the zone)"
   type        = string
