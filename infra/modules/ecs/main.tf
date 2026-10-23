@@ -10,9 +10,9 @@ resource "aws_iam_role" "ecs_execution" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect = "Allow"
+      Effect    = "Allow"
       Principal = { Service = "ecs-tasks.amazonaws.com" }
-      Action   = "sts:AssumeRole"
+      Action    = "sts:AssumeRole"
     }]
   })
 }
@@ -59,10 +59,10 @@ resource "aws_ecs_task_definition" "n8n" {
       dependsOn = [{ containerName = "n8n", condition = "START" }]
     },
     {
-      name          = "n8n"
-      image         = "n8nio/n8n:latest"
-      essential     = true
-      portMappings  = [{ containerPort = 5678, protocol = "tcp" }]
+      name         = "n8n"
+      image        = "n8nio/n8n:latest"
+      essential    = true
+      portMappings = [{ containerPort = 5678, protocol = "tcp" }]
       environment = [
         { name = "N8N_BASIC_AUTH_ACTIVE", value = tostring(var.n8n_basic_auth_active) },
         { name = "N8N_BASIC_AUTH_USER", value = var.n8n_basic_auth_user },
@@ -98,7 +98,7 @@ resource "aws_cloudwatch_log_group" "n8n" {
 
 resource "aws_cloudwatch_log_group" "caddy" {
   name              = "/ecs/${var.project_name}-caddy"
-  retention_in_days  = 7
+  retention_in_days = 7
 }
 
 # ECS service: one task with Caddy (80) + n8n (5678); Caddy proxies to n8n (no ALB)

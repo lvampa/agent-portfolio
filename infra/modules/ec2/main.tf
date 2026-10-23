@@ -33,9 +33,9 @@ resource "aws_iam_role" "ecs_instance" {
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect = "Allow"
+      Effect    = "Allow"
       Principal = { Service = "ec2.amazonaws.com" }
-      Action   = "sts:AssumeRole"
+      Action    = "sts:AssumeRole"
     }]
   })
 }
@@ -60,12 +60,12 @@ resource "aws_eip" "this" {
 
 # Single EC2 instance (no ASG)
 resource "aws_instance" "ecs" {
-  ami                    = data.aws_ami.ecs.id
-  instance_type          = var.instance_type
-  key_name               = var.ec2_keypair_name
-  subnet_id              = var.subnet_ids[0]
-  vpc_security_group_ids = [var.security_group_id]
-  iam_instance_profile   = aws_iam_instance_profile.ecs.name
+  ami                         = data.aws_ami.ecs.id
+  instance_type               = var.instance_type
+  key_name                    = var.ec2_keypair_name
+  subnet_id                   = var.subnet_ids[0]
+  vpc_security_group_ids      = [var.security_group_id]
+  iam_instance_profile        = aws_iam_instance_profile.ecs.name
   associate_public_ip_address = true
 
   user_data_base64 = base64encode(templatefile("${path.module}/user_data.sh", {

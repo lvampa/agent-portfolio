@@ -1,6 +1,6 @@
 # S3 bucket for static hosting (agent portfolio frontend)
 resource "aws_s3_bucket" "this" {
-  bucket = var.bucket_name
+  bucket        = var.bucket_name
   force_destroy = true
 
   tags = {
@@ -14,7 +14,7 @@ resource "aws_s3_bucket_public_access_block" "this" {
 
   block_public_acls       = false
   block_public_policy     = false
-  ignore_public_acls     = false
+  ignore_public_acls      = false
   restrict_public_buckets = false
 }
 
