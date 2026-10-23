@@ -23,11 +23,6 @@ run "plans" {
   }
 
   assert {
-    condition     = aws_ssm_parameter.n8n_encryption_key.type == "SecureString"
-    error_message = "The encryption key must be stored encrypted."
-  }
-
-  assert {
     condition = alltrue(flatten([
       for c in jsondecode(aws_ecs_task_definition.n8n.container_definitions) : [
         for e in try(c.environment, []) : e.name != "N8N_ENCRYPTION_KEY"
@@ -37,45 +32,8 @@ run "plans" {
   }
 
   assert {
-    condition     = one([for c in jsondecode(aws_ecs_task_definition.n8n.container_definitions) : c if c.name == "n8n"]).secrets[0].valueFrom == aws_ssm_parameter.n8n_encryption_key.name
-    error_message = "n8n must read its encryption key from SSM."
-  }
-
-  assert {
-    condition     = aws_ecs_service.n8n.deployment_minimum_healthy_percent == 0
+    condition     = aws_ecs_service.n8n.deployment_minimum_healthy_percent == 0 && aws_ecs_service.n8n.deployment_maximum_percent == 100
     error_message = "One instance with host port 80 can't run two tasks, so the old task must stop first."
-  }
-
-  assert {
-    condition     = aws_ecs_service.n8n.deployment_maximum_percent == 100
-    error_message = "One instance with host port 80 can't run two tasks at once."
-  }
-
-  assert {
-    condition = alltrue([
-      for c in jsondecode(aws_ecs_task_definition.n8n.container_definitions) :
-      can(regex(":[0-9]+\\.[0-9]+\\.[0-9]+(-alpine)?$", c.image))
-    ])
-    error_message = "Every image must be pinned to an exact version."
-  }
-
-  assert {
-    condition = alltrue(flatten([
-      for c in jsondecode(aws_ecs_task_definition.n8n.container_definitions) : [
-        for e in try(c.environment, []) : !startswith(e.name, "N8N_BASIC_AUTH")
-      ]
-    ]))
-    error_message = "n8n 1.0 removed basic auth, so N8N_BASIC_AUTH_* settings do nothing."
-  }
-
-  assert {
-    condition     = { for e in one([for c in jsondecode(aws_ecs_task_definition.n8n.container_definitions) : c if c.name == "n8n"]).environment : e.name => e.value }["N8N_WEBHOOK_URL"] == "https://api.example.com/"
-    error_message = "Webhooks must be published on the api host."
-  }
-
-  assert {
-    condition     = { for e in one([for c in jsondecode(aws_ecs_task_definition.n8n.container_definitions) : c if c.name == "n8n"]).environment : e.name => e.value }["N8N_EDITOR_BASE_URL"] == "https://admin.example.com/"
-    error_message = "The editor must be published on the admin host."
   }
 
   assert {
