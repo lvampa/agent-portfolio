@@ -2,7 +2,7 @@
 variable "region" {
   description = "AWS region to deploy resources in"
   type        = string
-  default     = "us-east-1"
+  default     = "us-east-2"
 }
 
 variable "aws_profile" {

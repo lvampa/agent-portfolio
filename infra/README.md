@@ -60,6 +60,16 @@ Set these in `terraform.tfvars` (or your chosen `*.tfvars` file).
 | `n8n_basic_auth_active` | Whether to enable HTTP basic auth (default `true`) |
 | `n8n_timezone` | Timezone for n8n (default `"America/New_York"`) |
 
+### State bucket
+
+State lives in the S3 bucket `ai-agent-portfolio-tfstate`.
+Create it once per AWS account, before the first `tofu init` in `infra/`:
+
+```bash
+tofu -chdir=bootstrap init
+tofu -chdir=bootstrap apply
+```
+
 ## Run
 
 From `infra/`:
