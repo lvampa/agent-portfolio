@@ -15,21 +15,21 @@ module "ec2" {
 }
 
 module "ecs" {
-  source                  = "./modules/ecs"
-  project_name            = var.project_name
-  aws_region              = var.region
-  n8n_basic_auth_active   = var.n8n_basic_auth_active
-  n8n_basic_auth_user     = var.n8n_basic_auth_user
-  n8n_basic_auth_password = var.n8n_basic_auth_password
-  n8n_encryption_key      = var.n8n_encryption_key
-  n8n_webhook_url         = var.n8n_webhook_url
-  n8n_timezone            = var.n8n_timezone
+  source             = "./modules/ecs"
+  project_name       = var.project_name
+  aws_region         = var.region
+  n8n_encryption_key = var.n8n_encryption_key
+  n8n_timezone       = var.n8n_timezone
+  api_hostname       = var.api_hostname
+  admin_hostname     = var.admin_hostname
 }
 
-# A record pointing at the EC2 instance (Elastic IP)
-resource "cloudflare_dns_record" "agent_subdomain_record" {
+# Both hostnames point at the Elastic IP; Caddy routes by host.
+resource "cloudflare_dns_record" "n8n" {
+  for_each = toset([var.api_hostname, var.admin_hostname])
+
   zone_id = var.cloudflare_zone_id
-  name    = var.cloudflare_a_record_name
+  name    = each.value
   type    = "A"
   content = module.ec2.public_ip
   ttl     = 1

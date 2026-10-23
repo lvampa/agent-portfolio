@@ -26,24 +26,6 @@ variable "home_ip_cidr" {
 }
 
 # n8n container env – set secrets in tfvars (gitignored)
-variable "n8n_basic_auth_active" {
-  description = "Enable n8n basic auth"
-  type        = bool
-  default     = true
-}
-
-variable "n8n_basic_auth_user" {
-  description = "n8n basic auth username"
-  type        = string
-  default     = "admin"
-}
-
-variable "n8n_basic_auth_password" {
-  description = "n8n basic auth password"
-  type        = string
-  sensitive   = true
-}
-
 variable "n8n_encryption_key" {
   description = "n8n encryption key (long random string for credentials encryption)"
   type        = string
@@ -56,8 +38,13 @@ variable "n8n_timezone" {
   default     = "America/New_York"
 }
 
-variable "n8n_webhook_url" {
-  description = "n8n webhook URL (e.g. https://n8n.example.com)"
+variable "api_hostname" {
+  description = "Public hostname for n8n webhooks, e.g. api.example.com"
+  type        = string
+}
+
+variable "admin_hostname" {
+  description = "Public hostname for the n8n editor, e.g. admin.example.com"
   type        = string
 }
 
@@ -70,11 +57,6 @@ variable "cloudflare_api_token" {
 
 variable "cloudflare_zone_id" {
   description = "Cloudflare zone ID (found in zone Overview in dashboard)"
-  type        = string
-}
-
-variable "cloudflare_a_record_name" {
-  description = "DNS name for the A record (e.g. 'n8n' for n8n.example.com, or '@' for apex)"
   type        = string
 }
 

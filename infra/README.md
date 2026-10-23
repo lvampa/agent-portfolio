@@ -48,16 +48,14 @@ Set these in `terraform.tfvars` (or your chosen `*.tfvars` file).
 |----------|---------|
 | `cloudflare_api_token` | API token with DNS edit on the zone (sensitive) |
 | `cloudflare_zone_id` | Zone ID from Cloudflare dashboard → zone Overview |
-| `cloudflare_a_record_name` | Record name, e.g. `n8n` for n8n.example.com, or `@` for apex |
+| `api_hostname` | Hostname for n8n webhooks, e.g. `api.example.com`. Only `/webhook/*` and `/webhook-test/*` are served. |
+| `admin_hostname` | Hostname for the n8n editor, e.g. `admin.example.com` |
 
 **n8n (app config, sensitive):**
 
 | Variable | Meaning |
 |----------|---------|
-| `n8n_basic_auth_user` | Basic auth username (default `"admin"`) |
-| `n8n_basic_auth_password` | Basic auth password (required, sensitive) |
 | `n8n_encryption_key` | Key used by n8n for encrypting credentials (required, sensitive) |
-| `n8n_basic_auth_active` | Whether to enable HTTP basic auth (default `true`) |
 | `n8n_timezone` | Timezone for n8n (default `"America/New_York"`) |
 
 ### State bucket
