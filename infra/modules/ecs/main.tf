@@ -69,8 +69,8 @@ resource "aws_ecs_task_definition" "n8n" {
   family                   = "${var.project_name}-n8n"
   network_mode             = "bridge"
   requires_compatibilities = ["EC2"]
-  cpu                      = "512"
-  memory                   = "768"
+  cpu                      = "1024"
+  memory                   = "1536"
   execution_role_arn       = aws_iam_role.ecs_execution.arn
 
   volume {

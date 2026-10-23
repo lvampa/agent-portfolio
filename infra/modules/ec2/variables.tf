@@ -20,7 +20,7 @@ variable "ec2_keypair_name" {
 variable "instance_type" {
   description = "EC2 instance type"
   type        = string
-  default     = "t4g.micro"
+  default     = "t4g.small"
 }
 
 variable "ami_id" {

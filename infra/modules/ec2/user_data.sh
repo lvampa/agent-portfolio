@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# The instance has 1 GiB of RAM and no swap. A swap file turns a memory spike into a slowdown instead of an OOM kill.
+# The AMI has no swap. A swap file turns a memory spike into a slowdown instead of an OOM kill.
 dd if=/dev/zero of=/swapfile bs=1M count=1024
 chmod 600 /swapfile
 mkswap /swapfile
