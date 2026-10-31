@@ -21,10 +21,10 @@ npx tsc --noEmit     # Type check
 Set these in `.env.local`.
 Next.js inlines them at build time.
 
-| Variable | Meaning |
-|----------|---------|
-| `NEXT_PUBLIC_CHAT_WEBHOOK_URL` | Base URL of the n8n chat webhook. |
-| `NEXT_PUBLIC_INFO_URL` | URL that returns the visitor's request info, shown in the first history entry. |
+| Variable                       | Meaning                                                                        |
+| ------------------------------ | ------------------------------------------------------------------------------ |
+| `NEXT_PUBLIC_CHAT_WEBHOOK_URL` | Base URL of the n8n chat webhook.                                              |
+| `NEXT_PUBLIC_INFO_URL`         | URL that returns the visitor's request info, shown in the first history entry. |
 
 ## How it talks to n8n
 
