@@ -9,19 +9,3 @@
 html {
   color: var(--color-terminal);
 }
-
-/* Simulated block cursor for input (native caret hidden via caret-color: transparent) */
-.input-cursor-wrapper {
-  position: relative;
-}
-.input-cursor-wrapper::after {
-  content: '';
-  position: absolute;
-  left: var(--cursor-left, 0);
-  top: 50%;
-  transform: translateY(-50%);
-  width: 10px;
-  height: 50%;
-  background: currentColor;
-  pointer-events: none;
-}
