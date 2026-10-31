@@ -3,7 +3,15 @@
 import type { HistoryItem } from '@app/components/History';
 import { HistoryItemSchema } from '@app/components/History/schemas';
 import { storage } from '@lib/storage';
-import React, { createContext, startTransition, useContext, useEffect, useState } from 'react';
+import React, {
+  createContext,
+  startTransition,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
 
 interface HistoryContextValue {
   items: HistoryItem[];
@@ -25,16 +33,14 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  function append(item: HistoryItem) {
+  const append = useCallback((item: HistoryItem) => {
     setItems((previous) => [...previous, item]);
     storage.append(item);
-  }
+  }, []);
 
-  return (
-    <HistoryContext.Provider value={{ items, hasLoaded, append }}>
-      {children}
-    </HistoryContext.Provider>
-  );
+  const value = useMemo(() => ({ items, hasLoaded, append }), [items, hasLoaded, append]);
+
+  return <HistoryContext.Provider value={value}>{children}</HistoryContext.Provider>;
 }
 
 export function useHistory(): HistoryContextValue {

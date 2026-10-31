@@ -1,5 +1,6 @@
 import { z } from 'zod';
 
+import { MAX_STORED_ITEMS } from '../constants';
 import { Storage } from '../Storage';
 
 const itemSchema = z.object({ id: z.number() });
@@ -50,6 +51,24 @@ describe('Storage', () => {
       expect(storage.load(itemSchema)).toEqual([{ id: 1 }, { id: 2 }]);
     });
 
+    test('keeps only the newest items once the cap is exceeded', () => {
+      for (let id = 1; id <= MAX_STORED_ITEMS + 5; id++) {
+        storage.append({ id });
+      }
+      const stored = storage.load(itemSchema);
+      expect(stored).toHaveLength(MAX_STORED_ITEMS);
+      expect(stored[0]).toEqual({ id: 6 });
+      expect(stored.at(-1)).toEqual({ id: MAX_STORED_ITEMS + 5 });
+    });
+
+    test('does not throw when setItem fails', () => {
+      const spy = jest.spyOn(window.Storage.prototype, 'setItem').mockImplementation(() => {
+        throw new DOMException('quota', 'QuotaExceededError');
+      });
+      expect(() => storage.append({ id: 1 })).not.toThrow();
+      spy.mockRestore();
+    });
+
     test('does not mix keys across separate Storage instances', () => {
       const other = new Storage('other-key');
       storage.append({ id: 1 });
@@ -73,6 +92,14 @@ describe('Storage', () => {
       storage.clear();
       expect(storage.load(itemSchema)).toEqual([]);
       expect(other.load(itemSchema)).toEqual([{ id: 99 }]);
+    });
+
+    test('does not throw when removeItem fails', () => {
+      const spy = jest.spyOn(window.Storage.prototype, 'removeItem').mockImplementation(() => {
+        throw new Error('blocked');
+      });
+      expect(() => storage.clear()).not.toThrow();
+      spy.mockRestore();
     });
 
     test('is safe to call when key is already absent', () => {
