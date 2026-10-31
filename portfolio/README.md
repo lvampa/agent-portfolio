@@ -1,25 +1,34 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Portfolio
 
-## Getting Started
+A terminal-style portfolio built with Next.js.
+Visitors type into a REPL, and an n8n workflow answers through a webhook.
+The app is a static export (`output: 'export'`), so there is no server at runtime.
 
-First, run the development server:
+## Scripts
 
 ```bash
-$ npm run dev
+npm run dev          # Start the dev server on http://localhost:3000
+npm run build        # Build the static export into out/
+npm run lint         # ESLint
+npm run format       # Prettier, write
+npm run format:check # Prettier, check only
+npm test             # Jest (app and lib projects)
+npx tsc --noEmit     # Type check
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Set these in `.env.local`.
+Next.js inlines them at build time.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| Variable | Meaning |
+|----------|---------|
+| `NEXT_PUBLIC_CHAT_WEBHOOK_URL` | Base URL of the n8n chat webhook. |
+| `NEXT_PUBLIC_INFO_URL` | URL that returns the visitor's request info, shown in the first history entry. |
 
-## Testing
+## How it talks to n8n
 
-This project follows Next.JS testing suggestions - https://nextjs.org/docs/app/guides/testing/jest
-
-Run tests with
-
-```shell
-$ npm run test
-```
+`lib/hooks/useChat.ts` sends `POST <NEXT_PUBLIC_CHAT_WEBHOOK_URL>/webhooks` with `{ "chatInput": "<message>" }`.
+The workflow replies with a JSON array of `{ "output": "<text>" }` items.
+The response is validated with Zod, and each item is added to the history as a message.
+History is kept in `localStorage`, and items that fail validation are dropped on load.

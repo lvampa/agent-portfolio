@@ -3,7 +3,7 @@
 This repository contains three related projects:
 
 - `portfolio`: Next.js frontend for the portfolio/agent experience.
-- `infra`: AWS infrastructure as code for self hosting n8n and portfolio static site.
+- `infra`: OpenTofu code for self hosting n8n on AWS.
 - `n8n-local`: Docker Compose setup for running n8n + Postgres locally.
 
 ## Repository Layout
@@ -11,13 +11,13 @@ This repository contains three related projects:
 ```text
 .
 ├── portfolio/    # Next.js app
-├── infra/        # Terraform/OpenTofu modules for AWS resources
+├── infra/        # OpenTofu modules for AWS and Cloudflare resources
 └── n8n-local/    # Local n8n development stack (Docker Compose)
 ```
 
 ## Prerequisites
 
-- Node.js 20+ and npm
+- Node.js 20.9+ and npm
 - Docker + Docker Compose
 - AWS CLI
 - OpenTofu
@@ -26,7 +26,9 @@ This repository contains three related projects:
 
 ## `portfolio` (Frontend App)
 
-The `portfolio` app is a Next.js project that renders a terminal-style UI with a REPL flow and supporting hooks/tests.
+The `portfolio` app is a Next.js project that renders a terminal-style UI with a REPL flow.
+It is built as a static export and talks to n8n webhooks.
+See [`portfolio/README.md`](portfolio/README.md) for env vars and scripts.
 
 ### Run locally
 
@@ -55,12 +57,16 @@ npm run lint
 
 ## `infra` (AWS Infrastructure)
 
-The `infra` project provisions core AWS resources through modules:
+The `infra` project provisions n8n on AWS through modules:
 
 - VPC + public subnets + security group
-- EC2 instance (with IAM profile, Elastic IP, and daily disk snapshots)
-- ECS cluster running Caddy and n8n on that instance
-- Cloudflare DNS records for the api and admin hostnames
+- One arm64 EC2 instance (with IAM profile, Elastic IP, and daily disk snapshots)
+- An ECS task on that instance running Caddy and n8n
+- Cloudflare DNS records for the webhook and editor hostnames
+
+Webhooks are served at `agent.connorabdelnoor.com` (only `/webhook/*`).
+The n8n editor is served at `admin.connorabdelnoor.com`.
+See [`infra/README.md`](infra/README.md) for variables, state bucket setup, and tests.
 
 ### Configure AWS profile
 
@@ -70,21 +76,17 @@ aws configure --profile portfolio
 
 ### Configure variables
 
-Update `infra/terraform.tfvars` with your values:
-
-- `ec2_keypair_name`
-- `home_ip_cidr` (for SSH access)
+Set the required values in `infra/terraform.tfvars`, for example `ec2_keypair_name`, `home_ip_cidr`, `api_hostname`, and `admin_hostname`.
+The full list is in `infra/README.md`.
 
 ### Plan and apply
 
 ```bash
 cd infra
-terraform init
-terraform plan
-terraform apply
+tofu init
+tofu plan
+tofu apply
 ```
-
-If you use OpenTofu, run the same commands with `tofu` instead of `terraform`.
 
 ---
 
@@ -102,6 +104,7 @@ Create or update `n8n-local/.env` with:
 - `N8N_HOST`
 - `N8N_PORT`
 - `N8N_PROTOCOL`
+- `N8N_CORS_ORIGIN`
 - `NODE_ENV`
 
 ### Start the stack
