@@ -18,10 +18,8 @@ describe('HistoryItemSchema', () => {
     expect(HistoryItemSchema.safeParse({ value: 'hello', type: 'command' }).success).toBe(true);
   });
 
-  test('accepts item with animate flag', () => {
-    expect(
-      HistoryItemSchema.safeParse({ value: 'hi', type: 'message', animate: true }).success,
-    ).toBe(true);
+  test.each(['help', 'thinking'])('rejects removed type %s from old stored history', (type) => {
+    expect(HistoryItemSchema.safeParse({ value: 'hi', type }).success).toBe(false);
   });
 
   test('rejects item with unknown type', () => {

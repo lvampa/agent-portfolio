@@ -5,7 +5,7 @@ import { type ClientInterface } from './types';
 export class Client implements ClientInterface {
   private readonly axios: AxiosInstance;
 
-  constructor(private readonly baseURL: string) {
+  constructor(baseURL: string) {
     this.axios = axios.create({
       baseURL,
       headers: {
@@ -20,9 +20,5 @@ export class Client implements ClientInterface {
 
   async post<T = unknown>(url: string, payload: unknown): Promise<AxiosResponse<T>> {
     return this.axios.post<T>(url, payload);
-  }
-
-  getWebhookUrl(): string {
-    return this.baseURL;
   }
 }

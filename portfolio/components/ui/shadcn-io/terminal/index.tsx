@@ -5,24 +5,6 @@ import { useEffect, useRef, useState } from 'react';
 
 import { cn } from '@/lib/utils';
 
-interface AnimatedSpanProps extends MotionProps {
-  children: React.ReactNode;
-  delay?: number;
-  className?: string;
-}
-
-export const AnimatedSpan = ({ children, delay = 0, className, ...props }: AnimatedSpanProps) => (
-  <motion.div
-    initial={{ opacity: 0, y: -5 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.3, delay: delay / 1000 }}
-    className={cn('grid tracking-tight', className)}
-    {...props}
-  >
-    {children}
-  </motion.div>
-);
-
 interface TypingAnimationProps extends MotionProps {
   children: string;
   className?: string;
