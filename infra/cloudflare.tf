@@ -81,7 +81,8 @@ resource "cloudflare_ruleset" "webhook_rate_limit" {
     action      = "block"
     enabled     = true
     ratelimit = {
-      characteristics     = ["ip.src"]
+      # The API rejects rate-limit rules whose characteristics leave out cf.colo.id.
+      characteristics     = ["cf.colo.id", "ip.src"]
       period              = var.rate_limit_period_seconds
       requests_per_period = var.rate_limit_requests
       mitigation_timeout  = var.rate_limit_period_seconds
