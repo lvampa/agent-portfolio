@@ -5,7 +5,7 @@ import { AnimationProvider } from '@app/contexts/AnimationContext';
 import { useHistory } from '@app/contexts/HistoryContext';
 import { useClientInfo } from '@lib/hooks/useClientInfo';
 import { buildUserInfoForUi } from '@lib/utils/clientInfo';
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { Terminal } from '@/components/ui/shadcn-io/terminal';
 
@@ -15,16 +15,20 @@ export default function Home() {
   const { append, items, hasLoaded } = useHistory();
   const { userInfo, isLoading } = useClientInfo();
 
+  const hasSeededUserInfo = useRef(false);
+
   useEffect(() => {
+    if (hasSeededUserInfo.current) return;
     if (!hasLoaded || isLoading) return;
     if (items.length > 0) return;
     if (!userInfo.request || !userInfo.parsedUA) return;
 
     const userInfoItems = buildUserInfoForUi(userInfo);
     if (userInfoItems) {
+      hasSeededUserInfo.current = true;
       append({ type: HISTORY_ITEM_TYPES.USER, value: JSON.stringify(userInfoItems) });
     }
-  }, [hasLoaded, isLoading, userInfo]);
+  }, [append, hasLoaded, isLoading, items.length, userInfo]);
 
   return (
     <main className="flex h-screen w-full justify-center">

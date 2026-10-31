@@ -148,7 +148,7 @@ describe('EventBus', () => {
   });
 
   test('handlers can modify the handlers array during emit safely', () => {
-    const mockFn1: CallbackFn = jest.fn((payload) => {
+    const mockFn1: CallbackFn = jest.fn(() => {
       bus.off('dynamic', mockFn2);
     });
     const mockFn2: CallbackFn = jest.fn();

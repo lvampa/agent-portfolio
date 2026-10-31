@@ -15,7 +15,7 @@ const sharedConfig: Config = {
   },
 };
 
-export default async (): Promise<Config> => {
+const config = async (): Promise<Config> => {
   const baseConfig = await createJestConfig(sharedConfig)();
 
   return {
@@ -40,3 +40,5 @@ export default async (): Promise<Config> => {
     ],
   };
 };
+
+export default config;
