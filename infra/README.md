@@ -7,7 +7,10 @@ Highlights:
 - A Cloudflare Access application lets only your home IP reach `admin_hostname`.
 - `api_hostname` serves only `/webhook/*`, capped at 4 KB per request and rate limited per IP at the edge.
 - `admin_hostname` serves the editor.
-- n8n data lives on the instance disk at `/opt/n8n-data`, with daily snapshots kept for 7 days.
+- n8n data lives on its own encrypted EBS volume mounted at `/opt/n8n-data`, so replacing the instance keeps it.
+- The data volume has daily snapshots kept for 7 days (`n8n_snapshot_retention_count`).
+- Workflows are exported to `n8n/workflows/` with `scripts/export-n8n-workflows.sh`.
+- Migration, restore, re-import, and AMI bump steps are in [the data volume spec](../docs/specs/2026-10-31-n8n-data-volume.md).
 - The n8n encryption key is a write-only SSM parameter, so it never lands in state.
 - The tunnel token is a write-only SSM parameter too, but it is also in state as a sensitive data source value.
 
