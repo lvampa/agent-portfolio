@@ -12,3 +12,8 @@ output "public_dns" {
   description = "Public DNS name of the Elastic IP"
   value       = aws_eip.this.public_dns
 }
+
+output "data_volume_id" {
+  description = "EBS volume ID of the n8n data volume"
+  value       = aws_ebs_volume.n8n_data.id
+}

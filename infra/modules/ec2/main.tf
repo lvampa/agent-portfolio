@@ -2,6 +2,35 @@
 
 locals {
   snapshot_tag = { Snapshot = "n8n-data" }
+  data_device  = "/dev/sdf"
+}
+
+data "aws_subnet" "instance" {
+  id = var.subnet_ids[0]
+}
+
+# Holds all n8n state, so it outlives the instance. The AZ must match the instance's.
+resource "aws_ebs_volume" "n8n_data" {
+  availability_zone = data.aws_subnet.instance.availability_zone
+  size              = var.data_volume_size_gib
+  type              = "gp3"
+  encrypted         = true
+
+  tags = merge(local.snapshot_tag, {
+    Name = "${var.project_name}-n8n-data"
+  })
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+# Stopping first lets the OS flush and unmount, so a replacement never detaches a busy filesystem.
+resource "aws_volume_attachment" "n8n_data" {
+  device_name                    = local.data_device
+  volume_id                      = aws_ebs_volume.n8n_data.id
+  instance_id                    = aws_instance.ecs.id
+  stop_instance_before_detaching = true
 }
 
 # IAM role for ECS container instance
@@ -48,16 +77,16 @@ resource "aws_instance" "ecs" {
 
   user_data_base64 = base64encode(templatefile("${path.module}/user_data.sh", {
     ecs_cluster_name = var.ecs_cluster_name
+    data_volume_id   = replace(aws_ebs_volume.n8n_data.id, "-", "")
   }))
+
+  # Safe now that n8n data is on its own volume. Without it, script edits never reach the host.
+  user_data_replace_on_change = true
 
   # Hop limit 1 keeps bridge-mode containers from reaching the instance role's credentials.
   metadata_options {
     http_tokens                 = "required"
     http_put_response_hop_limit = 1
-  }
-
-  root_block_device {
-    tags = local.snapshot_tag
   }
 
   tags = {
@@ -109,7 +138,7 @@ resource "aws_dlm_lifecycle_policy" "n8n_data" {
       }
 
       retain_rule {
-        count = 7
+        count = var.snapshot_retention_count
       }
     }
   }

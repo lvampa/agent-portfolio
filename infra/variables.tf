@@ -39,6 +39,18 @@ variable "n8n_timezone" {
   default     = "America/New_York"
 }
 
+variable "n8n_data_volume_size_gib" {
+  description = "Size of the n8n data volume in GiB"
+  type        = number
+  default     = 10
+}
+
+variable "n8n_snapshot_retention_count" {
+  description = "Daily snapshots of the n8n data volume to keep"
+  type        = number
+  default     = 7
+}
+
 variable "api_hostname" {
   description = "Public hostname for n8n webhooks, e.g. api.example.com"
   type        = string

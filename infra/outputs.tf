@@ -12,3 +12,8 @@ output "ec2_public_dns" {
   description = "EC2 public DNS name (from Elastic IP)"
   value       = module.ec2.public_dns
 }
+
+output "n8n_data_volume_id" {
+  description = "EBS volume holding /opt/n8n-data (snapshots are tagged Snapshot=n8n-data)"
+  value       = module.ec2.data_volume_id
+}
