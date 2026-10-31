@@ -4,7 +4,7 @@ output "ec2_instance_id" {
 }
 
 output "ec2_elastic_ip" {
-  description = "Elastic IP attached to the EC2 instance (static; used for the DNS records)"
+  description = "Elastic IP attached to the EC2 instance (static; SSH target)"
   value       = module.ec2.public_ip
 }
 

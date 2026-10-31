@@ -51,9 +51,27 @@ variable "admin_hostname" {
 
 # Cloudflare zone and API access
 variable "cloudflare_api_token" {
-  description = "Cloudflare API token (DNS edit permission for the zone)"
+  description = "Cloudflare API token (permissions listed in the README)"
   type        = string
   sensitive   = true
+}
+
+variable "cloudflare_account_id" {
+  description = "Cloudflare account ID, for the tunnel and Access (dashboard account Overview page)"
+  type        = string
+}
+
+# Free plan: one rule, 10 second period, block for the same 10 seconds.
+variable "rate_limit_requests" {
+  description = "Webhook requests allowed per IP in each rate-limit period"
+  type        = number
+  default     = 10
+}
+
+variable "rate_limit_period_seconds" {
+  description = "Rate-limit counting period, also used as the block duration. The free plan only allows 10."
+  type        = number
+  default     = 10
 }
 
 variable "cloudflare_zone_id" {

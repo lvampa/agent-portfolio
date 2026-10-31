@@ -8,7 +8,7 @@ variable "subnet_ids" {
 }
 
 variable "security_group_id" {
-  description = "Security group (SSH from home IP, 80 from Cloudflare)"
+  description = "Security group (SSH from home IP)"
   type        = string
 }
 

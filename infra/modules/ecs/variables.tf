@@ -15,6 +15,13 @@ variable "n8n_encryption_key" {
   ephemeral   = true
 }
 
+variable "tunnel_token" {
+  description = "Cloudflare Tunnel token for the cloudflared sidecar"
+  type        = string
+  sensitive   = true
+  ephemeral   = true
+}
+
 variable "n8n_timezone" {
   description = "n8n timezone"
   type        = string

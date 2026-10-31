@@ -13,12 +13,13 @@ module "ec2" {
   ecs_cluster_name  = "${var.project_name}-cluster"
 }
 
-# ECS cluster, task (Caddy + n8n), and service. No load balancer; Caddy in the task routes by host.
+# ECS cluster, task (cloudflared + Caddy + n8n), and service. No load balancer; Caddy in the task routes by host.
 module "ecs" {
   source             = "./modules/ecs"
   project_name       = var.project_name
   aws_region         = var.region
   n8n_encryption_key = var.n8n_encryption_key
+  tunnel_token       = data.cloudflare_zero_trust_tunnel_cloudflared_token.n8n.token
   n8n_timezone       = var.n8n_timezone
   api_hostname       = var.api_hostname
   admin_hostname     = var.admin_hostname

@@ -1,4 +1,4 @@
-# Single EC2 instance for ECS capacity. The n8n task's Caddy container listens on host port 80.
+# Single EC2 instance for ECS capacity. Nothing listens on the host; the task's cloudflared sidecar dials out.
 
 locals {
   snapshot_tag = { Snapshot = "n8n-data" }
@@ -28,7 +28,7 @@ resource "aws_iam_instance_profile" "ecs" {
   role = aws_iam_role.ecs_instance.name
 }
 
-# Elastic IP – static public IP for the instance (for DNS A record)
+# Elastic IP – static public IP for the instance (for SSH)
 resource "aws_eip" "this" {
   domain = "vpc"
   tags = {
