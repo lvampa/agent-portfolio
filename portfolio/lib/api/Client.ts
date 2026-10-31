@@ -1,5 +1,6 @@
 import axios, { type AxiosInstance, type AxiosResponse } from 'axios';
 
+import { REQUEST_TIMEOUT_MS } from './constants';
 import { type ClientInterface } from './types';
 
 export class Client implements ClientInterface {
@@ -8,6 +9,7 @@ export class Client implements ClientInterface {
   constructor(baseURL: string) {
     this.axios = axios.create({
       baseURL,
+      timeout: REQUEST_TIMEOUT_MS,
       headers: {
         'Content-Type': 'application/json',
       },

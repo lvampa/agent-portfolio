@@ -23,7 +23,7 @@ export function useClientInfo(): UseClientInfo {
         if (parsed.success) {
           setRequest(parsed.data);
         } else {
-          console.warn('ClientInfoRequest parse failed', parsed.error);
+          setError(new Error('ClientInfoRequest parse failed'));
         }
       } catch (err) {
         setError(err instanceof Error ? err : new Error(String(err)));

@@ -33,7 +33,7 @@ const eslintConfig = defineConfig([
         { selector: 'parameter', format: ['camelCase', 'PascalCase'], leadingUnderscore: 'allow' },
         { selector: 'typeLike', format: ['PascalCase'] },
       ],
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'no-console': 'warn',
       eqeqeq: ['error', 'always'],
     },
   },

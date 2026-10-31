@@ -7,6 +7,7 @@ import { useHistory } from '@app/contexts/HistoryContext';
 import useChat from '@lib/hooks/useChat';
 import { useEffect } from 'react';
 
+import { CHAT_ERROR_MESSAGE } from './constants';
 import { InputForm } from './InputForm';
 import ReplLoading from './ReplLoading';
 
@@ -23,11 +24,14 @@ export default function Repl() {
 
       const result = await sendMessage(command.value);
 
-      if (result) {
-        result.forEach((item) => {
-          append({ value: item.output, type: HISTORY_ITEM_TYPES.MESSAGE });
-        });
+      if (!result) {
+        append({ value: CHAT_ERROR_MESSAGE, type: HISTORY_ITEM_TYPES.ERROR });
+        return;
       }
+
+      result.forEach((item) => {
+        append({ value: item.output, type: HISTORY_ITEM_TYPES.MESSAGE });
+      });
     }
 
     const unregister = eventBus.on(EVENTS.SUBMIT, handleSubmit);

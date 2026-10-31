@@ -17,7 +17,7 @@ export default function useChat(): UseChat {
       const response = await chatClient.post('webhooks', { chatInput: message });
       const parsed = ChatResponseSchema.safeParse(response.data);
       if (!parsed.success) {
-        console.warn('ChatResponse parse failed', parsed.error);
+        setError(new Error('ChatResponse parse failed'));
         return undefined;
       }
       return parsed.data;
