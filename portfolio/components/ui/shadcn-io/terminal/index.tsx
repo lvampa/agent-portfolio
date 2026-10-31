@@ -9,7 +9,6 @@ interface TypingAnimationProps extends MotionProps {
   className?: string;
   duration?: number;
   delay?: number;
-  as?: React.ElementType;
   onStart?: () => void;
   onComplete?: () => void;
 }
@@ -19,7 +18,6 @@ export const TypingAnimation = ({
   className,
   duration = 60,
   delay = 0,
-  as: Component = 'span',
   onStart,
   onComplete,
   ...props
@@ -27,10 +25,6 @@ export const TypingAnimation = ({
   if (typeof children !== 'string') {
     throw new Error('TypingAnimation: children must be a string. Received:');
   }
-
-  const MotionComponent = motion.create(Component, {
-    forwardMotionProps: true,
-  });
 
   const [displayedText, setDisplayedText] = useState<string>('');
   const [started, setStarted] = useState(false);
@@ -73,10 +67,10 @@ export const TypingAnimation = ({
   }, [children, duration, started, onComplete]);
 
   return (
-    <MotionComponent ref={elementRef} className={cn('tracking-tight', className)} {...props}>
+    <motion.span ref={elementRef} className={cn('tracking-tight', className)} {...props}>
       <span className="sr-only">{children}</span>
       <span aria-hidden>{displayedText}</span>
-    </MotionComponent>
+    </motion.span>
   );
 };
 

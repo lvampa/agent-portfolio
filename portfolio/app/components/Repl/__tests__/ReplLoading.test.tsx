@@ -13,6 +13,15 @@ describe('ReplLoading', () => {
     expect(screen.getByText('... Loading')).toHaveClass('sr-only');
   });
 
+  test('keeps the same DOM node across re-renders', () => {
+    const { rerender } = render(<ReplLoading isVisible={true} />);
+    const before = screen.getByText('... Loading');
+
+    rerender(<ReplLoading isVisible={true} />);
+
+    expect(screen.getByText('... Loading').parentElement).toBe(before.parentElement);
+  });
+
   test('renders nothing when hidden', () => {
     render(<ReplLoading isVisible={false} />);
     expect(screen.queryByRole('status')).not.toBeInTheDocument();
