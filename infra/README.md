@@ -1,19 +1,21 @@
 # Infrastructure
 
 Highlights:
-- n8n on one arm64 EC2 instance, run by ECS as a single task with Caddy and n8n.
-- Cloudflare terminates HTTPS and forwards plain HTTP to the instance.
-- Port 80 only accepts Cloudflare's IP ranges, and SSH only accepts your home IP.
-- A Cloudflare firewall rule blocks `admin_hostname` for everyone except your home IP.
-- `api_hostname` serves only n8n webhooks, and `admin_hostname` serves the editor.
+- n8n on one arm64 EC2 instance, run by ECS as a single task with cloudflared, Caddy and n8n.
+- A Cloudflare Tunnel carries all web traffic. The `cloudflared` sidecar dials out, so no web port is open on the instance.
+- The only inbound rule is SSH from your home IP.
+- A Cloudflare Access application lets only your home IP reach `admin_hostname`.
+- `api_hostname` serves only `/webhook/*`, capped at 4 KB per request and rate limited per IP at the edge.
+- `admin_hostname` serves the editor.
 - n8n data lives on the instance disk at `/opt/n8n-data`, with daily snapshots kept for 7 days.
 - The n8n encryption key is a write-only SSM parameter, so it never lands in state.
+- The tunnel token is a write-only SSM parameter too, but it is also in state as a sensitive data source value.
 
 ## Technologies
 
 - **AWS** – VPC, EC2, ECS, SSM Parameter Store, Data Lifecycle Manager, S3 (state)
 - **OpenTofu** – IaC (`tofu` CLI)
-- **Cloudflare** – DNS, HTTPS
+- **Cloudflare** – DNS, HTTPS, Tunnel, Access, rate limiting
 
 ## Setup
 
@@ -31,14 +33,20 @@ Set these in `terraform.tfvars` (or your chosen `*.tfvars` file).
 | `ec2_keypair_name` | Name of the EC2 key pair used for SSH. Key pairs are per region, so create it in `us-east-2`. |
 | `home_ip_cidr` | Your IP in CIDR form (e.g. `1.2.3.4/32`) so the security group allows SSH only from you |
 
-**Cloudflare (DNS records for both hostnames):**
+**Cloudflare (tunnel, DNS, Access, rate limit):**
 
 | Variable | Meaning |
 |----------|---------|
-| `cloudflare_api_token` | API token with **DNS: Edit** and **Zone WAF: Edit** on the zone (sensitive) |
+| `cloudflare_api_token` | API token (sensitive). Permissions: Account > Cloudflare Tunnel > Edit, Account > Access: Apps and Policies > Edit, Zone > DNS > Edit, Zone > Zone WAF > Edit. |
+| `cloudflare_account_id` | Account ID from the Cloudflare dashboard account Overview |
 | `cloudflare_zone_id` | Zone ID from Cloudflare dashboard → zone Overview |
-| `api_hostname` | Hostname for n8n webhooks, e.g. `api.example.com`. Only `/webhook/*` and `/webhook-test/*` are served. |
+| `api_hostname` | Hostname for n8n webhooks, e.g. `api.example.com`. Only `/webhook/*` is served. |
 | `admin_hostname` | Hostname for the n8n editor, e.g. `admin.example.com` |
+| `rate_limit_requests` | Webhook requests allowed per IP per period (default `10`) |
+| `rate_limit_period_seconds` | Rate-limit period and block time (default `10`, the only value the free plan allows) |
+
+Access needs a Zero Trust organization on the account before the first apply.
+See `docs/specs/2026-10-31-cloudflare-tunnel.md` for the apply order and checks.
 
 **n8n (app config, sensitive):**
 
@@ -68,6 +76,7 @@ tofu apply
 ```
 
 Outputs: `ec2_instance_id`, `ec2_elastic_ip`, `ec2_public_dns`.
+The Elastic IP is only for SSH. Nothing answers on port 80.
 SSH in with `ssh -i your-key.pem ec2-user@<ec2_elastic_ip>`.
 
 After the first apply, open `https://<admin_hostname>` right away and create the owner account.
