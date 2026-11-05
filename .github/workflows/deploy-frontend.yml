@@ -13,11 +13,10 @@ concurrency:
 
 permissions: {}
 
-# Back to ubuntu-latest once it points at 26.04 (actions/runner-images#14748).
 jobs:
   # No secrets here, so npm install scripts never see the Cloudflare token.
   build:
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: read
@@ -56,7 +55,7 @@ jobs:
 
   deploy:
     needs: build
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions: {}
     environment:

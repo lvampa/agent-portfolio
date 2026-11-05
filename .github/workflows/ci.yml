@@ -10,10 +10,9 @@ concurrency:
 permissions:
   contents: read
 
-# Back to ubuntu-latest once it points at 26.04 (actions/runner-images#14748).
 jobs:
   frontend:
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
       run:
@@ -53,7 +52,7 @@ jobs:
         run: npm run build
 
   infra:
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
       run:
@@ -92,7 +91,7 @@ jobs:
     name: ci
     if: always()
     needs: [frontend, infra]
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
       - name: Fail if any job failed or was cancelled
