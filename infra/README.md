@@ -24,6 +24,14 @@ Highlights:
 
 ## Setup
 
+Before the first apply:
+
+1. Enable Cloudflare Zero Trust on the account (the Free plan is enough) and pick a team name.
+   Access returns 403 "Access is not enabled" without it, and the editor has no protection until Access exists.
+2. Create the AWS CLI profile `portfolio` (below).
+3. Fill in `terraform.tfvars` (below).
+4. Right after the first apply, open `admin_hostname` and create the n8n owner account.
+
 Tofu uses the AWS CLI profile `portfolio`, for both the state backend and the provider.
 Its access keys go in `~/.aws/credentials`.
 Pass `--region us-east-2` to `aws` commands if the profile has no region.
@@ -56,7 +64,6 @@ Set these in `terraform.tfvars` (or your chosen `*.tfvars` file).
 | `pages_project_name` | Pages project for the frontend. Changing it replaces the project, which `prevent_destroy` blocks. |
 | `site_hostname` | Apex hostname of the frontend, e.g. `example.com`. `www` redirects here. |
 
-Access needs a Zero Trust organization on the account before the first apply.
 See `docs/specs/cloudflare-tunnel.md` for the apply order and checks.
 The client-info Worker predates tofu. It was deleted by hand and recreated by tofu under the same name, as in [the Pages and Worker spec](../docs/specs/cloudflare-pages-and-worker.md).
 

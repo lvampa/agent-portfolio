@@ -40,6 +40,9 @@ resource "cloudflare_dns_record" "n8n" {
   content = "${cloudflare_zero_trust_tunnel_cloudflared.n8n.id}.cfargotunnel.com"
   ttl     = 1
   proxied = true
+
+  # Without DNS the tunnel's admin ingress is unreachable, so a failed Access create never leaves the editor public.
+  depends_on = [cloudflare_zero_trust_access_application.admin]
 }
 
 # Bypass skips the login page for the home IP, and Access denies everyone else by default.
