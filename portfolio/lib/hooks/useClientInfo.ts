@@ -8,6 +8,10 @@ import { useEffect, useMemo, useState } from 'react';
 
 import type { ClientInfoRequest, UseClientInfo } from './types';
 
+function toError(reason: unknown): Error {
+  return reason instanceof Error ? reason : new Error(String(reason));
+}
+
 export function useClientInfo(): UseClientInfo {
   const [request, setRequest] = useState<ClientInfoRequest | null>(null);
   const [parsedUA, setParsedUA] = useState<ParsedUA | null>(null);
@@ -27,10 +31,15 @@ export function useClientInfo(): UseClientInfo {
       }
     }
 
-    // Loading covers the lazy UA parse too, because the startup shows client info only when both are in.
-    Promise.all([getParsedUA().then(setParsedUA), fetchClientInfo()])
-      .catch((err: unknown) => setError(err instanceof Error ? err : new Error(String(err))))
-      .finally(() => setIsLoading(false));
+    // Loading ends only once both have settled, so a failed /info cannot end it before the lazy UA parse,
+    // which the chat payload needs even without the info request.
+    void Promise.allSettled([getParsedUA().then(setParsedUA), fetchClientInfo()]).then(
+      (results) => {
+        const failure = results.find((result) => result.status === 'rejected');
+        if (failure) setError(toError(failure.reason));
+        setIsLoading(false);
+      },
+    );
   }, []);
 
   const userInfo = useMemo(() => ({ request, parsedUA, referrer }), [request, parsedUA, referrer]);

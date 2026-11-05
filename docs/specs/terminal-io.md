@@ -348,6 +348,10 @@ Each field is null when its source did not load.
 The whoami and startup `referer` row uses the same value.
 It lists the fields one by one, so the IP, latitude, and longitude are never sent.
 `useInterpreter` builds the body, because the session and the visitor belong to the adapters, not the pure core.
+
+The body is client-controlled, so anyone can send any `sessionId`, `name`, or `client` values.
+Before the memory node and the log write, the n8n workflow must check that `sessionId` is a UUID, cap the length of every field, and sanitize `name` again.
+`whoami` prints the session id, so it may show up in screenshots; it keys memory, not access, so a leaked id exposes at most that conversation's context to whoever reuses it.
 The storage instances are created in the terminal, not in `lib/storage`, since the keys belong to the terminal.
 
 ## File layout
