@@ -26,9 +26,11 @@ Next.js inlines them at build time.
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `NEXT_PUBLIC_CHAT_WEBHOOK_URL` | Base URL of the n8n chat webhook.                                                                                                   |
 | `NEXT_PUBLIC_NO_HISTORY`       | Only applies under `npm run dev`. Set to `true` to clear the stored history and session on every page load, so the startup replays. |
+| `DEV_INFO_URL`                 | Only applies under `npm run dev`. The client-info Worker's `workers.dev` URL, which the dev server proxies `/info` to.              |
 
 Client info comes from `/info` on the site's own domain, served by the client-info Worker in `infra/workers/info/`.
-`npm run dev` has no `/info`, so it runs without client info.
+`npm run dev` proxies `/info` to `DEV_INFO_URL`, a rewrite in `next.config.ts` that the build leaves out.
+Without `DEV_INFO_URL`, dev runs without client info.
 
 ## How it talks to n8n
 
