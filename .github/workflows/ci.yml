@@ -73,18 +73,6 @@ jobs:
         uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
         with:
           tofu_version: "1.13.x"
-          tofu_wrapper: false
-
-      - name: Prepare plugin cache
-        run: |
-          mkdir -p "$RUNNER_TEMP/tofu-plugins"
-          echo "TF_PLUGIN_CACHE_DIR=$RUNNER_TEMP/tofu-plugins" >> "$GITHUB_ENV"
-
-      - name: Cache providers
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: ${{ runner.temp }}/tofu-plugins
-          key: tofu-plugins-${{ runner.os }}-${{ hashFiles('infra/.terraform.lock.hcl', 'infra/bootstrap/.terraform.lock.hcl') }}
 
       - name: Format check
         run: tofu fmt -check -recursive
