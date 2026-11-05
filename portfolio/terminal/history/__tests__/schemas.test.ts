@@ -6,7 +6,11 @@ describe('HistoryItemSchema', () => {
     const valid = [
       { type: 'text', text: '' },
       { type: 'command', line: 'help', prompt: 'C:\\Users\\unknown>' },
-      { type: 'clientInfo', info: [{ label: 'ip', value: '127.0.0.1' }] },
+      {
+        type: 'clientInfo',
+        info: [{ label: 'ip', value: '127.0.0.1' }],
+        prompt: 'C:\\Users\\unknown>',
+      },
     ];
     // The old string-value shape, which no longer validates.
     const invalid = { type: 'command', value: 'help' };

@@ -1,7 +1,7 @@
 import { QUESTION_IDS } from '../constants';
 import { startupEffects } from '../startup';
 import type { TerminalState } from '../types';
-import { ask, printText } from '../utils';
+import { ask, print, printText, promptFor } from '../utils';
 
 const clientInfo = [{ label: 'ip', value: '127.0.0.1' }];
 
@@ -30,6 +30,12 @@ describe('startupEffects', () => {
 
     expect(named).not.toContainEqual(ask(QUESTION_IDS.IDENTIFY));
     expect(named).toHaveLength(unnamed.length - 2);
+  });
+
+  test('types clientinfo after the prompt for the saved name', () => {
+    expect(effectsFor({ name: 'connor' })).toContainEqual(
+      print({ type: 'clientInfo', info: clientInfo, prompt: promptFor('connor') }),
+    );
   });
 
   test('skips the client info step when it failed to load', () => {
