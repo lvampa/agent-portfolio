@@ -13,12 +13,14 @@ Highlights:
 - Restore, re-import, and AMI bump steps are in [the data volume spec](../docs/specs/n8n-data-volume.md).
 - The n8n encryption key is a write-only SSM parameter, so it never lands in state.
 - The tunnel token is a write-only SSM parameter too, but it is also in state as a sensitive data source value.
+- The frontend is a Cloudflare Pages project on the apex `site_hostname`, and `www` redirects to it with a 301.
+- The client-info Worker answers `/info` on the apex. Its source is `workers/info/index.js`.
 
 ## Technologies
 
 - **AWS** – VPC, EC2, ECS, SSM Parameter Store, Data Lifecycle Manager, S3 (state)
 - **OpenTofu** – IaC (`tofu` CLI)
-- **Cloudflare** – DNS, HTTPS, Tunnel, Access, rate limiting
+- **Cloudflare** – DNS, HTTPS, Tunnel, Access, rate limiting, Pages, Workers, redirect rules
 
 ## Setup
 
@@ -36,20 +38,23 @@ Set these in `terraform.tfvars` (or your chosen `*.tfvars` file).
 | `ec2_keypair_name` | Name of the EC2 key pair used for SSH. Key pairs are per region, so create it in `us-east-2`. |
 | `home_ip_cidr` | Your IP in CIDR form (e.g. `1.2.3.4/32`) so the security group allows SSH only from you |
 
-**Cloudflare (tunnel, DNS, Access, rate limit):**
+**Cloudflare (tunnel, DNS, Access, rate limit, site):**
 
 | Variable | Meaning |
 |----------|---------|
-| `cloudflare_api_token` | API token (sensitive). Permissions: Account > Cloudflare Tunnel > Edit, Account > Access: Apps and Policies > Edit, Zone > DNS > Edit, Zone > Zone WAF > Edit. |
+| `cloudflare_api_token` | API token (sensitive). Permissions: Account > Cloudflare Tunnel > Edit, Account > Access: Apps and Policies > Edit, Account > Cloudflare Pages > Edit, Account > Workers Scripts > Edit, Zone > DNS > Edit, Zone > Zone WAF > Edit, Zone > Workers Routes > Edit, Zone > Single Redirect > Edit. |
 | `cloudflare_account_id` | Account ID from the Cloudflare dashboard account Overview |
 | `cloudflare_zone_id` | Zone ID from Cloudflare dashboard → zone Overview |
 | `api_hostname` | Hostname for n8n webhooks, e.g. `api.example.com`. Only `/webhook/*` is served. |
 | `admin_hostname` | Hostname for the n8n editor, e.g. `admin.example.com` |
 | `rate_limit_requests` | Webhook requests allowed per IP per period (default `10`) |
 | `rate_limit_period_seconds` | Rate-limit period and block time (default `10`, the only value the free plan allows) |
+| `pages_project_name` | Pages project for the frontend. Changing it replaces the project, which `prevent_destroy` blocks. |
+| `site_hostname` | Apex hostname of the frontend, e.g. `example.com`. `www` redirects here. |
 
 Access needs a Zero Trust organization on the account before the first apply.
 See `docs/specs/cloudflare-tunnel.md` for the apply order and checks.
+The client-info Worker predates tofu and was imported, as in [the Pages and Worker spec](../docs/specs/cloudflare-pages-and-worker.md).
 
 **n8n (app config, sensitive):**
 
@@ -78,7 +83,8 @@ tofu plan
 tofu apply
 ```
 
-Outputs: `ec2_instance_id`, `ec2_elastic_ip`, `ec2_public_dns`, `n8n_data_volume_id`.
+Outputs: `ec2_instance_id`, `ec2_elastic_ip`, `ec2_public_dns`, `n8n_data_volume_id`, and `cloudflare_account_id`, `pages_project_name`, `site_url`.
+The last three are the GitHub variables `CLOUDFLARE_ACCOUNT_ID`, `CF_PAGES_PROJECT`, and `SITE_URL`, set as in [docs/deploy.md](../docs/deploy.md).
 The Elastic IP is only for SSH. Nothing answers on port 80.
 SSH in with `ssh -i your-key.pem ec2-user@<ec2_elastic_ip>`.
 
@@ -87,7 +93,7 @@ Until then, anyone who reaches the editor can claim it.
 
 ## Tests
 
-The tests use mock providers, so they need no AWS credentials:
+The tests use mock providers, so they need no AWS or Cloudflare credentials:
 
 ```bash
 tofu init -backend=false

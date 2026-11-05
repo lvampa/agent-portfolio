@@ -69,7 +69,7 @@ variable "cloudflare_api_token" {
 }
 
 variable "cloudflare_account_id" {
-  description = "Cloudflare account ID, for the tunnel and Access (dashboard account Overview page)"
+  description = "Cloudflare account ID (dashboard account Overview page)"
   type        = string
 }
 
@@ -91,3 +91,12 @@ variable "cloudflare_zone_id" {
   type        = string
 }
 
+variable "pages_project_name" {
+  description = "Cloudflare Pages project for the frontend. Changing it replaces the project."
+  type        = string
+}
+
+variable "site_hostname" {
+  description = "Apex hostname of the frontend, e.g. example.com. www redirects here."
+  type        = string
+}

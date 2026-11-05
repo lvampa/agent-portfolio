@@ -2,7 +2,6 @@ import type { Config } from 'jest';
 import nextJest from 'next/jest.js';
 
 process.env.NEXT_PUBLIC_CHAT_WEBHOOK_URL ??= 'https://chat.example.com/';
-process.env.NEXT_PUBLIC_INFO_URL ??= 'https://info.example.com/';
 
 const createJestConfig = nextJest({
   dir: './',
