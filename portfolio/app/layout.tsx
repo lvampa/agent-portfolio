@@ -65,13 +65,13 @@ export default function RootLayout({
             <p>
               Connor&apos;s AI Agent answers questions about Connor Abdelnoor, a software engineer
               who builds enterprise software from user interfaces to infrastructure. It runs in a
-              90s command prompt and needs JavaScript; without it, see the static portfolio at{' '}
+              90s command prompt and needs JavaScript. Without it, see the static portfolio at{' '}
               <a href={STATIC_PORTFOLIO_URL} className="underline">
                 connorabdelnoor.github.io
               </a>
               .
             </p>
-            <p className="mt-4">Questions people ask it:</p>
+            <p className="mt-4">Example questions:</p>
             <ul>
               {EXAMPLE_QUESTIONS.map((question) => (
                 <li key={question}>- {question}</li>

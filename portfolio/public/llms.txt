@@ -3,11 +3,11 @@
 > An AI agent, styled as a 90s command prompt, that answers questions about Connor Abdelnoor.
 > Connor is a software engineer who designs scalable enterprise software from user interfaces to infrastructure, leads high-performing teams, and works with executives to turn strategic goals into technical requirements.
 
-The agent needs JavaScript and takes free-form questions, such as:
+The agent needs JavaScript. Example questions:
 
 - What has Connor built on AWS?
 - How does Connor lead a team?
-- What has Connor done with RAG and AI agents?
+- What tech does Connor use day to day?
 
 Connor works with AWS, React, Figma, infrastructure as code, RAG, and AI agents.
 

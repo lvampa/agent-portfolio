@@ -6,7 +6,7 @@ export const STATIC_PORTFOLIO_URL = 'https://connorabdelnoor.github.io';
 export const GITHUB_URL = 'https://github.com/lvampa';
 export const LINKEDIN_URL = 'https://www.linkedin.com/in/connorabdelnoor/';
 export const SITE_DESCRIPTION =
-  'An agent that describes Connor Abdelnoor, in a 90s command prompt. For the static portfolio, see connorabdelnoor.github.io.';
+  'Connor Abdelnoor is a software engineer who builds enterprise software from user interfaces to infrastructure. Ask his AI agent about his work.';
 
 export const PERSON_JSON_LD = {
   '@context': 'https://schema.org',
@@ -32,5 +32,5 @@ export const PERSON_JSON_LD = {
 export const EXAMPLE_QUESTIONS = [
   'What has Connor built on AWS?',
   'How does Connor lead a team?',
-  'What has Connor done with RAG and AI agents?',
+  'What tech does Connor use day to day?',
 ];
