@@ -30,6 +30,9 @@ jest.mock('@terminal/storage', () => ({
   sessionStore: { loadValue: jest.fn(), save: jest.fn(), clear: jest.fn() },
 }));
 
+// jsdom does no layout, so it has no scrollIntoView.
+Element.prototype.scrollIntoView = jest.fn();
+
 const mockedPost = chatClient.post as jest.Mock;
 const mockedLoadHistory = historyStore.load as jest.Mock;
 const mockedLoadSession = sessionStore.loadValue as jest.Mock;

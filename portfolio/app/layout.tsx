@@ -3,6 +3,7 @@ import './globals.css';
 import { HistoryProvider } from '@terminal/history/HistoryContext';
 import { EventBusProvider } from '@terminal/repl/EventBusContext';
 import { SessionProvider } from '@terminal/SessionContext';
+import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 import React from 'react';
 
@@ -10,8 +11,12 @@ const dosFont = localFont({
   src: '../public/fonts/PerfectDOSVGA437.ttf',
   variable: '--font-dos',
   display: 'swap',
-  fallback: ['sans-serif'],
+  fallback: ['monospace'],
 });
+
+export const metadata: Metadata = {
+  title: 'Command Prompt - Connor Abdelnoor',
+};
 
 export default function RootLayout({
   children,

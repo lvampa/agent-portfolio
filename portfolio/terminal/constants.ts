@@ -14,7 +14,7 @@ export const UNCONFIRMED_IDENTITY_LINE = 'Unconfirmed identity';
 
 export const MAX_NAME_LENGTH = 20;
 
-export const CHAT_ERROR_MESSAGE = 'Something went wrong. Please try again.';
+export const CHAT_ERROR_MESSAGE = 'The agent did not respond. Try again in a moment.';
 
 export const QUESTION_IDS = {
   IDENTIFY: 'identify',

@@ -4,6 +4,6 @@ import type { HistoryItemOf } from '../types';
 
 export const ErrorLine: React.FC<{ item: HistoryItemOf<'error'> }> = ({ item }) => (
   <div>
-    <p>{item.text}</p>
+    <p className="whitespace-pre-wrap">{item.text}</p>
   </div>
 );

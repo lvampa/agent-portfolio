@@ -13,6 +13,7 @@ import { useEffect, useEffectEvent, useMemo } from 'react';
 
 import { InputForm } from './InputForm';
 import ReplLoading from './ReplLoading';
+import { useFollowOutput } from './useFollowOutput';
 import { useInterpreter } from './useInterpreter';
 import { useStartup } from './useStartup';
 
@@ -26,7 +27,7 @@ interface ReplProps {
 export default function Repl({ clientInfo, isClientInfoLoading }: ReplProps) {
   const eventBus = useEventBus();
   const { isAnimating } = useAnimation();
-  const { hasLoaded: hasHistoryLoaded } = useHistory();
+  const { items, hasLoaded: hasHistoryLoaded } = useHistory();
   const { name, mode, hasLoaded: hasSessionLoaded } = useSession();
   const { apply, busy } = useInterpreter();
 
@@ -40,6 +41,7 @@ export default function Repl({ clientInfo, isClientInfoLoading }: ReplProps) {
     state,
     apply,
   });
+  const endRef = useFollowOutput(items.length);
   const inputState = getInputState({ hasStarted, busy, isAnimating, mode });
 
   // An effect event always sees the latest mode, even in the commit where the input first appears,
@@ -65,6 +67,7 @@ export default function Repl({ clientInfo, isClientInfoLoading }: ReplProps) {
         prompt={currentPrompt(mode, name)}
         label={currentInputLabel(mode)}
       />
+      <div ref={endRef} />
     </div>
   );
 }
