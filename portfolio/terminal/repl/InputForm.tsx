@@ -8,6 +8,8 @@ export function InputForm({ isVisible, prompt }: { isVisible: boolean; prompt: s
   const eventBus = useEventBus();
   const [value, setValue] = useState('');
   const inputElementRef = useRef<HTMLInputElement>(null);
+  const [isFocused, setIsFocused] = useState(false);
+  const [caret, setCaret] = useState({ index: 0, scrollLeft: 0 });
 
   useEffect(() => {
     function handleClickOnPage() {
@@ -21,9 +23,18 @@ export function InputForm({ isVisible, prompt }: { isVisible: boolean; prompt: s
     return;
   }
 
+  function syncCaret() {
+    const input = inputElementRef.current;
+    if (!input) return;
+    const caretIndex =
+      input.selectionDirection === 'backward' ? input.selectionStart : input.selectionEnd;
+    setCaret({ index: caretIndex ?? input.value.length, scrollLeft: input.scrollLeft });
+  }
+
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setValue('');
+    setCaret({ index: 0, scrollLeft: 0 });
 
     eventBus.emit(EVENTS.SUBMIT, value);
   }
@@ -34,14 +45,32 @@ export function InputForm({ isVisible, prompt }: { isVisible: boolean; prompt: s
         <label htmlFor="input-prompt" className="sr-only">
           Input Prompt
         </label>
-        <Input
-          id="input-prompt"
-          ref={inputElementRef}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          autoFocus
-          autoComplete="off"
-        />
+        {/* The native caret can't be made thicker, so it is hidden and drawn. The DOS font is monospace, so 1ch is one character. */}
+        <div className="relative w-full min-w-0 text-base">
+          <Input
+            id="input-prompt"
+            ref={inputElementRef}
+            value={value}
+            onChange={(e) => {
+              setValue(e.target.value);
+              syncCaret();
+            }}
+            onSelect={syncCaret}
+            onScroll={syncCaret}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            autoFocus
+            autoComplete="off"
+          />
+          {isFocused && (
+            <span
+              aria-hidden
+              data-testid="caret"
+              className="bg-terminal animate-caret-blink pointer-events-none absolute top-1/2 h-[1.1em] w-2 -translate-y-1/2 motion-reduce:animate-none"
+              style={{ left: `calc(${caret.index}ch - ${caret.scrollLeft}px)` }}
+            />
+          )}
+        </div>
       </CommandPrompt>
     </form>
   );

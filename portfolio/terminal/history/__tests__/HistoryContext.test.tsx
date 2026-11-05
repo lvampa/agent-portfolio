@@ -7,6 +7,7 @@ import { HistoryProvider, useHistory } from '@terminal/history/HistoryContext';
 import { historyStore } from '@terminal/storage';
 
 jest.mock('@terminal/storage', () => ({
+  ...jest.requireActual('@terminal/storage'),
   historyStore: {
     load: jest.fn(() => []),
     append: jest.fn(),

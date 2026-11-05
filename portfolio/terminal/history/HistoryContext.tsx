@@ -1,6 +1,6 @@
 'use client';
 
-import { historyStore } from '@terminal/storage';
+import { historyStore, isHistoryDisabled } from '@terminal/storage';
 import React, {
   createContext,
   startTransition,
@@ -16,6 +16,8 @@ import type { HistoryItem } from './types';
 
 interface HistoryContextValue {
   items: HistoryItem[];
+  /** Items before this index came from storage, so they were already seen on an earlier visit. */
+  restoredCount: number;
   hasLoaded: boolean;
   append: (item: HistoryItem) => void;
   clear: () => void;
@@ -23,14 +25,22 @@ interface HistoryContextValue {
 
 const HistoryContext = createContext<HistoryContextValue | null>(null);
 
+function loadHistory(): HistoryItem[] {
+  if (!isHistoryDisabled()) return historyStore.load(HistoryItemSchema);
+  historyStore.clear();
+  return [];
+}
+
 export function HistoryProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<HistoryItem[]>([]);
+  const [restoredCount, setRestoredCount] = useState(0);
   const [hasLoaded, setHasLoaded] = useState(false);
 
   useEffect(() => {
-    const stored = historyStore.load(HistoryItemSchema);
+    const stored = loadHistory();
     startTransition(() => {
       setItems(stored);
+      setRestoredCount(stored.length);
       setHasLoaded(true);
     });
   }, []);
@@ -42,12 +52,13 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
 
   const clear = useCallback(() => {
     setItems([]);
+    setRestoredCount(0);
     historyStore.clear();
   }, []);
 
   const value = useMemo(
-    () => ({ items, hasLoaded, append, clear }),
-    [items, hasLoaded, append, clear],
+    () => ({ items, restoredCount, hasLoaded, append, clear }),
+    [items, restoredCount, hasLoaded, append, clear],
   );
 
   return <HistoryContext.Provider value={value}>{children}</HistoryContext.Provider>;

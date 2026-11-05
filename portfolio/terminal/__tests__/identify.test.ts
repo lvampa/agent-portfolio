@@ -1,4 +1,4 @@
-import { MAX_NAME_LENGTH, STAYING_UNKNOWN_LINE } from '../constants';
+import { MAX_NAME_LENGTH, UNCONFIRMED_IDENTITY_LINE } from '../constants';
 import { identify } from '../questions';
 import type { TerminalState } from '../types';
 import { printText, setName } from '../utils';
@@ -6,14 +6,17 @@ import { printText, setName } from '../utils';
 const state: TerminalState = { name: null, clientInfo: null, commands: [] };
 
 describe('identify', () => {
-  test('a name sets it', () => {
-    expect(identify.onAnswer('  connor  ', state)).toEqual([setName('connor')]);
+  test('a name sets it and confirms it', () => {
+    expect(identify.onAnswer('  connor  ', state)).toEqual([
+      setName('connor'),
+      printText('Confirmed identity: connor'),
+    ]);
   });
 
   test.each(['', '   ', '>>>', '\\ > \\'])(
-    'a blank or all-stripped answer %p stays unknown',
+    'a blank or all-stripped answer %p stays unconfirmed',
     (answer) => {
-      expect(identify.onAnswer(answer, state)).toEqual([printText(STAYING_UNKNOWN_LINE)]);
+      expect(identify.onAnswer(answer, state)).toEqual([printText(UNCONFIRMED_IDENTITY_LINE)]);
     },
   );
 

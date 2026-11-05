@@ -11,7 +11,7 @@ export function sanitizeName(raw: string): string | null {
 }
 
 export function promptFor(name: string | null): string {
-  return `C:\\Users\\${name ?? UNKNOWN_NAME} >`;
+  return `C:\\Users\\${name ?? UNKNOWN_NAME}>`;
 }
 
 /** Checks run in the order of the InputState union, so starting wins over everything. */
