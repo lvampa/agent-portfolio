@@ -59,8 +59,9 @@ The instance has no web port open, so there is nothing to reach by IP.
 1. Add `cloudflare_account_id` to `terraform.tfvars`.
 2. Give the API token these permissions:
    - Account > Cloudflare Tunnel > Edit
-   - Zone > DNS > Edit
+   - Zone > DNS > Write
    - Zone > Zone WAF > Edit (covers the editor rule and the rate-limit ruleset)
+   The site adds more; the full list is in `docs/specs/cloudflare-pages-and-worker.md`.
 3. Right after the first apply, open `admin_hostname` and create the n8n owner account.
 
 ## Apply order

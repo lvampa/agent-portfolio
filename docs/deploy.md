@@ -21,7 +21,7 @@ Set these under Settings, Secrets and variables, Actions.
 
 | Name | Kind | Scope | Used for |
 |------|------|-------|----------|
-| `CF_API_TOKEN` | Secret | `production` environment | Cloudflare token scoped to Pages edit |
+| `CF_API_TOKEN` | Secret | `production` environment | Account-owned Cloudflare token with Account > Pages > Edit only, with an expiry |
 | `CLOUDFLARE_ACCOUNT_ID` | Variable | Repository | Cloudflare account |
 | `CF_PAGES_PROJECT` | Variable | Repository | Pages project name |
 | `SITE_URL` | Variable | Repository | Production URL for the smoke check |
