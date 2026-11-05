@@ -1,8 +1,9 @@
 import type { Mode, Session } from './types';
 
 export const BANNER_LINES = [
-  'Connor Abdelnoor Portfolio [Version 1.0]',
+  'Portfolio Agent (Version 2.1.6)',
   '(c) 2026 Connor Abdelnoor. All rights reserved.',
+  '',
 ] as const;
 
 export const GUIDANCE_LINE = 'Ask about the author, or type help for other commands.';
