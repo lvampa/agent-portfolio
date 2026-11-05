@@ -1,6 +1,6 @@
 import { CHAT_ERROR_MESSAGE, COMMAND_MODE } from './constants';
 import type { Ports } from './ports';
-import type { Effect, EffectContext, EffectHandlers, EffectOutcome } from './types';
+import type { Effect, EffectContext, EffectHandlers, EffectOf, EffectType } from './types';
 
 const effectHandlers: EffectHandlers = {
   print: ({ item }, { ports }) => {
@@ -30,14 +30,8 @@ const effectHandlers: EffectHandlers = {
   },
 };
 
-type AnyEffectHandler = (
-  effect: Effect,
-  context: EffectContext,
-) => EffectOutcome | Promise<'continue'>;
-
-function dispatch(effect: Effect, context: EffectContext) {
-  // TypeScript cannot tie effect.type to its handler's parameter, and EffectHandlers already guarantees the match.
-  const handler = effectHandlers[effect.type] as AnyEffectHandler;
+function dispatch<K extends EffectType>(type: K, effect: EffectOf<K>, context: EffectContext) {
+  const handler = effectHandlers[type];
   return handler(effect, context);
 }
 
@@ -50,7 +44,7 @@ export function createInterpreter(ports: Ports): { apply(effects: Effect[]): Pro
     ports.session.setMode(COMMAND_MODE);
 
     for (const [index, effect] of effects.entries()) {
-      const pending = dispatch(effect, { ports, rest: effects.slice(index + 1) });
+      const pending = dispatch(effect.type, effect, { ports, rest: effects.slice(index + 1) });
       // Awaiting a plain value would still yield a tick, so only real promises are awaited.
       const outcome = typeof pending === 'string' ? pending : await pending;
       if (outcome === 'stop') return;
