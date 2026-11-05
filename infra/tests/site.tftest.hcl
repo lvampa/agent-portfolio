@@ -7,8 +7,8 @@ mock_provider "cloudflare" {
 }
 
 variables {
-  account_id     = "test-account"
-  zone_id        = "test-zone"
+  account_id     = "0123456789abcdef0123456789abcdef"
+  zone_id        = "fedcba9876543210fedcba9876543210"
   project_name   = "portfolio"
   hostname       = "example.com"
   worker_name    = "info"
