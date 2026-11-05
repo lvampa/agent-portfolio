@@ -5,7 +5,7 @@ import { useHistory } from '@terminal/history/HistoryContext';
 import { COMMANDS } from '@terminal/registry';
 import { EVENTS } from '@terminal/repl/constants';
 import { useEventBus } from '@terminal/repl/EventBusContext';
-import { currentPrompt, route } from '@terminal/router';
+import { currentInputLabel, currentPrompt, route } from '@terminal/router';
 import { useSession } from '@terminal/SessionContext';
 import type { TerminalState } from '@terminal/types';
 import { acceptsInput, getInputState } from '@terminal/utils';
@@ -45,7 +45,7 @@ export default function Repl({ clientInfo, isClientInfoLoading }: ReplProps) {
   // An effect event always sees the latest mode, even in the commit where the input first appears,
   // so the handler is registered once instead of re-registering after every change.
   const handleSubmit = useEffectEvent((line: string) => {
-    // The input is hidden in other states, so this only guards against a stray submit.
+    // InputForm already holds Enter while it is not active, so this only guards against a stray submit.
     if (!acceptsInput(inputState)) return;
     void apply(route(line, mode, state));
   });
@@ -59,7 +59,12 @@ export default function Repl({ clientInfo, isClientInfoLoading }: ReplProps) {
     <div>
       <History />
       <ReplLoading isVisible={inputState === 'busy'} />
-      <InputForm isVisible={acceptsInput(inputState)} prompt={currentPrompt(mode, name)} />
+      <InputForm
+        isActive={acceptsInput(inputState)}
+        isAnswering={mode.type === 'awaiting'}
+        prompt={currentPrompt(mode, name)}
+        label={currentInputLabel(mode)}
+      />
     </div>
   );
 }

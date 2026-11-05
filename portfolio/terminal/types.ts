@@ -32,6 +32,8 @@ export interface Question {
   id: QuestionId;
   /** Shown as the input prompt while waiting for the answer. */
   text: string;
+  /** The input's accessible name while waiting, since the visible prompt is aria-hidden. */
+  label: string;
   onAnswer(answer: string, state: TerminalState): Effect[];
 }
 

@@ -5,6 +5,7 @@ import { printText, sanitizeName, setName } from '../utils';
 export const identify: Question = {
   id: QUESTION_IDS.IDENTIFY,
   text: 'User unknown, please identify:',
+  label: 'User unknown, please identify. Press Enter to skip.',
   onAnswer: (answer) => {
     const name = sanitizeName(answer);
     return name
