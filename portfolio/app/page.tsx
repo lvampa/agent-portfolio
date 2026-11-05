@@ -5,7 +5,7 @@ import { AnimationProvider } from '@app/contexts/AnimationContext';
 import { useHistory } from '@app/contexts/HistoryContext';
 import { useClientInfo } from '@lib/hooks/useClientInfo';
 import { buildUserInfoForUi } from '@lib/utils/clientInfo';
-import { useEffect, useRef } from 'react';
+import { useLayoutEffect, useRef } from 'react';
 
 import { Terminal } from '@/components/ui/shadcn-io/terminal';
 
@@ -17,7 +17,8 @@ export default function Home() {
 
   const hasSeededUserInfo = useRef(false);
 
-  useEffect(() => {
+  // Seeding before paint keeps the prompt from showing for a frame before the sequence mounts.
+  useLayoutEffect(() => {
     if (hasSeededUserInfo.current) return;
     if (!hasLoaded || isLoading) return;
     if (items.length > 0) return;
@@ -34,7 +35,7 @@ export default function Home() {
     <main className="flex h-screen w-full justify-center">
       <Terminal>
         <AnimationProvider>
-          <Repl />
+          <Repl isReady={hasLoaded && !isLoading} />
         </AnimationProvider>
       </Terminal>
     </main>

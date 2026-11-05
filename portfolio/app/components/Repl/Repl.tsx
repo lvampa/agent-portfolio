@@ -11,8 +11,11 @@ import { CHAT_ERROR_MESSAGE } from './constants';
 import { InputForm } from './InputForm';
 import ReplLoading from './ReplLoading';
 
-/** Bridges user input to the chat API and records both the command and the response in history. */
-export default function Repl() {
+/**
+ * Bridges user input to the chat API and records both the command and the response in history.
+ * The prompt stays hidden until `isReady`, so it does not flash before the startup sequence.
+ */
+export default function Repl({ isReady }: { isReady: boolean }) {
   const eventBus = useEventBus();
   const { isLoading, sendMessage } = useChat();
   const { isAnimating } = useAnimation();
@@ -42,7 +45,7 @@ export default function Repl() {
     <div>
       <History />
       <ReplLoading isVisible={isLoading} />
-      <InputForm isVisible={!isLoading && !isAnimating} />
+      <InputForm isVisible={isReady && !isLoading && !isAnimating} />
     </div>
   );
 }

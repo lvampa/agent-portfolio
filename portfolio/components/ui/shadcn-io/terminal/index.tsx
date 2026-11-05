@@ -2,14 +2,16 @@
 
 import { cn } from '@lib/utils/cn';
 import { motion, type MotionProps } from 'motion/react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 
 interface TypingAnimationProps extends MotionProps {
   children: string;
   className?: string;
   duration?: number;
   delay?: number;
+  /** Called on mount, before paint, so the wait before typing counts as animating. */
   onStart?: () => void;
+  /** Called once when typing ends, or on unmount if it never finished. */
   onComplete?: () => void;
 }
 
@@ -31,18 +33,27 @@ export const TypingAnimation = ({
   const elementRef = useRef<HTMLElement | null>(null);
   const onCompleteCalledRef = useRef(false);
 
+  const complete = useCallback(() => {
+    if (onCompleteCalledRef.current) return;
+    onCompleteCalledRef.current = true;
+    onComplete?.();
+  }, [onComplete]);
+
+  // Starting before paint closes the gap where nothing counts as animating and the prompt flashes.
+  useLayoutEffect(() => {
+    onCompleteCalledRef.current = false;
+    onStart?.();
+    return complete;
+  }, [onStart, complete]);
+
   useEffect(() => {
-    const startTimeout = setTimeout(() => {
-      setStarted(true);
-      onStart?.();
-    }, delay);
+    const startTimeout = setTimeout(() => setStarted(true), delay);
     return () => clearTimeout(startTimeout);
-  }, [delay, onStart]);
+  }, [delay]);
 
   useEffect(() => {
     if (!started) return;
 
-    onCompleteCalledRef.current = false;
     let i = 0;
     const typingEffect = setInterval(() => {
       if (i < children.length) {
@@ -50,21 +61,12 @@ export const TypingAnimation = ({
         i++;
       } else {
         clearInterval(typingEffect);
-        if (!onCompleteCalledRef.current) {
-          onCompleteCalledRef.current = true;
-          onComplete?.();
-        }
+        complete();
       }
     }, duration);
 
-    return () => {
-      clearInterval(typingEffect);
-      if (!onCompleteCalledRef.current && onComplete) {
-        onCompleteCalledRef.current = true;
-        onComplete();
-      }
-    };
-  }, [children, duration, started, onComplete]);
+    return () => clearInterval(typingEffect);
+  }, [children, duration, started, complete]);
 
   return (
     <motion.span ref={elementRef} className={cn('tracking-tight', className)} {...props}>

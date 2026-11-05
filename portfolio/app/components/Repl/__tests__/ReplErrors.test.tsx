@@ -26,7 +26,7 @@ async function submitCommand(command: string) {
     <EventBusProvider>
       <HistoryProvider>
         <AnimationProvider>
-          <Repl />
+          <Repl isReady />
         </AnimationProvider>
       </HistoryProvider>
     </EventBusProvider>,
