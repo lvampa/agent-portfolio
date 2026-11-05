@@ -1,11 +1,15 @@
 import type { Command } from '../types';
-import { printText } from '../utils';
+import { printList } from '../utils';
 
 export const help: Command = {
   names: ['help', 'h'],
   description: 'List the commands.',
-  run: (state) =>
-    state.commands.map((command) =>
-      printText(`${command.names.join(', ')} - ${command.description}`),
+  run: (state) => [
+    printList(
+      state.commands.map((command) => ({
+        term: command.names.join(', '),
+        detail: command.description,
+      })),
     ),
+  ],
 };

@@ -1,7 +1,5 @@
-import type { UserInfoItem } from '@lib/utils/types';
-
 import { DEFAULT_SESSION, MAX_NAME_LENGTH, UNKNOWN_NAME } from './constants';
-import type { HistoryItem } from './history/types';
+import type { HistoryItem, ListRow } from './history/types';
 import type { Effect, InputState, InputStateInput, QuestionId, Session } from './types';
 
 /** The only place names are cleaned. `\` and `>` would break the prompt, so they are stripped. */
@@ -10,10 +8,6 @@ export function sanitizeName(raw: string): string | null {
   // Array.from splits on code points, so the cap never cuts an emoji in half.
   const capped = Array.from(stripped).slice(0, MAX_NAME_LENGTH).join('').trimEnd();
   return capped || null;
-}
-
-export function formatInfoLine({ label, value }: UserInfoItem): string {
-  return `${label}: ${value}`;
 }
 
 export function promptFor(name: string | null): string {
@@ -51,6 +45,10 @@ export function print(item: HistoryItem): Effect {
 
 export function printText(text: string): Effect {
   return print({ type: 'text', text });
+}
+
+export function printList(items: ListRow[]): Effect {
+  return print({ type: 'list', items });
 }
 
 export function echo(line: string, prompt: string): Effect {

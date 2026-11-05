@@ -101,7 +101,7 @@ describe('Repl', () => {
 
     expect(screen.getByLabelText('Input Prompt')).toBeInTheDocument();
     // An animating line starts with only its screen-reader copy filled in.
-    expect(screen.getByText('ip: 127.0.0.1')).not.toHaveClass('sr-only');
+    expect(screen.getByText('127.0.0.1')).not.toHaveClass('sr-only');
   });
 
   test('NEXT_PUBLIC_NO_HISTORY clears both stores and replays the startup in development', async () => {

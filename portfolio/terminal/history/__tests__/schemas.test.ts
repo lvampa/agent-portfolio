@@ -11,6 +11,7 @@ describe('HistoryItemSchema', () => {
         info: [{ label: 'ip', value: '127.0.0.1' }],
         prompt: 'C:\\Users\\unknown>',
       },
+      { type: 'list', items: [{ term: 'help, h', detail: 'List the commands.' }] },
     ];
     // The old string-value shape, which no longer validates.
     const invalid = { type: 'command', value: 'help' };
