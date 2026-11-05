@@ -8,8 +8,13 @@ export interface CommandPromptProps extends React.HTMLAttributes<HTMLDivElement>
 
 export const CommandPrompt = React.forwardRef<HTMLDivElement, CommandPromptProps>(
   ({ className, children, prompt = 'C:\\Users\\unknown>', ...props }, ref) => (
-    <div ref={ref} className={cn('flex gap-3', className)} data-slot="command-prompt" {...props}>
-      <span className="shrink-0 select-none" aria-hidden>
+    <div
+      ref={ref}
+      className={cn('flex flex-wrap gap-x-[1ch]', className)}
+      data-slot="command-prompt"
+      {...props}
+    >
+      <span className="select-none" aria-hidden>
         {prompt}
       </span>
       {children}

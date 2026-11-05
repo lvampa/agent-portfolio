@@ -40,7 +40,8 @@ Port these PR #10 changes, because this design depends on them:
 On a first visit the screen shows, top to bottom:
 
 1. The banner: `Portfolio Agent (Version 2.1.6)`, `(c) 2026 Connor Abdelnoor. All rights reserved.`, then a blank line.
-2. The client info sequence: `clientinfo` typed after the prompt `C:\Users\unknown>`, then `Loading Client Information....` and the info lines as output.
+2. The client info sequence: `clientinfo` typed after the prompt `C:\Users\unknown>`, then `Loading Client Information....`, then the info rows in two columns.
+   Each row's label, such as `ip:`, appears at once and its value types, so the value column never slides.
 3. A blank line, then the question `User unknown, please identify:`, shown as the input prompt.
    A non-blank answer becomes the name, prints `Confirmed identity: <name>`, and changes the prompt from `C:\Users\unknown>` to `C:\Users\<name>>`.
    A blank answer prints `Unconfirmed identity`.
@@ -53,12 +54,20 @@ The registry ships with three commands:
 - `cls`, `clear` clears the screen and the saved history.
   A reload right after `cls` finds the history empty, so the startup replays, without the question when a name is saved.
   Anything typed after `cls` is saved, so a later reload restores it instead.
-- `whoami` prints a `list`: a `name` row with the name (or `unknown`), then a row per client info item when it loaded.
+- `whoami` prints a `list`: a `name:` row with the name (or `unknown`), then a row per client info item when it loaded.
+  Its terms end in a colon, like `systeminfo`, and so do the startup's info labels, through `infoTerm(label)`.
+  The colon is in the term data, so `List` stays generic, and `help`'s terms have none.
 
 A command runs only when nothing follows it, so `help me understand his AWS work` will go to the chat.
 A blank line in command mode prints an empty prompt line and does nothing else.
 On a reload, stored history renders as before and the startup does not replay.
 Restored items render at once, without typing, so the prompt shows right away.
+Under `prefers-reduced-motion: reduce`, new lines render at once too, and nothing waits on them: `TypingAnimation` shows the full text and never reports that it is animating.
+Up recalls the last submitted command into the input, like `cmd`.
+Down clears it again, but only while the input still holds the recalled command, so a typed draft is never lost.
+Esc clears the line.
+Only the last command is kept, in memory for the visit, and an answer to a question is never recalled.
+After each append, the end of the terminal scrolls into view, unless the visitor scrolled up to read.
 `HistoryContext` keeps how many items came from storage, and `History` passes `isRestored` to each renderer.
 
 ## Architecture
@@ -163,6 +172,7 @@ Matching is case-insensitive.
 interface Question {
   id: QuestionId;
   text: string; // Shown as the input prompt while waiting.
+  label: string; // The input's accessible name while waiting, since the visible prompt is aria-hidden.
   onAnswer(answer: string, state: TerminalState): Effect[];
 }
 ```
@@ -185,6 +195,8 @@ The answer is echoed as a `command` item with the question text as its prompt, s
 It strips `\` and `>`, trims, caps at 20 code points (not UTF-16 units, so an emoji is never split), and returns `null` when nothing is left.
 `promptFor(name)` returns `C:\Users\${name ?? 'unknown'}>`.
 The prompt is always derived, never stored on its own.
+The visible prompt is `aria-hidden`, so `currentInputLabel(mode)` gives the input its accessible name: the question's `label` while awaiting, such as `User unknown, please identify. Press Enter to skip.`, and `Command or question` otherwise.
+A focused field's label change is not announced, so an sr-only `role="status"` in `InputForm` speaks the question's `label` once the input goes live while awaiting.
 
 ## Routing
 
@@ -282,8 +294,11 @@ type InputState = 'starting' | 'busy' | 'animating' | 'awaiting' | 'idle';
 
 `getInputState({ hasStarted, busy, isAnimating, mode })` is a pure selector that checks in that order.
 It is a selector and not a state machine, because every input to it already has a single owner.
-The input renders only for `awaiting` and `idle`, and `ReplLoading` shows for `busy`.
-A line submitted in any other state is dropped.
+The input accepts lines only for `awaiting` and `idle`, and `ReplLoading` shows for `busy`.
+In the other states the input stays mounted and focused, but its row is faded out with opacity, since `display` or `visibility` would drop focus.
+Typing buffers, like type-ahead in `cmd`.
+Enter in those states keeps the line and submits it once the input accepts lines again.
+The input has `aria-disabled` while it does not accept lines, and the drawn caret is not shown while the row is faded.
 
 ## Persistence
 
@@ -336,12 +351,12 @@ A new output type takes three files, and `list` was added this way.
 
 1. `history/schemas.ts`: `ListItemSchema = z.object({ type: z.literal('list'), items: z.array(ListRowSchema) })`, with `ListRowSchema = z.object({ term: z.string(), detail: z.string() })`, added to the union.
 2. `history/renderers/List.tsx`: the component.
-   It renders `Columns`, a `<dl>` grid with `grid-cols-[max-content_1fr]` and a two-character column gap, so terms take the widest term's width and the details line up after it, as in DOS.
+   It renders `Columns`, a `<dl>` grid with `grid-cols-[max-content_minmax(0,1fr)]` and a two-character column gap, so terms take the widest term's width and the details line up after it, as in DOS.
    It renders at once, with no animation.
 3. `history/registry.ts`: `list: List`. Until this line exists, `tsc` fails.
 
 `printList(items)` in `utils.ts` builds the effect, so `help.run` returns `[printList(commands.map(...))]`.
-The startup client info uses the same `Columns`, typing each cell, so it looks the same as `whoami`.
+The startup client info uses the same `Columns`, with instant labels and typed values, so it looks the same as `whoami`.
 A table or an image is the same three steps.
 
 ## Testing
@@ -355,7 +370,9 @@ A few tests for the real risks:
 - `routes.test.ts`: `sendToChat` is the last route.
 - `startup.test.ts`: no name includes the ask, a saved name leaves it out, and missing client info skips that step.
 - `history/__tests__/schemas.test.ts`: an invalid stored item is dropped and valid ones survive.
-- One Repl integration test file: a first visit asks and then prints the guidance, restored history skips the startup, a reload mid-question asks again, the prompt stays hidden while client info types, and restored client info shows in full without holding back the prompt.
+- One Repl integration test file: a first visit asks and then prints the guidance, restored history skips the startup, a reload mid-question asks again, the input is named by the question while awaiting and `Command or question` after, typing during a chat keeps focus and the buffered text, Enter during a chat submits the buffered line once the reply lands, and restored client info shows in full without holding back the prompt.
+- `ReplInput.test.tsx`: Up recalls the last command and Down clears it, Down keeps a typed draft and Esc clears it, an answer is not recalled, and an inactive input is hidden but keeps focus and buffered text.
+- `history/__tests__/ClientInfo.test.tsx`: under reduced motion, a new sequence shows in full at once and nothing counts as animating.
 
 Update the existing tests the change touches, and delete ones that only test the old string items.
 

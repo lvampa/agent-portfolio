@@ -3,7 +3,7 @@
 @theme inline {
   --color-background: #212121;
   --color-terminal: #2dd42d;
-  --font-sans: var(--font-dos), sans-serif;
+  --font-sans: var(--font-dos), monospace;
   --animate-caret-blink: caret-blink 1s step-end infinite;
 
   @keyframes caret-blink {

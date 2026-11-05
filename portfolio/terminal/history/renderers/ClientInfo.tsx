@@ -1,7 +1,9 @@
 import { CommandPrompt } from '@components/ui/command-prompt';
 import { TypingAnimation } from '@components/ui/shadcn-io/terminal';
 import { useAnimation } from '@terminal/AnimationContext';
-import React from 'react';
+import { infoTerm } from '@terminal/utils';
+import { useReducedMotion } from 'motion/react';
+import React, { useEffect, useState } from 'react';
 
 import { Columns } from './Columns';
 import {
@@ -25,7 +27,7 @@ interface LineProps {
 function Line({ text, isRestored, delay, duration }: LineProps) {
   const { startAnimation, endAnimation } = useAnimation();
 
-  if (isRestored) return <span className="tracking-tight">{text}</span>;
+  if (isRestored) return <span>{text}</span>;
 
   return (
     <TypingAnimation
@@ -37,6 +39,21 @@ function Line({ text, isRestored, delay, duration }: LineProps) {
       {text}
     </TypingAnimation>
   );
+}
+
+// Laid out from the start, so the label column has its final width and the values never slide.
+function Label({ text, isRestored, delay }: { text: string; isRestored: boolean; delay: number }) {
+  const prefersReducedMotion = useReducedMotion() === true;
+  const isInstant = isRestored || prefersReducedMotion;
+  const [hasAppeared, setHasAppeared] = useState(false);
+
+  useEffect(() => {
+    if (isInstant) return;
+    const timeout = setTimeout(() => setHasAppeared(true), delay);
+    return () => clearTimeout(timeout);
+  }, [delay, isInstant]);
+
+  return <span className={isInstant || hasAppeared ? undefined : 'opacity-0'}>{text}</span>;
 }
 
 export const ClientInfo: React.FC<RendererProps<'clientInfo'>> = ({ item, isRestored }) => {
@@ -60,11 +77,10 @@ export const ClientInfo: React.FC<RendererProps<'clientInfo'>> = ({ item, isRest
         {item.info.map(({ label, value }) => (
           <React.Fragment key={label}>
             <dt>
-              <Line
-                text={label}
+              <Label
+                text={infoTerm(label)}
                 isRestored={isRestored}
                 delay={CLIENT_INFO_LINES_DELAY_MS}
-                duration={INFO_TYPING_MS_PER_CHAR}
               />
             </dt>
             <dd>

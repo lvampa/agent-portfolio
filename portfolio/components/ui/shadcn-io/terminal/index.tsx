@@ -1,7 +1,7 @@
 'use client';
 
 import { cn } from '@lib/utils/cn';
-import { motion, type MotionProps } from 'motion/react';
+import { motion, type MotionProps, useReducedMotion } from 'motion/react';
 import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
 
 interface TypingAnimationProps extends MotionProps {
@@ -9,7 +9,7 @@ interface TypingAnimationProps extends MotionProps {
   className?: string;
   duration?: number;
   delay?: number;
-  /** Called on mount, before paint, so the wait before typing counts as animating. */
+  /** Called on mount, before paint, so the wait before typing counts as animating. Never called under reduced motion. */
   onStart?: () => void;
   /** Called once when typing ends, or on unmount if it never finished. */
   onComplete?: () => void;
@@ -28,6 +28,8 @@ export const TypingAnimation = ({
     throw new Error('TypingAnimation: children must be a string. Received:');
   }
 
+  // Under reduced motion the text shows at once and never counts as animating, so nothing waits on it.
+  const isInstant = useReducedMotion() === true;
   const [displayedText, setDisplayedText] = useState<string>('');
   const [started, setStarted] = useState(false);
   const onCompleteCalledRef = useRef(false);
@@ -46,14 +48,16 @@ export const TypingAnimation = ({
 
   // Starting before paint closes the gap where nothing counts as animating and the prompt flashes.
   useLayoutEffect(() => {
+    if (isInstant) return;
     start();
     return () => complete();
-  }, []);
+  }, [isInstant]);
 
   useEffect(() => {
+    if (isInstant) return;
     const startTimeout = setTimeout(() => setStarted(true), delay);
     return () => clearTimeout(startTimeout);
-  }, [delay]);
+  }, [delay, isInstant]);
 
   useEffect(() => {
     if (!started) return;
@@ -73,9 +77,9 @@ export const TypingAnimation = ({
   }, [children, duration, started]);
 
   return (
-    <motion.span className={cn('tracking-tight', className)} {...props}>
+    <motion.span className={className} {...props}>
       <span className="sr-only select-none">{children}</span>
-      <span aria-hidden>{displayedText}</span>
+      <span aria-hidden>{isInstant ? children : displayedText}</span>
     </motion.span>
   );
 };
@@ -86,8 +90,13 @@ interface TerminalProps {
 }
 
 export const Terminal = ({ children, className }: TerminalProps) => (
-  <section className={cn('text-terminal m-4 w-full max-w-5xl', className)}>
-    <div className="grid gap-y-1 overflow-auto p-4 leading-loose font-medium text-inherit">
+  <section
+    className={cn(
+      'text-terminal m-4 w-full max-w-[calc(80ch+2rem)] [overflow-wrap:anywhere]',
+      className,
+    )}
+  >
+    <div className="grid gap-y-1 overflow-auto p-4 leading-normal font-medium text-inherit">
       {children}
     </div>
   </section>
