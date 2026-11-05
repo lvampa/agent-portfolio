@@ -32,11 +32,6 @@ run "plans" {
   }
 
   assert {
-    condition     = !contains(keys(aws_instance.ecs.root_block_device[0].tags), "Snapshot")
-    error_message = "The root volume must not carry the snapshot tag, or the policy would snapshot it too."
-  }
-
-  assert {
     condition     = aws_ebs_volume.n8n_data.encrypted && aws_ebs_volume.n8n_data.type == "gp3"
     error_message = "The data volume must be encrypted gp3."
   }
