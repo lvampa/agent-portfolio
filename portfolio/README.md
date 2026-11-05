@@ -1,21 +1,41 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Portfolio
 
-## Getting Started
+A terminal-style portfolio built with Next.js.
+Visitors type into a REPL, and an n8n workflow answers through a webhook.
+The app is a static export (`output: 'export'`), so there is no server at runtime.
 
-First, run the development server:
+## Scripts
 
 ```bash
-$ npm run dev
+npm run dev          # Start the dev server on http://localhost:3000
+npm run build        # Build the static export into out/
+npm run lint         # ESLint
+npm run format       # Prettier, write
+npm run format:check # Prettier, check only
+npm test             # Jest (terminal and lib projects)
+npx tsc --noEmit     # Type check
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment variables
 
-`npm run dev` runs without client info.
-The site gets it from `/info`, which only the deployed site serves, through the client-info Worker in `infra/workers/info/`.
+Set these in `.env.local`.
+Next.js inlines them at build time.
+`lib/env.ts` validates the chat URL, so the build fails if it is missing.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Variable                       | Meaning                                                                                                                             |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `NEXT_PUBLIC_CHAT_WEBHOOK_URL` | Base URL of the n8n chat webhook.                                                                                                   |
+| `NEXT_PUBLIC_NO_HISTORY`       | Only applies under `npm run dev`. Set to `true` to clear the stored history and session on every page load, so the startup replays. |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Client info comes from `/info` on the site's own domain, served by the client-info Worker in `infra/workers/info/`.
+`npm run dev` has no `/info`, so it runs without client info.
+
+## How it talks to n8n
+
+`lib/hooks/useChat.ts` sends `POST <NEXT_PUBLIC_CHAT_WEBHOOK_URL>/webhooks` with `{ "chatInput": "<message>" }`.
+The workflow replies with a JSON array of `{ "output": "<text>" }` items.
+The response is validated with Zod, and each item is added to the history as a message.
+History and the session are kept in `localStorage`, and items that fail validation are dropped on load.
 
 ## How the terminal is built
 
@@ -33,13 +53,3 @@ Once you have read one registry, you can read the rest.
 To add a command, write one file in `terminal/commands/` and add it to `COMMANDS` in `terminal/registry.ts`.
 To add a question, write one file in `terminal/questions/`, add its id to `QUESTION_IDS`, and add it to `QUESTIONS`.
 To add an output type, add a schema to `terminal/history/schemas.ts`, a renderer in `terminal/history/renderers/`, and an entry in `terminal/history/registry.ts`.
-
-## Testing
-
-This project follows Next.JS testing suggestions - https://nextjs.org/docs/app/guides/testing/jest
-
-Run tests with
-
-```shell
-$ npm run test
-```

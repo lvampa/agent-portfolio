@@ -40,11 +40,11 @@ Port these PR #10 changes, because this design depends on them:
 On a first visit the screen shows, top to bottom:
 
 1. The banner: `Portfolio Agent (Version 2.1.6)`, `(c) 2026 Connor Abdelnoor. All rights reserved.`, then a blank line.
-2. The client info sequence (`Loading Client Information . . . .` then the info lines), unchanged.
-3. The question `Please Identify:`, shown as the input prompt.
-   A non-blank answer becomes the name, and the prompt changes from `C:\Users\unknown >` to `C:\Users\<name> >`.
-   A blank answer prints `No name given. Staying as unknown.`
-4. The guidance line: `Ask about the author, or type help for other commands.`
+2. The client info sequence: `clientinfo` typed after the prompt `C:\Users\unknown>`, then `Loading Client Information....` and the info lines as output.
+3. A blank line, then the question `User unknown, please identify:`, shown as the input prompt.
+   A non-blank answer becomes the name, prints `Confirmed identity: <name>`, and changes the prompt from `C:\Users\unknown>` to `C:\Users\<name>>`.
+   A blank answer prints `Unconfirmed identity`.
+4. A blank line, the guidance line `Ask about the author, or type help for other commands.`, and another blank line before the input prompt.
 5. From then on, a line that is exactly a command name runs that command, and anything else goes to the chat.
 
 This PR builds the structure only, so the command registry ships empty and every line goes to the chat for now.
@@ -52,6 +52,8 @@ Commands such as `help`, `cls`, and `whoami` land in later PRs.
 A command runs only when nothing follows it, so `help me understand his AWS work` will go to the chat.
 A blank line in command mode prints an empty prompt line and does nothing else.
 On a reload, stored history renders as before and the startup does not replay.
+Restored items render at once, without typing, so the prompt shows right away.
+`HistoryContext` keeps how many items came from storage, and `History` passes `isRestored` to each renderer.
 
 ## Architecture
 
@@ -84,7 +86,7 @@ type HistoryItem =
   | { type: 'command'; line: string; prompt: string } // The echo of a submitted line.
   | { type: 'message'; text: string }               // A chat reply.
   | { type: 'error'; text: string }                 // A failed chat request.
-  | { type: 'clientInfo'; info: UserInfo };          // The typed client info sequence.
+  | { type: 'clientInfo'; info: UserInfo; prompt: string }; // The typed client info sequence.
 ```
 
 The schema is built from one schema per type with `z.discriminatedUnion('type', [...])`, and the type is inferred from it.
@@ -95,7 +97,7 @@ Renderers are registered in a mapped type, so each one receives its own item sha
 
 ```ts
 type Renderers = {
-  [K in HistoryItemType]: React.FC<{ item: Extract<HistoryItem, { type: K }> }>;
+  [K in HistoryItemType]: React.FC<{ item: Extract<HistoryItem, { type: K }>; isRestored: boolean }>;
 };
 
 export const renderers: Renderers = {
@@ -167,13 +169,13 @@ type Mode =
 ```
 
 `then` holds the effects that came after the `ask`, so the startup continues to the guidance line after the answer, and a reload mid-question asks again and still continues.
-The answer is echoed as a `command` item with the question text as its prompt, so the screen reads `Please Identify: connor`.
+The answer is echoed as a `command` item with the question text as its prompt, so the screen reads `User unknown, please identify: connor`.
 
 ### Name and prompt
 
 `sanitizeName` is the only place names are cleaned.
 It strips `\` and `>`, trims, caps at 20 code points (not UTF-16 units, so an emoji is never split), and returns `null` when nothing is left.
-`promptFor(name)` returns `C:\Users\${name ?? 'unknown'} >`.
+`promptFor(name)` returns `C:\Users\${name ?? 'unknown'}>`.
 The prompt is always derived, never stored on its own.
 
 ## Routing
@@ -249,9 +251,13 @@ Otherwise an Enter pressed in the frame the input appears can reach a stale hand
 function startupEffects(state: TerminalState): Effect[] {
   return [
     ...BANNER_LINES.map(printText),
-    ...(state.clientInfo ? [print({ type: 'clientInfo', info: state.clientInfo })] : []),
-    ...(state.name ? [] : [ask(QUESTION_IDS.IDENTIFY)]),
+    ...(state.clientInfo
+      ? [print({ type: 'clientInfo', info: state.clientInfo, prompt: promptFor(state.name) })]
+      : []),
+    ...(state.name ? [] : [printText(''), ask(QUESTION_IDS.IDENTIFY)]),
+    printText(''),
     printText(GUIDANCE_LINE),
+    printText(''),
   ];
 }
 ```
@@ -337,7 +343,7 @@ A few tests for the real risks:
 - `routes.test.ts`: `sendToChat` is the last route.
 - `startup.test.ts`: no name includes the ask, a saved name leaves it out, and missing client info skips that step.
 - `history/__tests__/schemas.test.ts`: an invalid stored item is dropped and valid ones survive.
-- One Repl integration test file: a first visit asks and then prints the guidance, restored history skips the startup, a reload mid-question asks again, and the prompt stays hidden while client info types.
+- One Repl integration test file: a first visit asks and then prints the guidance, restored history skips the startup, a reload mid-question asks again, the prompt stays hidden while client info types, and restored client info shows in full without holding back the prompt.
 
 Update the existing tests the change touches, and delete ones that only test the old string items.
 

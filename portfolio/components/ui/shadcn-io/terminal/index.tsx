@@ -1,26 +1,8 @@
 'use client';
 
-import { cn } from '@lib/utils';
+import { cn } from '@lib/utils/cn';
 import { motion, type MotionProps } from 'motion/react';
 import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
-
-interface AnimatedSpanProps extends MotionProps {
-  children: React.ReactNode;
-  delay?: number;
-  className?: string;
-}
-
-export const AnimatedSpan = ({ children, delay = 0, className, ...props }: AnimatedSpanProps) => (
-  <motion.div
-    initial={{ opacity: 0, y: -5 }}
-    animate={{ opacity: 1, y: 0 }}
-    transition={{ duration: 0.3, delay: delay / 1000 }}
-    className={cn('grid tracking-tight', className)}
-    {...props}
-  >
-    {children}
-  </motion.div>
-);
 
 interface TypingAnimationProps extends MotionProps {
   children: string;
@@ -36,7 +18,7 @@ interface TypingAnimationProps extends MotionProps {
 export const TypingAnimation = ({
   children,
   className,
-  duration = 60,
+  duration = 15,
   delay = 0,
   onStart,
   onComplete,
@@ -92,7 +74,8 @@ export const TypingAnimation = ({
 
   return (
     <motion.span className={cn('tracking-tight', className)} {...props}>
-      {displayedText}
+      <span className="sr-only select-none">{children}</span>
+      <span aria-hidden>{displayedText}</span>
     </motion.span>
   );
 };

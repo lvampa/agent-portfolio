@@ -7,7 +7,7 @@ import userEvent from '@testing-library/user-event';
 import { InputForm } from '../InputForm';
 
 const emit = jest.fn();
-const PROMPT = 'C:\\Users\\unknown >';
+const PROMPT = 'C:\\Users\\unknown>';
 
 jest.mock('@terminal/repl/EventBusContext', () => ({
   useEventBus: () => ({ emit }),
@@ -24,6 +24,24 @@ describe('ReplInput', () => {
 
       const input = screen.getByLabelText('Input Prompt');
       expect(input).toHaveFocus();
+    });
+
+    test('When the user types, Then the drawn caret follows the text', async () => {
+      render(<InputForm isVisible={true} prompt={PROMPT} />);
+      const user = userEvent.setup();
+
+      await user.type(screen.getByLabelText('Input Prompt'), 'abc');
+
+      expect(screen.getByTestId('caret').style.left).toBe('calc(3ch - 0px)');
+    });
+
+    test('When the user moves left, Then the drawn caret moves with the cursor', async () => {
+      render(<InputForm isVisible={true} prompt={PROMPT} />);
+      const user = userEvent.setup();
+
+      await user.type(screen.getByLabelText('Input Prompt'), 'abc{ArrowLeft}{ArrowLeft}');
+
+      expect(screen.getByTestId('caret').style.left).toBe('calc(1ch - 0px)');
     });
 
     test('When the user clicks elsewhere, Then focus returns to the prompt', async () => {

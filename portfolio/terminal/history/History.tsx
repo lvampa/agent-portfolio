@@ -1,22 +1,35 @@
-import React from 'react';
+import React, { createElement } from 'react';
 
 import { useHistory } from './HistoryContext';
 import { renderers } from './registry';
-import type { HistoryItem } from './types';
+import type { HistoryItemOf, HistoryItemType } from './types';
 
-type AnyRenderer = React.FC<{ item: HistoryItem }>;
+function HistoryLine<K extends HistoryItemType>({
+  type,
+  item,
+  isRestored,
+}: {
+  type: K;
+  item: HistoryItemOf<K>;
+  isRestored: boolean;
+}) {
+  return createElement(renderers[type], { item, isRestored });
+}
 
 export function History() {
-  const { items } = useHistory();
+  const { items, restoredCount, hasLoaded } = useHistory();
 
-  return items.map((item, index) => {
-    // TypeScript cannot tie item.type to its renderer's prop type, and the registry type already guarantees the match.
-    const Renderer = renderers[item.type] as AnyRenderer;
-    // History only appends or clears, so an index key stays stable.
-    return (
-      <div key={index}>
-        <Renderer item={item} />
-      </div>
-    );
-  });
+  // Mounting the log after load keeps restored items from being announced as new.
+  if (!hasLoaded) return null;
+
+  return (
+    <div role="log">
+      {items.map((item, index) => (
+        // History only appends or clears, so an index key stays stable.
+        <div key={index}>
+          <HistoryLine type={item.type} item={item} isRestored={index < restoredCount} />
+        </div>
+      ))}
+    </div>
+  );
 }

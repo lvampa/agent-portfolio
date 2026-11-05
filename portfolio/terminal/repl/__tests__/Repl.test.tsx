@@ -18,15 +18,23 @@ jest.mock('@lib/api', () => ({
 }));
 
 jest.mock('@terminal/storage', () => ({
+  ...jest.requireActual('@terminal/storage'),
   historyStore: { load: jest.fn(), append: jest.fn(), clear: jest.fn() },
-  sessionStore: { loadValue: jest.fn(), save: jest.fn() },
+  sessionStore: { loadValue: jest.fn(), save: jest.fn(), clear: jest.fn() },
 }));
 
 const mockedLoadHistory = historyStore.load as jest.Mock;
 const mockedLoadSession = sessionStore.loadValue as jest.Mock;
+const mockedClearHistory = historyStore.clear as jest.Mock;
+const mockedClearSession = sessionStore.clear as jest.Mock;
 
-const IDENTIFY_PROMPT = 'Please Identify:';
+const IDENTIFY_PROMPT = 'User unknown, please identify:';
 const EARLIER_LINE = 'an earlier line';
+
+// NODE_ENV is typed read-only, so tests write it through a widened view of process.env.
+function setNodeEnv(value: string | undefined) {
+  (process.env as Record<string, string | undefined>).NODE_ENV = value;
+}
 
 function renderRepl() {
   render(
@@ -60,17 +68,59 @@ describe('Repl', () => {
     await user.type(screen.getByLabelText('Input Prompt'), 'tester{enter}');
 
     expect(await screen.findByText(GUIDANCE_LINE)).toBeInTheDocument();
-    expect(screen.getByText('C:\\Users\\tester >')).toBeInTheDocument();
+    expect(screen.getByText('C:\\Users\\tester>')).toBeInTheDocument();
   });
 
-  test('restored history skips the startup', async () => {
-    mockedLoadHistory.mockReturnValue([{ type: 'text', text: EARLIER_LINE }]);
+  test('restored history skips the startup and is inside the log when it mounts', async () => {
+    let logBeforeLoad: HTMLElement | null = null;
+    mockedLoadHistory.mockImplementation(() => {
+      logBeforeLoad = screen.queryByRole('log');
+      return [{ type: 'text', text: EARLIER_LINE }];
+    });
     mockedLoadSession.mockReturnValue({ name: 'tester', mode: { type: 'command' } });
     renderRepl();
 
     expect(await screen.findByLabelText('Input Prompt')).toBeInTheDocument();
-    expect(screen.getByText(EARLIER_LINE)).toBeInTheDocument();
+    expect(logBeforeLoad).toBeNull();
+    expect(screen.getByRole('log')).toHaveTextContent(EARLIER_LINE);
     expect(screen.queryByText(BANNER_LINES[0])).not.toBeInTheDocument();
+  });
+
+  test('restored client info shows in full at once and does not hold back the prompt', async () => {
+    mockedLoadHistory.mockReturnValue([
+      {
+        type: 'clientInfo',
+        info: [{ label: 'ip', value: '127.0.0.1' }],
+        prompt: 'C:\\Users\\unknown>',
+      },
+    ]);
+    mockedLoadSession.mockReturnValue({ name: 'tester', mode: { type: 'command' } });
+    renderRepl();
+
+    await screen.findByRole('log');
+
+    expect(screen.getByLabelText('Input Prompt')).toBeInTheDocument();
+    // An animating line starts with only its screen-reader copy filled in.
+    expect(screen.getByText('ip: 127.0.0.1')).not.toHaveClass('sr-only');
+  });
+
+  test('NEXT_PUBLIC_NO_HISTORY clears both stores and replays the startup in development', async () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    setNodeEnv('development');
+    process.env.NEXT_PUBLIC_NO_HISTORY = 'true';
+    mockedLoadHistory.mockReturnValue([{ type: 'text', text: EARLIER_LINE }]);
+    mockedLoadSession.mockReturnValue({ name: 'tester', mode: { type: 'command' } });
+    try {
+      renderRepl();
+
+      expect(await screen.findByText(IDENTIFY_PROMPT)).toBeInTheDocument();
+      expect(screen.queryByText(EARLIER_LINE)).not.toBeInTheDocument();
+      expect(mockedClearHistory).toHaveBeenCalled();
+      expect(mockedClearSession).toHaveBeenCalled();
+    } finally {
+      delete process.env.NEXT_PUBLIC_NO_HISTORY;
+      setNodeEnv(originalNodeEnv);
+    }
   });
 
   test('a reload during a question asks it again and keeps what comes after', async () => {

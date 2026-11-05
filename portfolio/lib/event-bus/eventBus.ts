@@ -1,21 +1,15 @@
-import { type CallbackFn, type EventBus, type UnregisterFn } from './types';
+import { type EventBus, type UnregisterFn } from './types';
 
 export function createEventBus<TMap extends Record<string, unknown>>(): EventBus<TMap> {
-  const handlers = new Map<string, CallbackFn[]>();
+  const handlers: { [K in keyof TMap]?: Set<(payload: TMap[K]) => void> } = {};
 
   function on<K extends string & keyof TMap>(
     eventName: K,
     callback: (payload: TMap[K]) => void,
   ): UnregisterFn {
-    const eventHandlers = handlers.get(eventName) ?? [];
-    const cb = callback as CallbackFn;
-
-    if (eventHandlers.includes(cb)) {
-      return () => off(eventName, callback);
-    }
-
-    eventHandlers.push(cb);
-    handlers.set(eventName, eventHandlers);
+    const eventHandlers = handlers[eventName] ?? new Set();
+    eventHandlers.add(callback);
+    handlers[eventName] = eventHandlers;
     return () => off(eventName, callback);
   }
 
@@ -23,21 +17,12 @@ export function createEventBus<TMap extends Record<string, unknown>>(): EventBus
     eventName: K,
     callback: (payload: TMap[K]) => void,
   ): void {
-    const eventHandlers = handlers.get(eventName);
-
-    if (eventHandlers) {
-      eventHandlers.splice(eventHandlers.indexOf(callback as CallbackFn) >>> 0, 1);
-    }
+    handlers[eventName]?.delete(callback);
   }
 
   function emit<K extends string & keyof TMap>(eventName: K, payload: TMap[K]): void {
-    const eventHandlers = handlers.get(eventName);
-
-    if (eventHandlers) {
-      eventHandlers.slice().forEach(async (handler) => {
-        await handler(payload);
-      });
-    }
+    // A copy, so a handler that unregisters another during emit does not skip it.
+    [...(handlers[eventName] ?? [])].forEach((handler) => handler(payload));
   }
 
   return { on, off, emit };

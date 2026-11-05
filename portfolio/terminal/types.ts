@@ -7,6 +7,7 @@ import type { EffectSchema, ModeSchema, QuestionIdSchema, SessionSchema } from '
 
 export type Effect = z.infer<typeof EffectSchema>;
 export type EffectType = Effect['type'];
+export type EffectOf<K extends EffectType> = Extract<Effect, { type: K }>;
 export type Mode = z.infer<typeof ModeSchema>;
 export type QuestionId = z.infer<typeof QuestionIdSchema>;
 export type Session = z.infer<typeof SessionSchema>;
@@ -50,7 +51,7 @@ export interface EffectContext {
 
 export type EffectHandlers = {
   [K in EffectType]: (
-    effect: Extract<Effect, { type: K }>,
+    effect: EffectOf<K>,
     context: EffectContext,
   ) => EffectOutcome | Promise<'continue'>;
 };
