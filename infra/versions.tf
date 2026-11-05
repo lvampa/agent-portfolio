@@ -5,6 +5,8 @@ terraform {
     bucket       = "ai-agent-portfolio-tfstate"
     key          = "agent/terraform.tfstate"
     region       = "us-east-2"
+    # A backend cannot read variables, so this repeats var.aws_profile's default.
+    profile      = "portfolio"
     encrypt      = true
     use_lockfile = true
   }

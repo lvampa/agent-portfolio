@@ -24,6 +24,10 @@ Highlights:
 
 ## Setup
 
+Tofu uses the AWS CLI profile `portfolio`, for both the state backend and the provider.
+Its access keys go in `~/.aws/credentials`.
+Pass `--region us-east-2` to `aws` commands if the profile has no region.
+
 Set the required variables in `terraform.tfvars`, or another `*.tfvars` file.
 Real `*.tfvars` files are in `.gitignore`.
 
