@@ -1,5 +1,5 @@
-import { Command, Help, Message, Thinking, User } from '@app/components/History/renderers';
-import { type HistoryItem, type HistoryItemType } from '@app/components/History/types';
+import { Command, Help, Message, Thinking, User } from '@terminal/history/renderers';
+import { type HistoryItem, type HistoryItemType } from '@terminal/history/types';
 import type React from 'react';
 
 export const HISTORY_ITEM_TYPES = {

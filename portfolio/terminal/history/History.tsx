@@ -1,4 +1,4 @@
-import { useHistory } from '@app/contexts/HistoryContext';
+import { useHistory } from '@terminal/contexts/HistoryContext';
 import React from 'react';
 
 import { renderers } from './constants';

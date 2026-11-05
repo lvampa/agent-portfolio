@@ -1,5 +1,5 @@
-import { HISTORY_ITEM_TYPES } from '@app/components/History/constants';
-import { HistoryItemSchema, HistoryItemTypeSchema } from '@app/components/History/schemas';
+import { HISTORY_ITEM_TYPES } from '@terminal/history/constants';
+import { HistoryItemSchema, HistoryItemTypeSchema } from '@terminal/history/schemas';
 
 describe('HistoryItemTypeSchema', () => {
   test('accepts valid item types', () => {

@@ -3,8 +3,8 @@ import { act, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import React from 'react';
 
-import { HISTORY_ITEM_TYPES } from '@app/components/History';
-import { HistoryProvider, useHistory } from '@app/contexts/HistoryContext';
+import { HISTORY_ITEM_TYPES } from '@terminal/history';
+import { HistoryProvider, useHistory } from '@terminal/contexts/HistoryContext';
 import { storage } from '@lib/storage';
 
 jest.mock('@lib/storage', () => ({

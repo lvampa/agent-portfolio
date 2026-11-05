@@ -1,6 +1,5 @@
+import { CommandPrompt } from '@components/ui/command-prompt';
 import React from 'react';
-
-import { CommandPrompt } from '@/components/ui/command-prompt';
 
 import { type HistoryItem } from '../types';
 

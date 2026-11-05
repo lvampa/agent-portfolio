@@ -1,7 +1,7 @@
 import './globals.css';
 
-import { EventBusProvider } from '@app/contexts/EventBusContext';
-import { HistoryProvider } from '@app/contexts/HistoryContext';
+import { EventBusProvider } from '@terminal/contexts/EventBusContext';
+import { HistoryProvider } from '@terminal/contexts/HistoryContext';
 import localFont from 'next/font/local';
 import React from 'react';
 
