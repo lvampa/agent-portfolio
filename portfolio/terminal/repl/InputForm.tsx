@@ -2,7 +2,7 @@ import { CommandPrompt } from '@components/ui/command-prompt';
 import { Input } from '@components/ui/input';
 import { EVENTS } from '@terminal/repl/constants';
 import { useEventBus } from '@terminal/repl/EventBusContext';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useEffectEvent, useRef, useState } from 'react';
 
 interface InputFormProps {
   /** False while lines type or a chat is in flight. The input stays mounted and focused, so typing buffers. */
@@ -17,6 +17,7 @@ export function InputForm({ isActive, isAnswering, prompt, label }: InputFormPro
   const eventBus = useEventBus();
   const [value, setValue] = useState('');
   const [lastCommand, setLastCommand] = useState<string | null>(null);
+  const [hasPendingSubmit, setHasPendingSubmit] = useState(false);
   const inputElementRef = useRef<HTMLInputElement>(null);
   const [isFocused, setIsFocused] = useState(false);
   const [caret, setCaret] = useState({ index: 0, scrollLeft: 0 });
@@ -43,13 +44,35 @@ export function InputForm({ isActive, isAnswering, prompt, label }: InputFormPro
   function replaceValue(next: string) {
     setValue(next);
     setCaret({ index: next.length, scrollLeft: 0 });
+    // The input scrolls to the new text only after the commit, so the drawn caret syncs a frame later.
+    requestAnimationFrame(syncCaret);
   }
+
+  function submit() {
+    if (!isAnswering && value.trim()) setLastCommand(value);
+    replaceValue('');
+    eventBus.emit(EVENTS.SUBMIT, value);
+  }
+
+  // An effect event sees the latest value and mode when the pending line finally goes out.
+  const submitPending = useEffectEvent(() => {
+    setHasPendingSubmit(false);
+    submit();
+  });
+
+  useEffect(() => {
+    if (isActive && hasPendingSubmit) submitPending();
+  }, [isActive, hasPendingSubmit]);
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'ArrowUp' && lastCommand !== null) {
       e.preventDefault();
       replaceValue(lastCommand);
-    } else if (e.key === 'ArrowDown') {
+    } else if (e.key === 'ArrowDown' && value === lastCommand) {
+      // Only a recalled command goes away, so a typed draft is never lost.
+      e.preventDefault();
+      replaceValue('');
+    } else if (e.key === 'Escape') {
       e.preventDefault();
       replaceValue('');
     }
@@ -57,17 +80,18 @@ export function InputForm({ isActive, isAnswering, prompt, label }: InputFormPro
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    // Typed text is kept, so it submits once the terminal is ready again.
-    if (!isActive) return;
-
-    if (!isAnswering && value.trim()) setLastCommand(value);
-    replaceValue('');
-    eventBus.emit(EVENTS.SUBMIT, value);
+    // Like cmd, Enter while busy keeps the line and submits it once the terminal is ready again.
+    if (isActive) submit();
+    else setHasPendingSubmit(true);
   }
 
   return (
     // Opacity, not display or visibility, because those would drop focus and lose type-ahead.
     <form onSubmit={handleSubmit} style={{ opacity: isActive ? 1 : 0 }}>
+      {/* The input is already focused, so its new label is not announced. This speaks the question once it goes live. */}
+      <p role="status" className="sr-only">
+        {isActive && isAnswering ? label : ''}
+      </p>
       <CommandPrompt prompt={prompt}>
         <label htmlFor="input-prompt" className="sr-only">
           {label}
@@ -89,6 +113,7 @@ export function InputForm({ isActive, isAnswering, prompt, label }: InputFormPro
             onBlur={() => setIsFocused(false)}
             autoFocus
             autoComplete="off"
+            aria-disabled={!isActive}
           />
           {isFocused && isActive && (
             <span

@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom';
 
+import { chatClient } from '@lib/api';
 import { AnimationProvider } from '@terminal/AnimationContext';
 import {
   BANNER_LINES,
@@ -7,15 +8,14 @@ import {
   GUIDANCE_LINE,
   QUESTION_IDS,
 } from '@terminal/constants';
-import { identify } from '@terminal/questions';
 import { HistoryProvider } from '@terminal/history/HistoryContext';
+import { identify } from '@terminal/questions';
 import { EventBusProvider } from '@terminal/repl/EventBusContext';
 import { SessionProvider } from '@terminal/SessionContext';
-import { chatClient } from '@lib/api';
 import { historyStore, sessionStore } from '@terminal/storage';
 import type { Session } from '@terminal/types';
 import { printText } from '@terminal/utils';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import Repl from '../Repl';
@@ -77,7 +77,10 @@ describe('Repl', () => {
     expect(screen.queryByText(GUIDANCE_LINE)).not.toBeInTheDocument();
 
     // The visible prompt is aria-hidden, so the input's name carries the question.
-    await user.type(screen.getByRole('textbox', { name: identify.label }), 'tester{enter}');
+    const input = screen.getByRole('textbox', { name: identify.label });
+    // The question shows as text before the input accepts lines.
+    await waitFor(() => expect(input).toBeVisible());
+    await user.type(input, 'tester{enter}');
 
     expect(await screen.findByText(GUIDANCE_LINE)).toBeInTheDocument();
     expect(screen.getByText('C:\\Users\\tester>')).toBeInTheDocument();
@@ -99,6 +102,27 @@ describe('Repl', () => {
     expect(input).toHaveFocus();
     expect(input).toHaveValue('next');
     expect(mockedPost).toHaveBeenCalledTimes(1);
+  });
+
+  test('Enter during a chat submits the buffered line once the reply lands', async () => {
+    let replyToFirst: (response: { data: { output: string }[] }) => void = () => {};
+    mockedPost
+      .mockReturnValueOnce(new Promise((resolve) => (replyToFirst = resolve)))
+      .mockResolvedValueOnce({ data: [{ output: 'second reply' }] });
+    mockedLoadSession.mockReturnValue({ name: 'tester', mode: { type: 'command' } });
+    mockedLoadHistory.mockReturnValue([{ type: 'text', text: EARLIER_LINE }]);
+    renderRepl();
+    const user = userEvent.setup();
+    const input = await screen.findByRole('textbox', { name: COMMAND_INPUT_LABEL });
+
+    await user.type(input, 'first{enter}');
+    await user.type(input, 'second{enter}');
+    expect(mockedPost).toHaveBeenCalledTimes(1);
+
+    replyToFirst({ data: [{ output: 'first reply' }] });
+
+    await waitFor(() => expect(mockedPost).toHaveBeenCalledTimes(2));
+    expect(mockedPost).toHaveBeenLastCalledWith('webhooks', { chatInput: 'second' });
   });
 
   test('restored history skips the startup and is inside the log when it mounts', async () => {
@@ -168,7 +192,9 @@ describe('Repl', () => {
     const user = userEvent.setup();
 
     expect(await screen.findByText(IDENTIFY_PROMPT)).toBeInTheDocument();
-    await user.type(screen.getByLabelText(identify.label), 'tester{enter}');
+    const input = screen.getByLabelText(identify.label);
+    await waitFor(() => expect(input).toBeVisible());
+    await user.type(input, 'tester{enter}');
 
     expect(await screen.findByText(GUIDANCE_LINE)).toBeInTheDocument();
   });

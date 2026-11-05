@@ -14,7 +14,7 @@ export const CommandPrompt = React.forwardRef<HTMLDivElement, CommandPromptProps
       data-slot="command-prompt"
       {...props}
     >
-      <span className="shrink-0 select-none" aria-hidden>
+      <span className="select-none" aria-hidden>
         {prompt}
       </span>
       {children}

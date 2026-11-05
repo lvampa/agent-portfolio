@@ -91,7 +91,10 @@ interface TerminalProps {
 
 export const Terminal = ({ children, className }: TerminalProps) => (
   <section
-    className={cn('text-terminal m-4 w-full max-w-[80ch] [overflow-wrap:anywhere]', className)}
+    className={cn(
+      'text-terminal m-4 w-full max-w-[calc(80ch+2rem)] [overflow-wrap:anywhere]',
+      className,
+    )}
   >
     <div className="grid gap-y-1 overflow-auto p-4 leading-normal font-medium text-inherit">
       {children}

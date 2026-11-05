@@ -63,7 +63,9 @@ A blank line in command mode prints an empty prompt line and does nothing else.
 On a reload, stored history renders as before and the startup does not replay.
 Restored items render at once, without typing, so the prompt shows right away.
 Under `prefers-reduced-motion: reduce`, new lines render at once too, and nothing waits on them: `TypingAnimation` shows the full text and never reports that it is animating.
-Up recalls the last submitted command into the input, and Down clears it, like `cmd`.
+Up recalls the last submitted command into the input, like `cmd`.
+Down clears it again, but only while the input still holds the recalled command, so a typed draft is never lost.
+Esc clears the line.
 Only the last command is kept, in memory for the visit, and an answer to a question is never recalled.
 After each append, the end of the terminal scrolls into view, unless the visitor scrolled up to read.
 `HistoryContext` keeps how many items came from storage, and `History` passes `isRestored` to each renderer.
@@ -194,6 +196,7 @@ It strips `\` and `>`, trims, caps at 20 code points (not UTF-16 units, so an em
 `promptFor(name)` returns `C:\Users\${name ?? 'unknown'}>`.
 The prompt is always derived, never stored on its own.
 The visible prompt is `aria-hidden`, so `currentInputLabel(mode)` gives the input its accessible name: the question's `label` while awaiting, such as `User unknown, please identify. Press Enter to skip.`, and `Command or question` otherwise.
+A focused field's label change is not announced, so an sr-only `role="status"` in `InputForm` speaks the question's `label` once the input goes live while awaiting.
 
 ## Routing
 
@@ -293,8 +296,9 @@ type InputState = 'starting' | 'busy' | 'animating' | 'awaiting' | 'idle';
 It is a selector and not a state machine, because every input to it already has a single owner.
 The input accepts lines only for `awaiting` and `idle`, and `ReplLoading` shows for `busy`.
 In the other states the input stays mounted and focused, but its row is faded out with opacity, since `display` or `visibility` would drop focus.
-Typing buffers, like type-ahead in `cmd`, and Enter keeps the text until the input accepts lines again.
-The drawn caret is not shown while the row is faded.
+Typing buffers, like type-ahead in `cmd`.
+Enter in those states keeps the line and submits it once the input accepts lines again.
+The input has `aria-disabled` while it does not accept lines, and the drawn caret is not shown while the row is faded.
 
 ## Persistence
 
@@ -366,8 +370,8 @@ A few tests for the real risks:
 - `routes.test.ts`: `sendToChat` is the last route.
 - `startup.test.ts`: no name includes the ask, a saved name leaves it out, and missing client info skips that step.
 - `history/__tests__/schemas.test.ts`: an invalid stored item is dropped and valid ones survive.
-- One Repl integration test file: a first visit asks and then prints the guidance, restored history skips the startup, a reload mid-question asks again, the input is named by the question while awaiting and `Command or question` after, typing during a chat keeps focus and the buffered text, and restored client info shows in full without holding back the prompt.
-- `ReplInput.test.tsx`: Up recalls the last command and Down clears it, an answer is not recalled, and an inactive input is hidden but keeps focus and buffered text.
+- One Repl integration test file: a first visit asks and then prints the guidance, restored history skips the startup, a reload mid-question asks again, the input is named by the question while awaiting and `Command or question` after, typing during a chat keeps focus and the buffered text, Enter during a chat submits the buffered line once the reply lands, and restored client info shows in full without holding back the prompt.
+- `ReplInput.test.tsx`: Up recalls the last command and Down clears it, Down keeps a typed draft and Esc clears it, an answer is not recalled, and an inactive input is hidden but keeps focus and buffered text.
 - `history/__tests__/ClientInfo.test.tsx`: under reduced motion, a new sequence shows in full at once and nothing counts as animating.
 
 Update the existing tests the change touches, and delete ones that only test the old string items.

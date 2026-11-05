@@ -11,8 +11,10 @@ export function useFollowOutput(itemCount: number) {
     function updateIsFollowing() {
       const end = endRef.current;
       if (!end) return;
+      // The visual viewport excludes an on-screen keyboard, so the prompt is not left behind it.
+      const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
       isFollowingRef.current =
-        end.getBoundingClientRect().bottom <= window.innerHeight + FOLLOW_OUTPUT_SLACK_PX;
+        end.getBoundingClientRect().bottom <= viewportHeight + FOLLOW_OUTPUT_SLACK_PX;
     }
     // Capture, so scrolling any container counts, not only the window.
     document.addEventListener('scroll', updateIsFollowing, { capture: true, passive: true });

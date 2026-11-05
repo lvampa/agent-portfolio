@@ -78,6 +78,17 @@ describe('ReplInput', () => {
       expect(input).toHaveValue('');
     });
 
+    test('When the user has typed a draft, Then down keeps it and Esc clears it', async () => {
+      const input = renderInput();
+      const user = userEvent.setup();
+
+      await user.type(input, 'help{enter}draft{ArrowDown}');
+      expect(input).toHaveValue('draft');
+
+      await user.type(input, '{Escape}');
+      expect(input).toHaveValue('');
+    });
+
     test('When the user answers a question, Then up does not recall the answer', async () => {
       const input = renderInput({ isAnswering: true });
       const user = userEvent.setup();
