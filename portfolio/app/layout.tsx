@@ -3,7 +3,7 @@ import './globals.css';
 import { HistoryProvider } from '@terminal/history/HistoryContext';
 import { EventBusProvider } from '@terminal/repl/EventBusContext';
 import { SessionProvider } from '@terminal/SessionContext';
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import localFont from 'next/font/local';
 import React from 'react';
 
@@ -36,6 +36,11 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
   },
   twitter: { card: 'summary_large_image' },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#212121',
+  colorScheme: 'dark',
 };
 
 export default function RootLayout({

@@ -33,6 +33,16 @@ The build fails if `NEXT_PUBLIC_CHAT_WEBHOOK_URL` is missing or not a URL, becau
 Client info needs no variable: the site calls `/info` on its own origin, which the client-info Worker serves.
 The deploy job fails early if `CLOUDFLARE_ACCOUNT_ID`, `CF_PAGES_PROJECT`, or `SITE_URL` is empty.
 
+## Security headers
+
+`portfolio/public/_headers` sets the Content-Security-Policy and the other security headers for every page, and Pages serves it as is.
+Nothing in it is derived at build time, so two changes need a hand edit there:
+
+- If the origin of `NEXT_PUBLIC_CHAT_WEBHOOK_URL` changes, change `connect-src` to match, or the chat is blocked.
+- Cloudflare Web Analytics would need `https://static.cloudflareinsights.com` in `script-src` and `https://cloudflareinsights.com` in `connect-src`.
+
+The same file marks the `*.pages.dev` hostnames `noindex`, so only the apex is indexed.
+
 ## Redeploy
 
 Open the latest run of "Deploy frontend to Cloudflare Pages" under Actions and choose "Re-run all jobs".
