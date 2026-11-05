@@ -27,8 +27,8 @@ There was no restore procedure, and the workflows were not in git.
   It is a follow-up if losing `us-east-2` ever matters.
 - The DLM policy has no `prevent_destroy`.
   It is cheap to recreate, and the snapshots it made are kept when it goes.
-- Workflows are exported to `n8n/workflows/` by `scripts/export-n8n-workflows.sh`.
-  Credentials are not exported.
+- Workflows are backed up by downloading them from the editor.
+  Downloads do not include credentials.
 
 ## Migrating the existing instance
 
@@ -43,7 +43,7 @@ Everything marked "you run" is a manual command, and Connor runs all `tofu apply
    - Wait for it to reach `completed`.
    - Also copy the data off the host:
      `ssh ec2-user@<ip> 'sudo tar -C /opt -czf - n8n-data' > n8n-data-backup.tgz`.
-   - Run `scripts/export-n8n-workflows.sh`, commit the JSON, and keep the file somewhere safe.
+   - Download each workflow from the editor and keep the files somewhere safe.
 2. Create only the volume.
    - You run: `tofu apply -target=module.ec2.aws_ebs_volume.n8n_data`.
    - Read the plan first.
@@ -103,24 +103,16 @@ Use this if the volume is corrupted or the data is wrong.
 
 Use this on a fresh instance with an empty data volume, or if a workflow was deleted.
 
-1. Copy the files to the host: `scp -r n8n/workflows ec2-user@<ip>:/tmp/workflows`.
-2. Copy them into the container and import:
-   ```
-   c=$(sudo docker ps -q --filter "label=com.amazonaws.ecs.container-name=n8n")
-   sudo docker cp /tmp/workflows "$c":/tmp/workflows
-   sudo docker exec "$c" n8n import:workflow --separate --input=/tmp/workflows/
-   ```
-3. Imported workflows are deactivated by default.
-   Open each one in the editor and activate it.
-4. Credentials are not in git.
+1. In the editor, create a workflow and use Import from File with a downloaded workflow.
+2. Imported workflows start inactive.
+   Activate each one after checking it.
+3. Credentials are not in the downloads.
    Recreate them in the editor, then re-link them in the workflows that use them.
-5. Imported workflows keep their IDs.
-   Importing over an existing workflow with the same ID overwrites it.
 
 ## AMI bump
 
 1. Take a manual snapshot of the data volume: `aws ec2 create-snapshot --region us-east-2 --volume-id <data volume id>`.
-2. Run `scripts/export-n8n-workflows.sh` and commit any changes.
+2. Download any workflows that changed since the last backup.
 3. Update `ami_id` in `modules/ec2`, using the SSM command in the variable's description.
 4. You run: `tofu plan`.
    Check that only the instance, attachment, and EIP association are replaced, and the data volume is untouched.
@@ -131,4 +123,4 @@ Use this on a fresh instance with an empty data volume, or if a workflow was del
 ## Sources
 
 - AWS, "Map Amazon EBS volumes to NVMe device names": https://docs.aws.amazon.com/ebs/latest/userguide/identify-nvme-ebs-device.html
-- n8n CLI commands (`export:workflow`, `import:workflow`): https://docs.n8n.io/hosting/cli-commands/
+- n8n, "Export and import workflows": https://docs.n8n.io/workflows/export-import/
