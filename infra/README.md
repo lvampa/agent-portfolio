@@ -10,7 +10,7 @@ Highlights:
 - n8n data lives on its own encrypted EBS volume mounted at `/opt/n8n-data`, so replacing the instance keeps it.
 - The data volume has daily snapshots kept for 7 days (`n8n_snapshot_retention_count`).
 - Workflows are exported to `n8n/workflows/` with `scripts/export-n8n-workflows.sh`.
-- Migration, restore, re-import, and AMI bump steps are in [the data volume spec](../docs/specs/2026-10-31-n8n-data-volume.md).
+- Migration, restore, re-import, and AMI bump steps are in [the data volume spec](../docs/specs/n8n-data-volume.md).
 - The n8n encryption key is a write-only SSM parameter, so it never lands in state.
 - The tunnel token is a write-only SSM parameter too, but it is also in state as a sensitive data source value.
 
@@ -49,7 +49,7 @@ Set these in `terraform.tfvars` (or your chosen `*.tfvars` file).
 | `rate_limit_period_seconds` | Rate-limit period and block time (default `10`, the only value the free plan allows) |
 
 Access needs a Zero Trust organization on the account before the first apply.
-See `docs/specs/2026-10-31-cloudflare-tunnel.md` for the apply order and checks.
+See `docs/specs/cloudflare-tunnel.md` for the apply order and checks.
 
 **n8n (app config, sensitive):**
 
