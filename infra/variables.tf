@@ -69,7 +69,7 @@ variable "cloudflare_api_token" {
 }
 
 variable "cloudflare_account_id" {
-  description = "Cloudflare account ID, for the tunnel and Access (dashboard account Overview page)"
+  description = "Cloudflare account ID (dashboard account Overview page)"
   type        = string
 }
 

@@ -15,9 +15,9 @@ variables {
   worker_content = "export default {};"
 }
 
-# Apply, not plan, so the mocked subdomain is known. It only runs against the mock provider.
-run "applies" {
-  command = apply
+# Plan, not apply: the teardown after an apply would destroy the project, which prevent_destroy refuses.
+run "plans" {
+  command = plan
 
   module {
     source = "./modules/site"

@@ -125,7 +125,6 @@ jobs:
           SITE_URL: ${{ vars.SITE_URL }}
         run: |
           is_html() { grep -qF '</html>'; }
-          # The pages.dev deployment URL has no Worker route, so /info is only checked on the site.
           is_info() { jq -e '.timestamp' > /dev/null; }
           check() {
             for attempt in 1 2 3 4 5 6; do
@@ -139,6 +138,7 @@ jobs:
             echo "::error::$1 did not return the expected response ($2 failed)."
             return 1
           }
+          # The pages.dev deployment URL has no Worker route, so /info is only checked on the site.
           check "$DEPLOYMENT_URL" is_html
           check "$SITE_URL" is_html
           check "$SITE_URL/info" is_info

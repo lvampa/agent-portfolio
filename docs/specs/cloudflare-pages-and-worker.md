@@ -170,6 +170,9 @@ resource "cloudflare_workers_route" "info" {
   zone_id = var.zone_id
   pattern = "${var.hostname}/info*"
   script  = cloudflare_workers_script.info.script_name
+
+  # Pages may refuse a custom domain on a host that already has a Worker route.
+  depends_on = [cloudflare_pages_domain.apex]
 }
 ```
 
@@ -231,8 +234,7 @@ export default {
 ```
 
 `asn` stays a number when present, which `ClientInfoRequestSchema` accepts.
-Keep the current Worker's defaults for `ip` and `country` when porting.
-The schema allows null for both.
+`ip` and `country` are raw headers, null when missing, which the schema allows.
 
 ## Frontend changes
 
@@ -281,7 +283,8 @@ With `npm run dev`, `/info` is a 404 from `next dev`, so `useClientInfo` leaves 
 ### Infra
 
 `infra/tests/site.tftest.hcl`.
-It uses `command = apply`, which runs only against the mock provider, so the computed `subdomain` has a value.
+It uses `command = plan`, because the teardown after an apply would destroy the Pages project, which `prevent_destroy` refuses.
+The mock provider fills the computed `subdomain` from `mock_resource` defaults at plan too ([tofu test](https://opentofu.org/docs/cli/commands/test/)).
 
 ```hcl
 mock_provider "cloudflare" {
@@ -301,8 +304,8 @@ variables {
   worker_content = "export default {};"
 }
 
-run "applies" {
-  command = apply
+run "plans" {
+  command = plan
 
   module {
     source = "./modules/site"
