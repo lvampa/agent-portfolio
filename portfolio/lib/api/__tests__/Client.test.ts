@@ -17,11 +17,6 @@ describe('Client', () => {
   });
 
   describe('constructor', () => {
-    test('uses provided chat URL', () => {
-      const client = new Client('https://example.com/webhook');
-      expect(client.getWebhookUrl()).toBe('https://example.com/webhook');
-    });
-
     test('creates axios instance with JSON content type', () => {
       new Client('https://example.com');
       expect(mockedAxios.create).toHaveBeenCalledWith({

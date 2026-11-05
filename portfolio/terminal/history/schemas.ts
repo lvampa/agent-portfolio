@@ -27,6 +27,8 @@ export const ErrorItemSchema = z.object({
 export const ClientInfoItemSchema = z.object({
   type: z.literal('clientInfo'),
   info: UserInfoSchema,
+  // Same as a command item: the prompt `clientinfo` was typed after.
+  prompt: z.string(),
 });
 
 export const HistoryItemSchema = z.discriminatedUnion('type', [

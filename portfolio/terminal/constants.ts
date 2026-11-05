@@ -9,7 +9,7 @@ export const BANNER_LINES = [
 export const GUIDANCE_LINE = 'Ask about the author, or type help for other commands.';
 
 export const UNKNOWN_NAME = 'unknown';
-export const STAYING_UNKNOWN_LINE = `No name given. Staying as ${UNKNOWN_NAME}.`;
+export const UNCONFIRMED_IDENTITY_LINE = 'Unconfirmed identity';
 
 export const MAX_NAME_LENGTH = 20;
 

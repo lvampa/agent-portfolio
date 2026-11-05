@@ -26,7 +26,12 @@ describe('route', () => {
       'an awaiting mode sends the line to the question, then appends then',
       'connor',
       awaitingIdentify,
-      [echo('connor', identify.text), setName('connor'), printText(GUIDANCE_LINE)],
+      [
+        echo('connor', identify.text),
+        setName('connor'),
+        printText('Confirmed identity: connor'),
+        printText(GUIDANCE_LINE),
+      ],
     ],
     [
       'a command name matches case-insensitively',
