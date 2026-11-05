@@ -14,13 +14,18 @@ export const ClientInfo: React.FC<{ item: HistoryItemOf<'clientInfo'> }> = ({ it
     <div>
       <CommandPrompt>
         <TypingAnimation onStart={startAnimation} onComplete={endAnimation}>
-          Loading Client Information....
+          clientinfo
         </TypingAnimation>
       </CommandPrompt>
+      <div>
+        <TypingAnimation delay={400} onStart={startAnimation} onComplete={endAnimation}>
+          Loading Client Information....
+        </TypingAnimation>
+      </div>
       {item.info.map((infoItem) => (
         <div key={infoItem.label}>
           <TypingAnimation
-            delay={1000}
+            delay={1400}
             duration={10}
             onStart={startAnimation}
             onComplete={endAnimation}

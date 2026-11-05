@@ -5,7 +5,7 @@ describe('HistoryItemSchema', () => {
   test('drops an invalid stored item and keeps the valid ones', () => {
     const valid = [
       { type: 'text', text: '' },
-      { type: 'command', line: 'help', prompt: 'C:\\Users\\unknown >' },
+      { type: 'command', line: 'help', prompt: 'C:\\Users\\unknown>' },
       { type: 'clientInfo', info: [{ label: 'ip', value: '127.0.0.1' }] },
     ];
     // The old string-value shape, which no longer validates.

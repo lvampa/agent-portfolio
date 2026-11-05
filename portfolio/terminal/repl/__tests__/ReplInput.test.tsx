@@ -7,7 +7,7 @@ import userEvent from '@testing-library/user-event';
 import { InputForm } from '../InputForm';
 
 const emit = jest.fn();
-const PROMPT = 'C:\\Users\\unknown >';
+const PROMPT = 'C:\\Users\\unknown>';
 
 jest.mock('@terminal/repl/EventBusContext', () => ({
   useEventBus: () => ({ emit }),
