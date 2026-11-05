@@ -32,6 +32,15 @@ describe('ReplInput', () => {
       expect(input).toHaveFocus();
     });
 
+    test('When the user types, Then the drawn caret follows the text', async () => {
+      render(<InputForm isVisible={true} prompt={PROMPT} />);
+      const user = userEvent.setup();
+
+      await user.type(screen.getByLabelText('Input Prompt'), 'abc');
+
+      expect(screen.getByTestId('caret').style.left).toBe('calc(3ch - 0px)');
+    });
+
     test('When the user clicks elsewhere, Then focus returns to the prompt', async () => {
       render(<InputForm isVisible={true} prompt={PROMPT} />);
       const user = userEvent.setup();
