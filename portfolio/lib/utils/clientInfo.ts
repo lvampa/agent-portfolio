@@ -1,5 +1,4 @@
-import type { ClientInfo, ClientInfoRequest } from '@lib/hooks/types';
-import { UAParser } from 'ua-parser-js';
+import type { ChatVisitor, ClientInfo, ClientInfoRequest } from '@lib/hooks/types';
 
 import type { ParsedUA, UserInfo } from './types';
 
@@ -7,9 +6,11 @@ export type { ParsedUA, UserInfo, UserInfoItem } from './types';
 
 /**
  * Parse the current browser user agent. Returns null when run outside the browser (e.g. SSR).
+ * The parser loads on demand, so it stays out of the first bundle.
  */
-export function getParsedUA(): ParsedUA | null {
+export async function getParsedUA(): Promise<ParsedUA | null> {
   if (typeof window === 'undefined') return null;
+  const { UAParser } = await import('ua-parser-js');
   const result = new UAParser().getResult();
   return {
     ua: result.ua,
@@ -19,6 +20,12 @@ export function getParsedUA(): ParsedUA | null {
     engine: result.engine,
     cpu: result.cpu,
   };
+}
+
+/** document.referrer, or Direct when the visitor typed the address or the browser withheld it. Null outside the browser. */
+export function getReferrer(): string | null {
+  if (typeof document === 'undefined') return null;
+  return document.referrer || 'Direct';
 }
 
 const BOT_UA_PATTERNS =
@@ -56,12 +63,12 @@ function formatClient(parsedUA: ParsedUA): { browser: string; os: string; device
  * Returns null when parsedUA is missing (e.g. SSR).
  */
 export function buildUserInfoForUi(userInfo: ClientInfo): UserInfo | null {
-  const { request, parsedUA } = userInfo;
+  const { request, parsedUA, referrer } = userInfo;
   if (!parsedUA) return null;
   const location = formatLocation(request);
   const client = formatClient(parsedUA);
   const botRisk = getBotRisk(parsedUA);
-  const referer = request?.referer ?? '';
+  const referer = referrer ?? '';
   const ip = request?.ip ?? '';
 
   return [
@@ -73,4 +80,21 @@ export function buildUserInfoForUi(userInfo: ClientInfo): UserInfo | null {
     { label: 'botRisk', value: botRisk },
     { label: 'referer', value: referer },
   ];
+}
+
+/**
+ * The client info sent with each chat. Fields are listed one by one, so the IP and coordinates can never ride along.
+ */
+export function buildChatVisitor({ request, parsedUA, referrer }: ClientInfo): ChatVisitor {
+  const client = parsedUA ? formatClient(parsedUA) : null;
+  return {
+    city: request?.city ?? null,
+    country: request?.country ?? null,
+    organization: request?.organization ?? null,
+    browser: client?.browser ?? null,
+    os: client?.os ?? null,
+    device: client?.device ?? null,
+    referer: referrer,
+    botRisk: parsedUA ? getBotRisk(parsedUA) : null,
+  };
 }

@@ -2,7 +2,7 @@
 
 import { Terminal } from '@components/ui/shadcn-io/terminal';
 import { useClientInfo } from '@lib/hooks/useClientInfo';
-import { buildUserInfoForUi } from '@lib/utils/clientInfo';
+import { buildChatVisitor, buildUserInfoForUi } from '@lib/utils/clientInfo';
 import { AnimationProvider } from '@terminal/AnimationContext';
 import Repl from '@terminal/repl/Repl';
 import { useMemo } from 'react';
@@ -16,11 +16,13 @@ export default function Home() {
     [userInfo],
   );
 
+  const visitor = useMemo(() => buildChatVisitor(userInfo), [userInfo]);
+
   return (
     <main className="flex h-screen w-full justify-center">
       <Terminal>
         <AnimationProvider>
-          <Repl clientInfo={clientInfo} isClientInfoLoading={isLoading} />
+          <Repl clientInfo={clientInfo} isClientInfoLoading={isLoading} visitor={visitor} />
         </AnimationProvider>
       </Terminal>
     </main>

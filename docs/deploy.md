@@ -21,7 +21,7 @@ Set these under Settings, Secrets and variables, Actions.
 
 | Name | Kind | Scope | Used for |
 |------|------|-------|----------|
-| `CF_API_TOKEN` | Secret | `production` environment | Cloudflare token scoped to Pages edit |
+| `CF_API_TOKEN` | Secret | `production` environment | Account-owned Cloudflare token with Account > Pages > Edit only, with an expiry |
 | `CLOUDFLARE_ACCOUNT_ID` | Variable | Repository | Cloudflare account |
 | `CF_PAGES_PROJECT` | Variable | Repository | Pages project name |
 | `SITE_URL` | Variable | Repository | Production URL for the smoke check |
@@ -32,6 +32,16 @@ Tofu also sets the Pages project's production branch to `main`, in `infra/module
 The build fails if `NEXT_PUBLIC_CHAT_WEBHOOK_URL` is missing or not a URL, because `portfolio/lib/env.ts` validates it when `next.config.ts` loads.
 Client info needs no variable: the site calls `/info` on its own origin, which the client-info Worker serves.
 The deploy job fails early if `CLOUDFLARE_ACCOUNT_ID`, `CF_PAGES_PROJECT`, or `SITE_URL` is empty.
+
+## Security headers
+
+`portfolio/public/_headers` sets the Content-Security-Policy and the other security headers for every page, and Pages serves it as is.
+Nothing in it is derived at build time, so two changes need a hand edit there:
+
+- If the origin of `NEXT_PUBLIC_CHAT_WEBHOOK_URL` changes, change `connect-src` to match, or the chat is blocked.
+- Cloudflare Web Analytics would need `https://static.cloudflareinsights.com` in `script-src` and `https://cloudflareinsights.com` in `connect-src`.
+
+The same file marks the `*.pages.dev` hostnames `noindex`, so only the apex is indexed.
 
 ## Redeploy
 

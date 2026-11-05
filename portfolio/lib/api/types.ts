@@ -1,6 +1,5 @@
-import { type AxiosResponse } from 'axios';
-
+/** Resolves to the parsed JSON body, which callers validate. Rejects on a network error, a timeout, or a non-2xx status. */
 export interface ClientInterface {
-  post<T = unknown>(url: string, payload: unknown): Promise<AxiosResponse<T>>;
-  get<T = unknown>(url: string): Promise<AxiosResponse<T>>;
+  post(path: string, payload: unknown): Promise<unknown>;
+  get(path: string): Promise<unknown>;
 }

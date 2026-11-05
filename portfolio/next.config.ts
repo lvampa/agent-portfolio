@@ -6,8 +6,9 @@ import { env } from './lib/env';
 const baseConfig: NextConfig = {
   output: 'export',
   images: { unoptimized: true },
-  assetPrefix: './',
   transpilePackages: ['@t3-oss/env-nextjs', '@t3-oss/env-core'],
+  // The stylesheet is small, so inlining it saves a render-blocking request.
+  experimental: { inlineCss: true },
 };
 
 // Only the dev server rewrites, because a static export cannot.

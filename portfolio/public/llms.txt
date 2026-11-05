@@ -1,0 +1,19 @@
+# Connor's AI Agent
+
+> An AI agent, styled as a 90s command prompt, that answers questions about Connor Abdelnoor.
+> Connor is a software engineer who designs scalable enterprise software from user interfaces to infrastructure, leads high-performing teams, and works with executives to turn strategic goals into technical requirements.
+
+The agent needs JavaScript. Example questions:
+
+- What has Connor built on AWS?
+- How does Connor lead a team?
+- What tech does Connor use day to day?
+
+Connor works with AWS, React, Figma, infrastructure as code, RAG, and AI agents.
+
+## Links
+
+- [Connor's AI Agent](https://connorabdelnoor.com/): the interactive agent.
+- [Static portfolio](https://connorabdelnoor.github.io/): Connor's portfolio without the agent.
+- [GitHub](https://github.com/lvampa): Connor's code.
+- [LinkedIn](https://www.linkedin.com/in/connorabdelnoor/): Connor's work history.

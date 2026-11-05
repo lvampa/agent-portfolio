@@ -25,6 +25,8 @@ export default {
       headers: {
         'Content-Type': 'application/json',
         'Cache-Control': 'no-store',
+        // The JSON describes one visitor, so it should never show up in search.
+        'X-Robots-Tag': 'noindex',
       },
     });
   },

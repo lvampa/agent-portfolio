@@ -1,5 +1,6 @@
 'use client';
 
+import { randomUuid } from '@lib/utils/uuid';
 import React, {
   createContext,
   startTransition,
@@ -18,9 +19,11 @@ import { normalizeSession } from './utils';
 interface SessionContextValue {
   name: string | null;
   mode: Mode;
+  sessionId: string;
   hasLoaded: boolean;
   setName: (name: string) => void;
   setMode: (mode: Mode) => void;
+  newConversation: () => void;
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null);
@@ -61,9 +64,21 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     );
   }, []);
 
+  const newConversation = useCallback(() => {
+    setSession((previous) => ({ ...previous, sessionId: randomUuid() }));
+  }, []);
+
   const value = useMemo(
-    () => ({ name: session.name, mode: session.mode, hasLoaded, setName, setMode }),
-    [session, hasLoaded, setName, setMode],
+    () => ({
+      name: session.name,
+      mode: session.mode,
+      sessionId: session.sessionId,
+      hasLoaded,
+      setName,
+      setMode,
+      newConversation,
+    }),
+    [session, hasLoaded, setName, setMode, newConversation],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

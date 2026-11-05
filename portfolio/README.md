@@ -34,7 +34,31 @@ Without `DEV_INFO_URL`, dev runs without client info.
 
 ## How it talks to n8n
 
-`lib/hooks/useChat.ts` sends `POST <NEXT_PUBLIC_CHAT_WEBHOOK_URL>/webhooks` with `{ "chatInput": "<message>" }`.
+`lib/hooks/useChat.ts` sends `POST <NEXT_PUBLIC_CHAT_WEBHOOK_URL>/webhooks` with:
+
+```json
+{
+  "chatInput": "<message>",
+  "sessionId": "<uuid>",
+  "name": "<name or null>",
+  "client": {
+    "city": "<or null>",
+    "country": "<or null>",
+    "organization": "<or null>",
+    "browser": "<or null>",
+    "os": "<or null>",
+    "device": "<or null>",
+    "referer": "<or null>",
+    "botRisk": "<low, high, or null>"
+  }
+}
+```
+
+`sessionId` keys the agent's memory.
+It is a new UUID on `cls` and whenever the startup replays, and `whoami` shows it.
+`client` comes from the client info and the UA parse, with nulls when they did not load.
+`referer` is `document.referrer` (`Direct` when empty), not the Worker's header, which only sees the page itself.
+The IP, latitude, and longitude are never sent.
 The workflow replies with a JSON array of `{ "output": "<text>" }` items.
 The response is validated with Zod, and each item is added to the history as a message.
 History and the session are kept in `localStorage`, and items that fail validation are dropped on load.

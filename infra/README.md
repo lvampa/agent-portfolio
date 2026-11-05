@@ -52,7 +52,7 @@ Set these in `terraform.tfvars` (or your chosen `*.tfvars` file).
 
 | Variable | Meaning |
 |----------|---------|
-| `cloudflare_api_token` | API token (sensitive). Permissions: Account > Cloudflare Tunnel > Edit, Account > Cloudflare Pages > Edit, Account > Workers Scripts > Edit, Zone > DNS > Edit, Zone > Zone WAF > Edit (the editor rule and the rate limit), Zone > Workers Routes > Edit, Zone > Single Redirect > Edit. |
+| `cloudflare_api_token` | API token (sensitive). Permissions: Account > Cloudflare Tunnel > Edit, Account > Pages > Edit, Account > Workers > Editor (not the Legacy Workers Scripts), Zone > DNS > Write, Zone > Zone WAF > Edit (the editor rule and the rate limit), Zone > Workers Routes > Edit, Zone > Single Redirect > Edit (may show as Dynamic URL Redirects Write). See the token list in [the Pages and Worker spec](../docs/specs/cloudflare-pages-and-worker.md). |
 | `cloudflare_account_id` | Account ID from the Cloudflare dashboard account Overview |
 | `cloudflare_zone_id` | Zone ID from Cloudflare dashboard → zone Overview |
 | `api_hostname` | Hostname for n8n webhooks, e.g. `api.example.com`. Only `/webhook/*` is served. |

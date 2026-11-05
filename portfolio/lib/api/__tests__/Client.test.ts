@@ -1,64 +1,66 @@
-import axios from 'axios';
-
 import { Client } from '../Client';
+import { REQUEST_TIMEOUT_MS } from '../constants';
 
-jest.mock('axios');
-
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+// jsdom has no Response, so this has only the fields Client reads.
+function jsonResponse(body: unknown, status = 200) {
+  return { ok: status >= 200 && status < 300, status, json: async () => body };
+}
 
 describe('Client', () => {
-  const mockPost = jest.fn();
+  let fetchSpy: jest.SpyInstance;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockedAxios.create = jest.fn().mockReturnValue({
-      post: mockPost,
-    });
+    fetchSpy = jest.spyOn(globalThis, 'fetch');
   });
 
-  describe('constructor', () => {
-    test('creates axios instance with JSON content type', () => {
-      new Client('https://example.com');
-      expect(mockedAxios.create).toHaveBeenCalledWith({
-        baseURL: 'https://example.com',
-        timeout: 30_000,
-        headers: { 'Content-Type': 'application/json' },
-      });
-    });
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
-  describe('post', () => {
-    test('sends POST request with payload and returns response data', async () => {
-      const response = { reply: 'Hello back' };
-      mockPost.mockResolvedValue({ data: response });
+  test('post sends JSON with a timeout and returns the parsed body', async () => {
+    const timeoutSpy = jest.spyOn(AbortSignal, 'timeout');
+    fetchSpy.mockResolvedValue(jsonResponse([{ output: 'hi' }]));
 
-      const client = new Client('https://example.com/webhook');
-      const result = await client.post('', { message: 'Hello' });
-
-      expect(mockPost).toHaveBeenCalledTimes(1);
-      expect(mockPost).toHaveBeenCalledWith('', { message: 'Hello' });
-      expect(result.data).toEqual(response);
+    const body = await new Client('https://agent.example.com/webhook/abc').post('webhooks', {
+      chatInput: 'hello',
     });
 
-    test('propagates axios errors', async () => {
-      const networkError = new Error('Network Error');
-      mockPost.mockRejectedValue(networkError);
-
-      const client = new Client('https://example.com/webhook');
-
-      await expect(client.post('', { message: 'Hi' })).rejects.toThrow('Network Error');
+    const [, init] = fetchSpy.mock.calls[0];
+    expect(init).toMatchObject({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chatInput: 'hello' }),
     });
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+    expect(timeoutSpy).toHaveBeenCalledWith(REQUEST_TIMEOUT_MS);
+    expect(body).toEqual([{ output: 'hi' }]);
+  });
 
-    test('returns typed response when generic is provided', async () => {
-      const response = { id: 1, text: 'typed' };
-      mockPost.mockResolvedValue({ data: response });
+  // A plain new URL(path, base) would drop the base's last segment, so the path is appended instead.
+  test.each([
+    ['https://x/webhook', 'webhooks'],
+    ['https://x/webhook/', 'webhooks'],
+    ['https://x/webhook', '/webhooks'],
+    ['https://x/webhook/', '/webhooks'],
+  ])('base %p plus path %p is https://x/webhook/webhooks', async (base, path) => {
+    fetchSpy.mockResolvedValue(jsonResponse([]));
 
-      const client = new Client('https://example.com/webhook');
-      const result = await client.post<{ id: number; text: string }>('', { message: 'Hi' });
+    await new Client(base).post(path, {});
 
-      expect(result.data).toEqual(response);
-      expect(result.data.id).toBe(1);
-      expect(result.data.text).toBe('typed');
-    });
+    expect(String(fetchSpy.mock.calls[0][0])).toBe('https://x/webhook/webhooks');
+  });
+
+  test('a relative base such as /info resolves against the page origin', async () => {
+    fetchSpy.mockResolvedValue(jsonResponse({ timestamp: 'now' }));
+
+    await new Client('/info').get('');
+
+    expect(String(fetchSpy.mock.calls[0][0])).toBe(`${window.location.origin}/info`);
+  });
+
+  test('a non-2xx status rejects, so callers treat it as a failure', async () => {
+    fetchSpy.mockResolvedValue(jsonResponse({ error: 'nope' }, 502));
+
+    await expect(new Client('/info').get('')).rejects.toThrow('Request failed with status 502');
   });
 });

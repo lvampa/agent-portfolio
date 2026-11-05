@@ -1,3 +1,5 @@
+import { randomUuid } from '@lib/utils/uuid';
+
 import { DEFAULT_SESSION, MAX_NAME_LENGTH, UNKNOWN_NAME } from './constants';
 import type { HistoryItem, ListRow } from './history/types';
 import type { Effect, InputState, InputStateInput, QuestionId, Session } from './types';
@@ -39,9 +41,9 @@ export function acceptsInput(inputState: InputState): boolean {
 
 /** Re-sanitizes a stored name, so an edited value cannot break the prompt. */
 export function normalizeSession(stored: Session | null): Session {
-  if (!stored) return DEFAULT_SESSION;
+  if (!stored) return { ...DEFAULT_SESSION, sessionId: randomUuid() };
   const name = stored.name === null ? null : sanitizeName(stored.name);
-  return { name, mode: stored.mode };
+  return { name, mode: stored.mode, sessionId: stored.sessionId };
 }
 
 export function print(item: HistoryItem): Effect {
@@ -62,6 +64,10 @@ export function echo(line: string, prompt: string): Effect {
 
 export function clearScreen(): Effect {
   return { type: 'clear' };
+}
+
+export function newConversation(): Effect {
+  return { type: 'newConversation' };
 }
 
 export function setName(name: string): Effect {

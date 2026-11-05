@@ -11,7 +11,12 @@ const ping: Command = {
   description: 'Replies pong.',
   run: () => [printText('pong')],
 };
-const state: TerminalState = { name: null, clientInfo: null, commands: createRegistry([ping]) };
+const state: TerminalState = {
+  name: null,
+  sessionId: 'session-1',
+  clientInfo: null,
+  commands: createRegistry([ping]),
+};
 const commandMode: Mode = { type: 'command' };
 const awaitingIdentify: Mode = {
   type: 'awaiting',

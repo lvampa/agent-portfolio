@@ -1,3 +1,4 @@
+import type { ChatVisitor } from '@lib/hooks/types';
 import useChat from '@lib/hooks/useChat';
 import { useHistory } from '@terminal/history/HistoryContext';
 import { createInterpreter } from '@terminal/interpreter';
@@ -9,9 +10,9 @@ import { useCallback, useMemo, useState } from 'react';
  * Adapts the contexts and useChat to the interpreter's ports.
  * `busy` spans the whole apply of any list with a chat, so the input returns in the same render as the reply.
  */
-export function useInterpreter() {
+export function useInterpreter(visitor: ChatVisitor) {
   const { append, clear } = useHistory();
-  const { setName, setMode } = useSession();
+  const { name, sessionId, setName, setMode, newConversation } = useSession();
   const { sendMessage } = useChat();
   const [chatsInFlight, setChatsInFlight] = useState(0);
 
@@ -19,10 +20,13 @@ export function useInterpreter() {
     () =>
       createInterpreter({
         history: { append, clear },
-        session: { setName, setMode },
-        chat: { send: async (message) => (await sendMessage(message)) ?? null },
+        session: { setName, setMode, newConversation },
+        chat: {
+          send: async (message) =>
+            (await sendMessage({ chatInput: message, sessionId, name, client: visitor })) ?? null,
+        },
       }),
-    [append, clear, setName, setMode, sendMessage],
+    [append, clear, setName, setMode, newConversation, sendMessage, sessionId, name, visitor],
   );
 
   const apply = useCallback(

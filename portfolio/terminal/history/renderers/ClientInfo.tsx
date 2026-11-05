@@ -1,8 +1,8 @@
 import { CommandPrompt } from '@components/ui/command-prompt';
 import { TypingAnimation } from '@components/ui/shadcn-io/terminal';
+import { usePrefersReducedMotion } from '@lib/hooks/usePrefersReducedMotion';
 import { useAnimation } from '@terminal/AnimationContext';
 import { infoTerm } from '@terminal/utils';
-import { useReducedMotion } from 'motion/react';
 import React, { useEffect, useState } from 'react';
 
 import { Columns } from './Columns';
@@ -43,7 +43,7 @@ function Line({ text, isRestored, delay, duration }: LineProps) {
 
 // Laid out from the start, so the label column has its final width and the values never slide.
 function Label({ text, isRestored, delay }: { text: string; isRestored: boolean; delay: number }) {
-  const prefersReducedMotion = useReducedMotion() === true;
+  const prefersReducedMotion = usePrefersReducedMotion();
   const isInstant = isRestored || prefersReducedMotion;
   const [hasAppeared, setHasAppeared] = useState(false);
 

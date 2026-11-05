@@ -11,6 +11,10 @@ const effectHandlers: EffectHandlers = {
     ports.history.clear();
     return 'continue';
   },
+  newConversation: (_effect, { ports }) => {
+    ports.session.newConversation();
+    return 'continue';
+  },
   setName: ({ name }, { ports }) => {
     ports.session.setName(name);
     return 'continue';

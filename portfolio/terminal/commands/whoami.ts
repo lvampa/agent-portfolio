@@ -8,6 +8,7 @@ export const whoami: Command = {
   run: (state) => [
     printList([
       { term: infoTerm('name'), detail: state.name ?? UNKNOWN_NAME },
+      { term: infoTerm('session'), detail: state.sessionId },
       ...(state.clientInfo ?? []).map(({ label, value }) => ({
         term: infoTerm(label),
         detail: value,

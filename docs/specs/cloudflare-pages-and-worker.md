@@ -265,17 +265,23 @@ With `npm run dev`, `/info` is a 404 from `next dev`, so `useClientInfo` leaves 
 
 ## Tokens
 
-**Tofu token (`cloudflare_api_token`)**, final list:
+**Tofu token (`cloudflare_api_token`)**, as named in the token editor in November 2026, and proven by the first full apply:
 
-- Account > Cloudflare Tunnel > Edit (existing)
-- Account > Cloudflare Pages > Edit (new)
-- Account > Workers Scripts > Edit (new)
-- Zone > DNS > Edit (existing)
-- Zone > Zone WAF > Edit (existing, for the rate-limit ruleset)
-- Zone > Workers Routes > Edit (new)
-- Zone > Single Redirect > Edit (new, for the `http_request_dynamic_redirect` ruleset)
+- Account > Cloudflare Tunnel > Edit
+- Account > Pages > Edit
+- Account > Workers > Editor.
+  Cloudflare replaced the per-feature Workers permissions with one permission that has levels, and marks the old "Workers Scripts" as Legacy.
+  Editor is the lowest level that can upload a script; raise it to Admin if a Workers call returns 403.
+- Zone > DNS > Write
+- Zone > Zone WAF > Edit, for the editor's custom rule and the rate-limit ruleset
+- Zone > Workers Routes > Edit
+- Zone > Single Redirect > Edit, for the `http_request_dynamic_redirect` ruleset.
+  The editor may show it as Dynamic URL Redirects Write.
 
-**Deploy token (`CF_API_TOKEN`)**: unchanged, Account > Cloudflare Pages > Edit only.
+No Access permission: the editor is protected by the WAF rule, not Cloudflare Access.
+
+**Deploy token (`CF_API_TOKEN`)**: an account-owned token with Account > Pages > Edit only, scoped to the one account, with an expiry about a year out.
+It lives only in the `production` environment.
 
 ## Tests
 
@@ -360,7 +366,7 @@ Nothing is live today, so the steps favor simple over seamless.
      curl -s -H "Authorization: Bearer $TOFU_TOKEN" "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/rulesets" | jq '.result[] | {id, phase, kind, name}'
      ```
    - Note the Worker's compatibility date, flags, bindings, and observability in the dashboard, so the config matches them.
-2. **Widen the tofu token** with the four new permissions.
+2. **Set the tofu token's permissions** to the list in Tokens.
 3. **Delete the dead records by hand:** the apex record that pointed at AWS, any `www` record, and the `/info*` route.
    Tofu creates all three fresh, with the route after the Pages domain, so Pages never sees a route on a host it is being added to.
    If a zone ruleset with phase `http_request_dynamic_redirect` exists, delete it too.

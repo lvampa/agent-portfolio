@@ -3,7 +3,12 @@ import { identify } from '../questions';
 import type { TerminalState } from '../types';
 import { printText, setName } from '../utils';
 
-const state: TerminalState = { name: null, clientInfo: null, commands: [] };
+const state: TerminalState = {
+  name: null,
+  sessionId: 'session-1',
+  clientInfo: null,
+  commands: [],
+};
 
 describe('identify', () => {
   test('a name sets it and confirms it', () => {

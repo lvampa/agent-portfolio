@@ -22,7 +22,8 @@ export const QUESTION_IDS = {
 
 export const COMMAND_MODE: Mode = { type: 'command' };
 
-export const DEFAULT_SESSION: Session = { name: null, mode: COMMAND_MODE };
+// No sessionId, because each new session needs its own.
+export const DEFAULT_SESSION: Omit<Session, 'sessionId'> = { name: null, mode: COMMAND_MODE };
 
 // The version lives in the key, so a format change starts visitors fresh instead of migrating.
 export const STORAGE_KEYS = {
