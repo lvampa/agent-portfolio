@@ -26,7 +26,9 @@ export function InputForm({ isVisible, prompt }: { isVisible: boolean; prompt: s
   function syncCaret() {
     const input = inputElementRef.current;
     if (!input) return;
-    setCaret({ index: input.selectionStart ?? input.value.length, scrollLeft: input.scrollLeft });
+    const caretIndex =
+      input.selectionDirection === 'backward' ? input.selectionStart : input.selectionEnd;
+    setCaret({ index: caretIndex ?? input.value.length, scrollLeft: input.scrollLeft });
   }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -48,13 +50,13 @@ export function InputForm({ isVisible, prompt }: { isVisible: boolean; prompt: s
           <Input
             id="input-prompt"
             ref={inputElementRef}
-            className="caret-transparent"
             value={value}
             onChange={(e) => {
               setValue(e.target.value);
               syncCaret();
             }}
             onSelect={syncCaret}
+            onScroll={syncCaret}
             onFocus={() => setIsFocused(true)}
             onBlur={() => setIsFocused(false)}
             autoFocus
@@ -64,7 +66,7 @@ export function InputForm({ isVisible, prompt }: { isVisible: boolean; prompt: s
             <span
               aria-hidden
               data-testid="caret"
-              className="bg-terminal animate-caret-blink pointer-events-none absolute top-1/2 h-[1.1em] w-2 -translate-y-1/2"
+              className="bg-terminal animate-caret-blink pointer-events-none absolute top-1/2 h-[1.1em] w-2 -translate-y-1/2 motion-reduce:animate-none"
               style={{ left: `calc(${caret.index}ch - ${caret.scrollLeft}px)` }}
             />
           )}

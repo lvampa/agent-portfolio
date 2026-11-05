@@ -31,6 +31,11 @@ const mockedClearSession = sessionStore.clear as jest.Mock;
 const IDENTIFY_PROMPT = 'Please Identify:';
 const EARLIER_LINE = 'an earlier line';
 
+// NODE_ENV is typed read-only, so tests write it through a widened view of process.env.
+function setNodeEnv(value: string | undefined) {
+  (process.env as Record<string, string | undefined>).NODE_ENV = value;
+}
+
 function renderRepl() {
   render(
     <EventBusProvider>
@@ -66,17 +71,24 @@ describe('Repl', () => {
     expect(screen.getByText('C:\\Users\\tester >')).toBeInTheDocument();
   });
 
-  test('restored history skips the startup', async () => {
-    mockedLoadHistory.mockReturnValue([{ type: 'text', text: EARLIER_LINE }]);
+  test('restored history skips the startup and is inside the log when it mounts', async () => {
+    let logBeforeLoad: HTMLElement | null = null;
+    mockedLoadHistory.mockImplementation(() => {
+      logBeforeLoad = screen.queryByRole('log');
+      return [{ type: 'text', text: EARLIER_LINE }];
+    });
     mockedLoadSession.mockReturnValue({ name: 'tester', mode: { type: 'command' } });
     renderRepl();
 
     expect(await screen.findByLabelText('Input Prompt')).toBeInTheDocument();
+    expect(logBeforeLoad).toBeNull();
     expect(screen.getByRole('log')).toHaveTextContent(EARLIER_LINE);
     expect(screen.queryByText(BANNER_LINES[0])).not.toBeInTheDocument();
   });
 
-  test('NEXT_PUBLIC_NO_HISTORY clears both stores and replays the startup', async () => {
+  test('NEXT_PUBLIC_NO_HISTORY clears both stores and replays the startup in development', async () => {
+    const originalNodeEnv = process.env.NODE_ENV;
+    setNodeEnv('development');
     process.env.NEXT_PUBLIC_NO_HISTORY = 'true';
     mockedLoadHistory.mockReturnValue([{ type: 'text', text: EARLIER_LINE }]);
     mockedLoadSession.mockReturnValue({ name: 'tester', mode: { type: 'command' } });
@@ -89,6 +101,7 @@ describe('Repl', () => {
       expect(mockedClearSession).toHaveBeenCalled();
     } finally {
       delete process.env.NEXT_PUBLIC_NO_HISTORY;
+      setNodeEnv(originalNodeEnv);
     }
   });
 

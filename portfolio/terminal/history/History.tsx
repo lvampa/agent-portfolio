@@ -7,7 +7,10 @@ import type { HistoryItem } from './types';
 type AnyRenderer = React.FC<{ item: HistoryItem }>;
 
 export function History() {
-  const { items } = useHistory();
+  const { items, hasLoaded } = useHistory();
+
+  // Mounting the log after load keeps restored items from being announced as new.
+  if (!hasLoaded) return null;
 
   return (
     <div role="log">

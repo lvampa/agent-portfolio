@@ -74,7 +74,7 @@ export const TypingAnimation = ({
 
   return (
     <motion.span className={cn('tracking-tight', className)} {...props}>
-      <span className="sr-only">{children}</span>
+      <span className="sr-only select-none">{children}</span>
       <span aria-hidden>{displayedText}</span>
     </motion.span>
   );

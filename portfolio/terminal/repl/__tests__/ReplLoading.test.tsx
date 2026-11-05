@@ -11,4 +11,10 @@ describe('ReplLoading', () => {
     expect(screen.getByRole('status')).toHaveTextContent('... Loading');
     expect(screen.getByText('... Loading')).toHaveClass('sr-only');
   });
+
+  test('keeps an empty status region mounted when hidden', () => {
+    render(<ReplLoading isVisible={false} />);
+
+    expect(screen.getByRole('status')).toBeEmptyDOMElement();
+  });
 });

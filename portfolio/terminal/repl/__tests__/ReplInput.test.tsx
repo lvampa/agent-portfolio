@@ -35,6 +35,15 @@ describe('ReplInput', () => {
       expect(screen.getByTestId('caret').style.left).toBe('calc(3ch - 0px)');
     });
 
+    test('When the user moves left, Then the drawn caret moves with the cursor', async () => {
+      render(<InputForm isVisible={true} prompt={PROMPT} />);
+      const user = userEvent.setup();
+
+      await user.type(screen.getByLabelText('Input Prompt'), 'abc{ArrowLeft}{ArrowLeft}');
+
+      expect(screen.getByTestId('caret').style.left).toBe('calc(1ch - 0px)');
+    });
+
     test('When the user clicks elsewhere, Then focus returns to the prompt', async () => {
       render(<InputForm isVisible={true} prompt={PROMPT} />);
       const user = userEvent.setup();
