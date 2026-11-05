@@ -4,7 +4,7 @@ Highlights:
 - n8n on one arm64 EC2 instance, run by ECS as a single task with cloudflared, Caddy and n8n.
 - A Cloudflare Tunnel carries all web traffic. The `cloudflared` sidecar dials out, so no web port is open on the instance.
 - The only inbound rule is SSH from your home IP.
-- A Cloudflare Access application lets only your home IP reach `admin_hostname`.
+- A Cloudflare WAF custom rule lets only your home IP reach `admin_hostname`.
 - `api_hostname` serves only `/webhook/*`, capped at 4 KB per request and rate limited per IP at the edge.
 - `admin_hostname` serves the editor.
 - n8n data lives on its own encrypted EBS volume mounted at `/opt/n8n-data`, so replacing the instance keeps it.
@@ -20,9 +20,19 @@ Highlights:
 
 - **AWS** – VPC, EC2, ECS, SSM Parameter Store, Data Lifecycle Manager, S3 (state)
 - **OpenTofu** – IaC (`tofu` CLI)
-- **Cloudflare** – DNS, HTTPS, Tunnel, Access, rate limiting, Pages, Workers, redirect rules
+- **Cloudflare** – DNS, HTTPS, Tunnel, WAF custom rules, rate limiting, Pages, Workers, redirect rules
 
 ## Setup
+
+Before the first apply:
+
+1. Create the AWS CLI profile `portfolio` (below).
+2. Fill in `terraform.tfvars` (below).
+3. Right after the first apply, open `admin_hostname` and create the n8n owner account.
+
+Tofu uses the AWS CLI profile `portfolio`, for both the state backend and the provider.
+Its access keys go in `~/.aws/credentials`.
+Pass `--region us-east-2` to `aws` commands if the profile has no region.
 
 Set the required variables in `terraform.tfvars`, or another `*.tfvars` file.
 Real `*.tfvars` files are in `.gitignore`.
@@ -36,13 +46,13 @@ Set these in `terraform.tfvars` (or your chosen `*.tfvars` file).
 | Variable | Meaning |
 |----------|---------|
 | `ec2_keypair_name` | Name of the EC2 key pair used for SSH. Key pairs are per region, so create it in `us-east-2`. |
-| `home_ip_cidr` | Your IP in CIDR form (e.g. `1.2.3.4/32`) so the security group allows SSH only from you |
+| `home_ip_cidr` | Your home IP as CIDR (e.g. `1.2.3.4/32`). The only source allowed to SSH in and to open the n8n editor. IPv4, `/24` to `/32`. |
 
-**Cloudflare (tunnel, DNS, Access, rate limit, site):**
+**Cloudflare (tunnel, DNS, WAF rules, site):**
 
 | Variable | Meaning |
 |----------|---------|
-| `cloudflare_api_token` | API token (sensitive). Permissions: Account > Cloudflare Tunnel > Edit, Account > Access: Apps and Policies > Edit, Account > Cloudflare Pages > Edit, Account > Workers Scripts > Edit, Zone > DNS > Edit, Zone > Zone WAF > Edit, Zone > Workers Routes > Edit, Zone > Single Redirect > Edit. |
+| `cloudflare_api_token` | API token (sensitive). Permissions: Account > Cloudflare Tunnel > Edit, Account > Cloudflare Pages > Edit, Account > Workers Scripts > Edit, Zone > DNS > Edit, Zone > Zone WAF > Edit (the editor rule and the rate limit), Zone > Workers Routes > Edit, Zone > Single Redirect > Edit. |
 | `cloudflare_account_id` | Account ID from the Cloudflare dashboard account Overview |
 | `cloudflare_zone_id` | Zone ID from Cloudflare dashboard → zone Overview |
 | `api_hostname` | Hostname for n8n webhooks, e.g. `api.example.com`. Only `/webhook/*` is served. |
@@ -52,9 +62,8 @@ Set these in `terraform.tfvars` (or your chosen `*.tfvars` file).
 | `pages_project_name` | Pages project for the frontend. Changing it replaces the project, which `prevent_destroy` blocks. |
 | `site_hostname` | Apex hostname of the frontend, e.g. `example.com`. `www` redirects here. |
 
-Access needs a Zero Trust organization on the account before the first apply.
 See `docs/specs/cloudflare-tunnel.md` for the apply order and checks.
-The client-info Worker predates tofu and was imported, as in [the Pages and Worker spec](../docs/specs/cloudflare-pages-and-worker.md).
+The client-info Worker predates tofu. It was deleted by hand and recreated by tofu under the same name, as in [the Pages and Worker spec](../docs/specs/cloudflare-pages-and-worker.md).
 
 **n8n (app config, sensitive):**
 

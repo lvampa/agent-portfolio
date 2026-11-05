@@ -23,8 +23,8 @@ The browser calls it cross-origin through `NEXT_PUBLIC_INFO_URL`.
 
 ## Decision
 
-- The Worker stays its own Worker, imported into tofu as `cloudflare_workers_script` with its source at `infra/workers/info/index.js`.
-- Its route `connorabdelnoor.com/info*` is imported as `cloudflare_workers_route`.
+- The Worker stays its own Worker, managed by tofu as `cloudflare_workers_script` with its source at `infra/workers/info/index.js`, and `cloudflare_workers_script_subdomain` keeps its `workers.dev` URL on for `DEV_INFO_URL`.
+- Its route `connorabdelnoor.com/info*` is created as `cloudflare_workers_route`.
 - Tofu creates the Pages project as direct upload and protects it with `prevent_destroy`.
 - Tofu adds the apex custom domain and points the apex record at the project.
 - The frontend calls the relative path `/info` in every environment.
@@ -42,8 +42,8 @@ In `internal/services/*/schema.go` at `v5.28.0`, these attributes have `Requires
   Changing an A or AAAA record to a CNAME is a destroy, then a create.
 - `cloudflare_pages_project.name` and `cloudflare_pages_domain.name`.
 
-`cloudflare_workers_script.content` is not read back from the API (`json:"-"` in `model.go`).
-So after import, the first plan shows an in-place update that uploads the repo source.
+`cloudflare_workers_script.content` is not read back from the API (`json:"-"` in `model.go`), so an imported Worker would always show a content update.
+The migration deletes the old Worker and lets tofu create it instead.
 
 **The API does not create the Pages CNAME.**
 The `cloudflare_pages_domain` doc says "A DNS record for the domain is not automatically created" ([pages_domain.md](https://github.com/cloudflare/terraform-provider-cloudflare/blob/v5.28.0/docs/resources/pages_domain.md)).
@@ -86,7 +86,7 @@ Pinned provider: `cloudflare/cloudflare ~> 5.28`, locked at `5.28.0`.
 | `cloudflare_dns_record` (apex) | Created, after the old record is deleted | `<zone_id>/<dns_record_id>` | [dns_record.md](https://github.com/cloudflare/terraform-provider-cloudflare/blob/v5.28.0/docs/resources/dns_record.md) |
 | `cloudflare_dns_record` (`www`) | Created | `<zone_id>/<dns_record_id>` | same |
 | `cloudflare_ruleset` (redirect) | Created | `zones/<zone_id>/<ruleset_id>` | [ruleset.md](https://github.com/cloudflare/terraform-provider-cloudflare/blob/v5.28.0/docs/resources/ruleset.md) |
-| `cloudflare_workers_script` | Imported | `<account_id>/<script_name>` | [workers_script.md](https://github.com/cloudflare/terraform-provider-cloudflare/blob/v5.28.0/docs/resources/workers_script.md) |
+| `cloudflare_workers_script` | Created, after the old Worker is deleted | `<account_id>/<script_name>` | [workers_script.md](https://github.com/cloudflare/terraform-provider-cloudflare/blob/v5.28.0/docs/resources/workers_script.md) |
 | `cloudflare_workers_route` | Created, after the old route is deleted | `<zone_id>/<route_id>` | [workers_route.md](https://github.com/cloudflare/terraform-provider-cloudflare/blob/v5.28.0/docs/resources/workers_route.md) |
 
 ### Module `infra/modules/site`
@@ -268,7 +268,6 @@ With `npm run dev`, `/info` is a 404 from `next dev`, so `useClientInfo` leaves 
 **Tofu token (`cloudflare_api_token`)**, final list:
 
 - Account > Cloudflare Tunnel > Edit (existing)
-- Account > Access: Apps and Policies > Edit (existing)
 - Account > Cloudflare Pages > Edit (new)
 - Account > Workers Scripts > Edit (new)
 - Zone > DNS > Edit (existing)
@@ -366,12 +365,9 @@ Nothing is live today, so the steps favor simple over seamless.
    Tofu creates all three fresh, with the route after the Pages domain, so Pages never sees a route on a host it is being added to.
    If a zone ruleset with phase `http_request_dynamic_redirect` exists, delete it too.
 4. **Infra PR: the whole `site` module**, with `pages_project_name` and `site_hostname` in `terraform.tfvars`.
-   After it merges, from `infra/`, import only the Worker:
-   ```bash
-   tofu import 'module.site.cloudflare_workers_script.info' "$ACCOUNT_ID/solitary-breeze-9668"
-   ```
-   `tofu plan` must show creates for the Pages project, Pages domain, apex and `www` records, ruleset, and route, plus an in-place update to the Worker, and no destroys.
-   If the Worker shows other diffs, such as observability or bindings, copy them into the config until only the content update remains.
+   Delete the old `solitary-breeze-9668` Worker in the dashboard first; tofu recreates it under the same name, so its `workers.dev` URL stays the same.
+   Recreating it was simpler than importing it, because the Worker had no bindings or settings worth keeping.
+   `tofu plan` must show only creates, for the Pages project, Pages domain, apex and `www` records, ruleset, Worker, its `workers.dev` setting, and route, and no destroys.
    Apply, then plan again: it must be empty.
 5. **Set the GitHub variables from outputs:**
    ```bash

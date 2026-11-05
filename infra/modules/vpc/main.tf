@@ -1,3 +1,8 @@
+# A literal count, not length(aws_subnet.public), so tofu import can evaluate the route table associations.
+locals {
+  public_subnet_count = 2
+}
+
 resource "aws_vpc" "this" {
   cidr_block           = var.cidr_block
   enable_dns_support   = true
@@ -16,7 +21,7 @@ resource "aws_internet_gateway" "this" {
 
 # Public subnets for the EC2 instance
 resource "aws_subnet" "public" {
-  count                   = 2
+  count                   = local.public_subnet_count
   vpc_id                  = aws_vpc.this.id
   cidr_block              = cidrsubnet(aws_vpc.this.cidr_block, 8, count.index)
   map_public_ip_on_launch = true
@@ -34,7 +39,7 @@ resource "aws_route_table" "public" {
 }
 
 resource "aws_route_table_association" "public_assoc" {
-  count          = length(aws_subnet.public)
+  count          = local.public_subnet_count
   subnet_id      = aws_subnet.public[count.index].id
   route_table_id = aws_route_table.public.id
 }

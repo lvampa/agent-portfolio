@@ -14,6 +14,7 @@ variables {
   n8n_timezone       = "America/New_York"
   api_hostname       = "api.example.com"
   admin_hostname     = "admin.example.com"
+  home_ip_cidr       = "203.0.113.7/32"
 }
 
 run "plans" {
@@ -57,5 +58,10 @@ run "plans" {
   assert {
     condition     = strcontains({ for e in one([for c in jsondecode(aws_ecs_task_definition.n8n.container_definitions) : c if c.name == "caddy"]).environment : e.name => e.value }["CADDYFILE"], "@webhooks path /webhook/* /webhook-test/*\n")
     error_message = "The api host must proxy only /webhook/ and /webhook-test/ paths."
+  }
+
+  assert {
+    condition     = can(regex("@home client_ip 203\\.0\\.113\\.7/32\\s+handle @home \\{\\s+reverse_proxy n8n:5678[\\s\\S]*handle \\{\\s+respond 403", { for e in one([for c in jsondecode(aws_ecs_task_definition.n8n.container_definitions) : c if c.name == "caddy"]).environment : e.name => e.value }["CADDYFILE"]))
+    error_message = "The admin host must proxy to n8n only for the home IP and answer 403 otherwise."
   }
 }

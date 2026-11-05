@@ -62,6 +62,7 @@ resource "aws_iam_role_policy" "ecs_execution_read_secrets" {
 # Only the cloudflared sidecar can reach Caddy, so private addresses are the proxies we trust.
 # Caddy then takes the client IP from CF-Connecting-IP and hands n8n a single X-Forwarded-For entry,
 # which is what N8N_PROXY_HOPS=1 reads.
+# The admin host also checks that client IP against the home IP, in case the WAF rule is ever missing or wrong.
 locals {
   caddyfile = <<-EOT
     {
@@ -87,8 +88,14 @@ locals {
     }
 
     http://${var.admin_hostname} {
-      reverse_proxy n8n:5678 {
-        header_up X-Forwarded-For {client_ip}
+      @home client_ip ${var.home_ip_cidr}
+      handle @home {
+        reverse_proxy n8n:5678 {
+          header_up X-Forwarded-For {client_ip}
+        }
+      }
+      handle {
+        respond 403
       }
     }
   EOT

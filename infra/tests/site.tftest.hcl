@@ -34,6 +34,11 @@ run "plans" {
   }
 
   assert {
+    condition     = cloudflare_workers_script_subdomain.info.enabled
+    error_message = "npm run dev reaches the Worker on workers.dev through DEV_INFO_URL, so it must stay on."
+  }
+
+  assert {
     condition = (
       cloudflare_ruleset.www_redirect.rules[0].expression == "http.host eq \"www.example.com\"" &&
       cloudflare_ruleset.www_redirect.rules[0].action_parameters.from_value.target_url.expression == "concat(\"https://example.com\", http.request.uri.path)" &&

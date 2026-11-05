@@ -37,3 +37,7 @@ variable "admin_hostname" {
   type        = string
 }
 
+variable "home_ip_cidr" {
+  description = "Home IP as CIDR. Caddy proxies the admin host to n8n only for this client IP."
+  type        = string
+}

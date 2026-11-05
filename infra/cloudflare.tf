@@ -40,29 +40,28 @@ resource "cloudflare_dns_record" "n8n" {
   content = "${cloudflare_zero_trust_tunnel_cloudflared.n8n.id}.cfargotunnel.com"
   ttl     = 1
   proxied = true
+
+  # Without DNS the tunnel's admin ingress is unreachable, so a failed rule create never leaves the editor public.
+  depends_on = [cloudflare_ruleset.admin_home_ip]
 }
 
-# Bypass skips the login page for the home IP, and Access denies everyone else by default.
-# An Allow policy would still ask for an identity.
-resource "cloudflare_zero_trust_access_policy" "admin_home_ip" {
-  account_id = var.cloudflare_account_id
-  name       = "${var.project_name} admin from home IP"
-  decision   = "bypass"
+# Only the home IP may open the editor. Every request arrives through the tunnel, so the origin never sees a client address of its own.
+# This edge rule is the first check, and Caddy repeats it.
+# A zone has one http_request_firewall_custom entry point, so creating this fails if the dashboard already made one.
+# Delete that ruleset or import it first (docs/specs/cloudflare-tunnel.md).
+# http.host is the raw Host header, and the docs do not say a port or trailing dot is stripped.
+# wildcard is case-insensitive and its * also catches "admin.example.com." and "admin.example.com:443".
+resource "cloudflare_ruleset" "admin_home_ip" {
+  zone_id = var.cloudflare_zone_id
+  name    = "n8n editor from home IP only"
+  kind    = "zone"
+  phase   = "http_request_firewall_custom"
 
-  include = [{
-    ip = { ip = var.home_ip_cidr }
-  }]
-}
-
-resource "cloudflare_zero_trust_access_application" "admin" {
-  account_id = var.cloudflare_account_id
-  name       = "${var.project_name} n8n editor"
-  domain     = var.admin_hostname
-  type       = "self_hosted"
-
-  policies = [{
-    id         = cloudflare_zero_trust_access_policy.admin_home_ip.id
-    precedence = 1
+  rules = [{
+    description = "Block the n8n editor except from the home IP"
+    expression  = "http.host wildcard \"${lower(var.admin_hostname)}*\" and not ip.src in {${var.home_ip_cidr}}"
+    action      = "block"
+    enabled     = true
   }]
 }
 

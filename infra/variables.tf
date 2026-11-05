@@ -21,8 +21,13 @@ variable "ec2_keypair_name" {
 }
 
 variable "home_ip_cidr" {
-  description = "Your private IP as CIDR for SSH access"
+  description = "Your home IP as CIDR (e.g. 1.2.3.4/32). The only source allowed to SSH in and to open the n8n editor."
   type        = string
+
+  validation {
+    condition     = can(regex("^\\d+\\.\\d+\\.\\d+\\.\\d+/(2[4-9]|3[0-2])$", var.home_ip_cidr)) && try(cidrsubnet(var.home_ip_cidr, 0, 0) == var.home_ip_cidr, false)
+    error_message = "home_ip_cidr must be an IPv4 network from /24 to /32, such as 1.2.3.4/32 or 1.2.3.0/24. A wide range like 0.0.0.0/0 would open both the editor rule and SSH, and the SSH security group rule is IPv4 only."
+  }
 }
 
 # n8n container env – set secrets in tfvars (gitignored)
