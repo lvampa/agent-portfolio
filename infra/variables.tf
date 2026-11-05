@@ -91,3 +91,12 @@ variable "cloudflare_zone_id" {
   type        = string
 }
 
+variable "pages_project_name" {
+  description = "Cloudflare Pages project for the frontend. Changing it replaces the project."
+  type        = string
+}
+
+variable "site_hostname" {
+  description = "Apex hostname of the frontend, e.g. example.com. www redirects here."
+  type        = string
+}
