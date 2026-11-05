@@ -1,6 +1,6 @@
 'use client';
 
-import { historyStore } from '@terminal/storage';
+import { historyStore, isHistoryDisabled } from '@terminal/storage';
 import React, {
   createContext,
   startTransition,
@@ -23,12 +23,18 @@ interface HistoryContextValue {
 
 const HistoryContext = createContext<HistoryContextValue | null>(null);
 
+function loadHistory(): HistoryItem[] {
+  if (!isHistoryDisabled()) return historyStore.load(HistoryItemSchema);
+  historyStore.clear();
+  return [];
+}
+
 export function HistoryProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<HistoryItem[]>([]);
   const [hasLoaded, setHasLoaded] = useState(false);
 
   useEffect(() => {
-    const stored = historyStore.load(HistoryItemSchema);
+    const stored = loadHistory();
     startTransition(() => {
       setItems(stored);
       setHasLoaded(true);

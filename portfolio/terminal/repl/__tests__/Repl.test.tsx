@@ -18,12 +18,15 @@ jest.mock('@lib/api', () => ({
 }));
 
 jest.mock('@terminal/storage', () => ({
+  ...jest.requireActual('@terminal/storage'),
   historyStore: { load: jest.fn(), append: jest.fn(), clear: jest.fn() },
-  sessionStore: { loadValue: jest.fn(), save: jest.fn() },
+  sessionStore: { loadValue: jest.fn(), save: jest.fn(), clear: jest.fn() },
 }));
 
 const mockedLoadHistory = historyStore.load as jest.Mock;
 const mockedLoadSession = sessionStore.loadValue as jest.Mock;
+const mockedClearHistory = historyStore.clear as jest.Mock;
+const mockedClearSession = sessionStore.clear as jest.Mock;
 
 const IDENTIFY_PROMPT = 'Please Identify:';
 const EARLIER_LINE = 'an earlier line';
@@ -69,8 +72,24 @@ describe('Repl', () => {
     renderRepl();
 
     expect(await screen.findByLabelText('Input Prompt')).toBeInTheDocument();
-    expect(screen.getByText(EARLIER_LINE)).toBeInTheDocument();
+    expect(screen.getByRole('log')).toHaveTextContent(EARLIER_LINE);
     expect(screen.queryByText(BANNER_LINES[0])).not.toBeInTheDocument();
+  });
+
+  test('NEXT_PUBLIC_NO_HISTORY clears both stores and replays the startup', async () => {
+    process.env.NEXT_PUBLIC_NO_HISTORY = 'true';
+    mockedLoadHistory.mockReturnValue([{ type: 'text', text: EARLIER_LINE }]);
+    mockedLoadSession.mockReturnValue({ name: 'tester', mode: { type: 'command' } });
+    try {
+      renderRepl();
+
+      expect(await screen.findByText(IDENTIFY_PROMPT)).toBeInTheDocument();
+      expect(screen.queryByText(EARLIER_LINE)).not.toBeInTheDocument();
+      expect(mockedClearHistory).toHaveBeenCalled();
+      expect(mockedClearSession).toHaveBeenCalled();
+    } finally {
+      delete process.env.NEXT_PUBLIC_NO_HISTORY;
+    }
   });
 
   test('a reload during a question asks it again and keeps what comes after', async () => {

@@ -11,7 +11,7 @@ import React, {
 } from 'react';
 
 import { SessionSchema } from './schemas';
-import { sessionStore } from './storage';
+import { isHistoryDisabled, sessionStore } from './storage';
 import type { Mode, Session } from './types';
 import { normalizeSession } from './utils';
 
@@ -25,12 +25,18 @@ interface SessionContextValue {
 
 const SessionContext = createContext<SessionContextValue | null>(null);
 
+function loadSession(): Session {
+  if (!isHistoryDisabled()) return normalizeSession(sessionStore.loadValue(SessionSchema));
+  sessionStore.clear();
+  return normalizeSession(null);
+}
+
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session>(() => normalizeSession(null));
   const [hasLoaded, setHasLoaded] = useState(false);
 
   useEffect(() => {
-    const stored = normalizeSession(sessionStore.loadValue(SessionSchema));
+    const stored = loadSession();
     startTransition(() => {
       setSession(stored);
       setHasLoaded(true);
