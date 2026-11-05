@@ -15,6 +15,8 @@ export type ChatReply = ChatResponse[number];
 
 export interface TerminalState {
   name: string | null;
+  /** Keys the agent's memory. A new one starts on cls and when the startup replays. */
+  sessionId: string;
   /** From buildUserInfoForUi, or null when client info failed to load. */
   clientInfo: UserInfo | null;
   // Passed in so help can list the registry without importing it, which would be a cycle.

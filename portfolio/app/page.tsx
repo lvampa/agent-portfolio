@@ -16,11 +16,20 @@ export default function Home() {
     [userInfo],
   );
 
+  // Only what the agent may use to tailor its answers. The IP stays out of the chat.
+  const visitor = useMemo(
+    () => ({
+      organization: userInfo.request?.organization ?? null,
+      country: userInfo.request?.country ?? null,
+    }),
+    [userInfo.request],
+  );
+
   return (
     <main className="flex h-screen w-full justify-center">
       <Terminal>
         <AnimationProvider>
-          <Repl clientInfo={clientInfo} isClientInfoLoading={isLoading} />
+          <Repl clientInfo={clientInfo} isClientInfoLoading={isLoading} visitor={visitor} />
         </AnimationProvider>
       </Terminal>
     </main>

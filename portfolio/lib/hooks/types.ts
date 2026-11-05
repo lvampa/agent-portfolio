@@ -12,8 +12,22 @@ export interface ClientInfo {
   parsedUA: ParsedUA | null;
 }
 
+/** What the agent may know about the visitor. Never the IP. */
+export interface ChatVisitor {
+  organization: string | null;
+  country: string | null;
+}
+
+/** The body of a chat request. sessionId keys the agent's memory. */
+export interface ChatRequest {
+  chatInput: string;
+  sessionId: string;
+  name: string | null;
+  client: ChatVisitor;
+}
+
 export interface UseChat {
-  sendMessage: (message: string) => Promise<ChatResponse | undefined>;
+  sendMessage: (request: ChatRequest) => Promise<ChatResponse | undefined>;
   isLoading: boolean;
   error: Error | null;
 }

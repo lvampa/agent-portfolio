@@ -6,7 +6,13 @@ import { ask, print, printText, promptFor } from '../utils';
 const clientInfo = [{ label: 'ip', value: '127.0.0.1' }];
 
 function effectsFor(overrides: Partial<TerminalState>) {
-  return startupEffects({ name: null, clientInfo, commands: [], ...overrides });
+  return startupEffects({
+    name: null,
+    sessionId: 'session-1',
+    clientInfo,
+    commands: [],
+    ...overrides,
+  });
 }
 
 function hasClientInfo(state: Partial<TerminalState>) {

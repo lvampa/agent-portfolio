@@ -39,6 +39,9 @@ const mockedLoadSession = sessionStore.loadValue as jest.Mock;
 const mockedClearHistory = historyStore.clear as jest.Mock;
 const mockedClearSession = sessionStore.clear as jest.Mock;
 
+const VISITOR = { organization: 'Acme ISP', country: 'US' };
+const SESSION_ID = '00000000-0000-4000-8000-000000000000';
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const IDENTIFY_PROMPT = 'User unknown, please identify:';
 const EARLIER_LINE = 'an earlier line';
 
@@ -53,7 +56,7 @@ function renderRepl() {
       <HistoryProvider>
         <SessionProvider>
           <AnimationProvider>
-            <Repl clientInfo={null} isClientInfoLoading={false} />
+            <Repl clientInfo={null} isClientInfoLoading={false} visitor={VISITOR} />
           </AnimationProvider>
         </SessionProvider>
       </HistoryProvider>
@@ -122,7 +125,53 @@ describe('Repl', () => {
     replyToFirst({ data: [{ output: 'first reply' }] });
 
     await waitFor(() => expect(mockedPost).toHaveBeenCalledTimes(2));
-    expect(mockedPost).toHaveBeenLastCalledWith('webhooks', { chatInput: 'second' });
+    expect(mockedPost).toHaveBeenLastCalledWith(
+      'webhooks',
+      expect.objectContaining({ chatInput: 'second' }),
+    );
+  });
+
+  test('a chat sends the session id, name, and visitor, and never the IP', async () => {
+    mockedPost.mockResolvedValue({ data: [{ output: 'reply' }] });
+    mockedLoadSession.mockReturnValue({
+      name: 'tester',
+      mode: { type: 'command' },
+      sessionId: SESSION_ID,
+    });
+    mockedLoadHistory.mockReturnValue([{ type: 'text', text: EARLIER_LINE }]);
+    renderRepl();
+    const user = userEvent.setup();
+
+    await user.type(await screen.findByLabelText(COMMAND_INPUT_LABEL), 'hi{enter}');
+
+    // toEqual on the whole body, so any extra field such as an IP fails the test.
+    expect(mockedPost).toHaveBeenCalledWith('webhooks', {
+      chatInput: 'hi',
+      sessionId: SESSION_ID,
+      name: 'tester',
+      client: VISITOR,
+    });
+  });
+
+  test('cls starts a new conversation with a new session id', async () => {
+    mockedPost.mockResolvedValue({ data: [{ output: 'reply' }] });
+    mockedLoadSession.mockReturnValue({
+      name: 'tester',
+      mode: { type: 'command' },
+      sessionId: SESSION_ID,
+    });
+    mockedLoadHistory.mockReturnValue([{ type: 'text', text: EARLIER_LINE }]);
+    renderRepl();
+    const user = userEvent.setup();
+    const input = await screen.findByLabelText(COMMAND_INPUT_LABEL);
+
+    await user.type(input, 'cls{enter}');
+    await user.type(input, 'hi{enter}');
+
+    await waitFor(() => expect(mockedPost).toHaveBeenCalled());
+    const { sessionId } = mockedPost.mock.calls[0][1];
+    expect(sessionId).toMatch(UUID);
+    expect(sessionId).not.toBe(SESSION_ID);
   });
 
   test('restored history skips the startup and is inside the log when it mounts', async () => {
@@ -180,6 +229,7 @@ describe('Repl', () => {
   test('a reload during a question asks it again and keeps what comes after', async () => {
     const awaiting: Session = {
       name: null,
+      sessionId: SESSION_ID,
       mode: {
         type: 'awaiting',
         questionId: QUESTION_IDS.IDENTIFY,

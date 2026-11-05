@@ -51,10 +51,10 @@ On a first visit the screen shows, top to bottom:
 The registry ships with three commands:
 
 - `help`, `h` prints a `list` with one row per command, built from `state.commands`: the names, such as `help, h`, then the description.
-- `cls`, `clear` clears the screen and the saved history.
+- `cls`, `clear` clears the screen and the saved history, and starts a new conversation with a new session id.
   A reload right after `cls` finds the history empty, so the startup replays, without the question when a name is saved.
   Anything typed after `cls` is saved, so a later reload restores it instead.
-- `whoami` prints a `list`: a `name:` row with the name (or `unknown`), then a row per client info item when it loaded.
+- `whoami` prints a `list`: a `name:` row with the name (or `unknown`), a `session:` row with the session id, so a visitor can quote it, then a row per client info item when it loaded.
   Its terms end in a colon, like `systeminfo`, and so do the startup's info labels, through `infoTerm(label)`.
   The colon is in the term data, so `List` stays generic, and `help`'s terms have none.
 
@@ -135,12 +135,13 @@ Renderers live in `history/renderers/` and are the only files that know how a ty
 type Effect =
   | { type: 'print'; item: HistoryItem }
   | { type: 'clear' }
+  | { type: 'newConversation' } // A new session id, so the agent starts without memory.
   | { type: 'setName'; name: string }
   | { type: 'ask'; questionId: QuestionId }
   | { type: 'chat'; message: string };
 ```
 
-Small builders keep call sites short: `printText(text)`, `print(item)`, `echo(line, prompt)`, `ask(id)`, `chat(message)`.
+Small builders keep call sites short: `printText(text)`, `print(item)`, `echo(line, prompt)`, `ask(id)`, `chat(message)`, `newConversation()`.
 A command that needs richer output prints a different item type.
 It never formats structure into text.
 
@@ -155,6 +156,7 @@ interface Command {
 
 interface TerminalState {
   name: string | null;
+  sessionId: string; // Keys the agent's memory.
   clientInfo: UserInfo | null;
   commands: readonly Command[]; // So help can list the registry without importing it.
 }
@@ -229,7 +231,7 @@ The interpreter is pure TypeScript and talks to the outside only through ports:
 ```ts
 interface Ports {
   history: { append(item: HistoryItem): void; clear(): void };
-  session: { setName(name: string): void; setMode(mode: Mode): void };
+  session: { setName(name: string): void; setMode(mode: Mode): void; newConversation(): void };
   chat: { send(message: string): Promise<ChatReply[] | null> };
 }
 
@@ -270,6 +272,7 @@ Otherwise an Enter pressed in the frame the input appears can reach a stale hand
 ```ts
 function startupEffects(state: TerminalState): Effect[] {
   return [
+    newConversation(),
     ...BANNER_LINES.map(printText),
     ...(state.clientInfo
       ? [print({ type: 'clientInfo', info: state.clientInfo, prompt: promptFor(state.name) })]
@@ -283,6 +286,8 @@ function startupEffects(state: TerminalState): Effect[] {
 ```
 
 `useStartup` runs it once history, session, and client info have loaded, and only when history is empty.
+It starts with `newConversation()`, because empty history means the agent should not remember the last conversation.
+`newConversation` is its own effect, not part of `clear`, because the startup needs a new id without clearing anything.
 It runs in a `useLayoutEffect` guarded by a ref, so Strict Mode does not run it twice and items append before paint.
 The seeding effect in `app/page.tsx` goes away.
 
@@ -305,12 +310,32 @@ The input has `aria-disabled` while it does not accept lines, and the drawn care
 | Key | Holds | Schema |
 |---|---|---|
 | `history.v2` | Array of history items | `HistoryItemSchema` |
-| `session.v1` | `{ name, mode }` | `SessionSchema` |
+| `session.v1` | `{ name, mode, sessionId }` | `SessionSchema` |
 
 The item shape changes, so the version moves to `history.v2`, and the legacy `history` key is removed on load without being parsed.
 `Storage` gains `loadValue(schema)` and `save(value)` for the session object.
 Name the instance `sessionStore`, not `sessionStorage`, which would shadow `window.sessionStorage`.
-A session that fails validation loads as `{ name: null, mode: { type: 'command' } }`, and a loaded name goes through `sanitizeName` again.
+A session that fails validation loads as `{ name: null, mode: { type: 'command' } }` with a new `sessionId`, and a loaded name goes through `sanitizeName` again.
+`sessionId` is a `crypto.randomUUID()`.
+A stored session without one, from before ids existed, gets one on load through `.catch` in `SessionSchema`, so the key stays `session.v1`.
+
+### Chat request
+
+`POST <NEXT_PUBLIC_CHAT_WEBHOOK_URL>/webhooks` with:
+
+```json
+{
+  "chatInput": "<message>",
+  "sessionId": "<uuid>",
+  "name": "<name or null>",
+  "client": { "organization": "<org or null>", "country": "<country or null>" }
+}
+```
+
+`sessionId` keys the agent's memory.
+`client` comes from the raw client info request, and both fields are null when it failed to load.
+The IP is never sent.
+`useInterpreter` builds the body, because the session and the visitor belong to the adapters, not the pure core.
 The storage instances are created in the terminal, not in `lib/storage`, since the keys belong to the terminal.
 
 ## File layout

@@ -1,9 +1,14 @@
 import { COMMANDS, findCommand } from '../registry';
 import { route } from '../router';
 import type { TerminalState } from '../types';
-import { clearScreen, echo, printList, promptFor } from '../utils';
+import { clearScreen, echo, newConversation, printList, promptFor } from '../utils';
 
-const state: TerminalState = { name: null, clientInfo: null, commands: COMMANDS };
+const state: TerminalState = {
+  name: null,
+  sessionId: 'session-1',
+  clientInfo: null,
+  commands: COMMANDS,
+};
 
 function run(name: string, overrides: Partial<TerminalState> = {}) {
   const command = findCommand(COMMANDS, name);
@@ -21,20 +26,27 @@ describe('commands', () => {
     expect(rows).toContainEqual({ term: 'help, h', detail: 'List the commands.' });
   });
 
-  test.each(['cls', 'CLEAR'])('%s clears the screen and the saved history', (line) => {
+  test.each(['cls', 'CLEAR'])('%s clears the screen and starts a new conversation', (line) => {
     expect(route(line, { type: 'command' }, state)).toEqual([
       echo(line, promptFor(null)),
       clearScreen(),
+      newConversation(),
     ]);
   });
 
-  test('whoami lists the name, then the client info only when it loaded, each term with a colon', () => {
-    expect(run('whoami')).toEqual([printList([{ term: 'name:', detail: 'unknown' }])]);
+  test('whoami lists the name and session, then the client info only when it loaded, each term with a colon', () => {
+    expect(run('whoami')).toEqual([
+      printList([
+        { term: 'name:', detail: 'unknown' },
+        { term: 'session:', detail: 'session-1' },
+      ]),
+    ]);
     expect(
       run('whoami', { name: 'connor', clientInfo: [{ label: 'ip', value: '127.0.0.1' }] }),
     ).toEqual([
       printList([
         { term: 'name:', detail: 'connor' },
+        { term: 'session:', detail: 'session-1' },
         { term: 'ip:', detail: '127.0.0.1' },
       ]),
     ]);

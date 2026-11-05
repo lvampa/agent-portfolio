@@ -14,6 +14,7 @@ function fakePorts(reply: ChatReply[] | null = []) {
     session: {
       setName: jest.fn((name) => calls.push(`setName ${name}`)),
       setMode: jest.fn((mode) => calls.push(`setMode ${mode.type}`)),
+      newConversation: jest.fn(() => calls.push('newConversation')),
     },
     chat: { send: jest.fn(async () => reply) },
   };

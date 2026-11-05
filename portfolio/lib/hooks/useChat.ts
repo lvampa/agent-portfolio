@@ -4,17 +4,17 @@ import { chatClient } from '@lib/api';
 import { ChatResponseSchema } from '@lib/hooks/schemas';
 import { useCallback, useState } from 'react';
 
-import type { UseChat } from './types';
+import type { ChatRequest, UseChat } from './types';
 
 export default function useChat(): UseChat {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
-  const sendMessage = useCallback(async (message: string) => {
+  const sendMessage = useCallback(async (request: ChatRequest) => {
     setIsLoading(true);
     setError(null);
     try {
-      const response = await chatClient.post('webhooks', { chatInput: message });
+      const response = await chatClient.post('webhooks', request);
       const parsed = ChatResponseSchema.safeParse(response.data);
       if (!parsed.success) {
         setError(new Error('ChatResponse parse failed'));

@@ -1,3 +1,4 @@
+import type { ChatVisitor } from '@lib/hooks/types';
 import type { UserInfo } from '@lib/utils/types';
 import { useAnimation } from '@terminal/AnimationContext';
 import { History } from '@terminal/history/History';
@@ -21,19 +22,21 @@ interface ReplProps {
   /** Null when client info failed to load; the startup then skips that step. */
   clientInfo: UserInfo | null;
   isClientInfoLoading: boolean;
+  /** Sent with each chat. Its fields are null when client info failed to load. */
+  visitor: ChatVisitor;
 }
 
 /** Routes each submitted line to a pending question, a command, or the chat. */
-export default function Repl({ clientInfo, isClientInfoLoading }: ReplProps) {
+export default function Repl({ clientInfo, isClientInfoLoading, visitor }: ReplProps) {
   const eventBus = useEventBus();
   const { isAnimating } = useAnimation();
   const { items, hasLoaded: hasHistoryLoaded } = useHistory();
-  const { name, mode, hasLoaded: hasSessionLoaded } = useSession();
-  const { apply, busy } = useInterpreter();
+  const { name, mode, sessionId, hasLoaded: hasSessionLoaded } = useSession();
+  const { apply, busy } = useInterpreter(visitor);
 
   const state: TerminalState = useMemo(
-    () => ({ name, clientInfo, commands: COMMANDS }),
-    [name, clientInfo],
+    () => ({ name, sessionId, clientInfo, commands: COMMANDS }),
+    [name, sessionId, clientInfo],
   );
 
   const hasStarted = useStartup({
