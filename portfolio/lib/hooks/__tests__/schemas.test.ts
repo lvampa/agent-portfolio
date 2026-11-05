@@ -14,7 +14,6 @@ describe('ClientInfoRequestSchema', () => {
     asn: 'AS12345',
     organization: 'Acme ISP',
     timezone: 'America/New_York',
-    deviceType: 'desktop',
     userAgent: 'Mozilla/5.0',
     acceptLanguage: 'en-US',
     acceptEncoding: 'gzip',

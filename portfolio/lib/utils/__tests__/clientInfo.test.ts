@@ -34,7 +34,6 @@ describe('buildUserInfoForUi', () => {
         asn: '',
         organization: '',
         timezone: '',
-        deviceType: '',
         userAgent: null,
         acceptLanguage: null,
         acceptEncoding: null,
