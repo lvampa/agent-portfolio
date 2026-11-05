@@ -24,10 +24,10 @@ The instance has no web port open, so there is nothing to reach by IP.
 - **Security group.** The port-80 rule and the `cloudflare_ip_ranges` data source are gone.
   The VPC module no longer needs a Cloudflare provider.
   The SSH rule from `home_ip_cidr` stays.
-- **Admin access.** A Cloudflare Access application covers `admin_hostname`.
-  Its policy uses the `bypass` decision with an `ip` include of `home_ip_cidr`.
-  Bypass skips the login page for the home IP, and Access denies everyone else by default.
-  An `allow` policy would still ask for an identity, and we do not use a login provider.
+- **Admin access.** A WAF custom rule blocks `admin_hostname` unless `ip.src` is in `home_ip_cidr`.
+  It replaced a Cloudflare Access application, which needed a Zero Trust organization for the same IP-only check.
+  The n8n DNS records wait for the rule, so the editor is never reachable without it.
+  n8n's own login is the second layer.
 - **Caddy.** The api host serves `/webhook/*` and `/webhook-test/*`, and everything else is a 404.
   Test webhooks stay public so "Listen for test event" works.
   n8n only answers them while the editor is listening.
@@ -51,15 +51,12 @@ The instance has no web port open, so there is nothing to reach by IP.
 
 ## Before apply
 
-1. Make sure the account has a Zero Trust organization (dashboard, Zero Trust, pick a team name).
-   The free plan covers up to 50 users, and we use none.
-   Cloudflare may ask for a payment method during onboarding.
-2. Add `cloudflare_account_id` to `terraform.tfvars`.
-3. Give the API token these permissions:
+1. Add `cloudflare_account_id` to `terraform.tfvars`.
+2. Give the API token these permissions:
    - Account > Cloudflare Tunnel > Edit
-   - Account > Access: Apps and Policies > Edit
    - Zone > DNS > Edit
-   - Zone > Zone WAF > Edit (covers the rate-limit ruleset)
+   - Zone > Zone WAF > Edit (covers the editor rule and the rate-limit ruleset)
+3. Right after the first apply, open `admin_hostname` and create the n8n owner account.
 
 ## Apply order
 
@@ -74,15 +71,14 @@ The data source waits for the tunnel, and the SSM parameter waits for the data s
 - `curl -i https://<api_hostname>/` returns 404.
 - `curl -i -X POST https://<api_hostname>/webhook/x -d "$(head -c 5000 /dev/zero | tr '\0' a)"` returns 413.
 - Twelve quick requests to `https://<api_hostname>/webhook/x` end in 429 or a Cloudflare block page.
-- `https://<admin_hostname>` from a non-home IP (phone on mobile data) shows an Access block page.
+- `https://<admin_hostname>` from a non-home IP (phone on mobile data) shows a Cloudflare block page.
 - `https://<admin_hostname>` from the home IP loads n8n, and login works with the secure cookie.
 - The n8n execution log shows real client IPs for webhook calls, not a `172.x` address.
-- In the dashboard, Zero Trust, Networks, Tunnels shows the tunnel healthy.
+- In the dashboard, the tunnel shows healthy.
 
-If the home IP check fails because Access still shows a login page, switch the policy decision to `allow` and add a login method.
 Change the free-plan rate limit values only through the two variables.
 
 ## Follow-up
 
-Add email one-time-PIN login to the Access policy.
-That survives a change of home IP, which today locks you out of the editor until you update `home_ip_cidr`.
+A change of home IP locks you out of the editor until you update `home_ip_cidr` and apply.
+If that becomes a nuisance, Cloudflare Access with email one-time-PIN login survives it, at the cost of a Zero Trust organization.

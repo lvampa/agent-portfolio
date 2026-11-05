@@ -268,7 +268,6 @@ With `npm run dev`, `/info` is a 404 from `next dev`, so `useClientInfo` leaves 
 **Tofu token (`cloudflare_api_token`)**, final list:
 
 - Account > Cloudflare Tunnel > Edit (existing)
-- Account > Access: Apps and Policies > Edit (existing)
 - Account > Cloudflare Pages > Edit (new)
 - Account > Workers Scripts > Edit (new)
 - Zone > DNS > Edit (existing)

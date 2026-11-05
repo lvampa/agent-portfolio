@@ -41,31 +41,23 @@ resource "cloudflare_dns_record" "n8n" {
   ttl     = 1
   proxied = true
 
-  # Without DNS the tunnel's admin ingress is unreachable, so a failed Access create never leaves the editor public.
-  depends_on = [cloudflare_zero_trust_access_application.admin]
+  # Without DNS the tunnel's admin ingress is unreachable, so a failed rule create never leaves the editor public.
+  depends_on = [cloudflare_ruleset.admin_home_ip]
 }
 
-# Bypass skips the login page for the home IP, and Access denies everyone else by default.
-# An Allow policy would still ask for an identity.
-resource "cloudflare_zero_trust_access_policy" "admin_home_ip" {
-  account_id = var.cloudflare_account_id
-  name       = "${var.project_name} admin from home IP"
-  decision   = "bypass"
+# Only the home IP may open the editor. Every request arrives through the tunnel, so the check has to happen at Cloudflare.
+# Cloudflare allows one custom-rules ruleset per zone, so rules added in the dashboard would be overwritten here.
+resource "cloudflare_ruleset" "admin_home_ip" {
+  zone_id = var.cloudflare_zone_id
+  name    = "n8n editor from home IP only"
+  kind    = "zone"
+  phase   = "http_request_firewall_custom"
 
-  include = [{
-    ip = { ip = var.home_ip_cidr }
-  }]
-}
-
-resource "cloudflare_zero_trust_access_application" "admin" {
-  account_id = var.cloudflare_account_id
-  name       = "${var.project_name} n8n editor"
-  domain     = var.admin_hostname
-  type       = "self_hosted"
-
-  policies = [{
-    id         = cloudflare_zero_trust_access_policy.admin_home_ip.id
-    precedence = 1
+  rules = [{
+    description = "Block the n8n editor except from the home IP"
+    expression  = "http.host eq \"${var.admin_hostname}\" and not ip.src in {${var.home_ip_cidr}}"
+    action      = "block"
+    enabled     = true
   }]
 }
 

@@ -4,7 +4,7 @@ Highlights:
 - n8n on one arm64 EC2 instance, run by ECS as a single task with cloudflared, Caddy and n8n.
 - A Cloudflare Tunnel carries all web traffic. The `cloudflared` sidecar dials out, so no web port is open on the instance.
 - The only inbound rule is SSH from your home IP.
-- A Cloudflare Access application lets only your home IP reach `admin_hostname`.
+- A Cloudflare WAF custom rule lets only your home IP reach `admin_hostname`.
 - `api_hostname` serves only `/webhook/*`, capped at 4 KB per request and rate limited per IP at the edge.
 - `admin_hostname` serves the editor.
 - n8n data lives on its own encrypted EBS volume mounted at `/opt/n8n-data`, so replacing the instance keeps it.
@@ -20,17 +20,15 @@ Highlights:
 
 - **AWS** – VPC, EC2, ECS, SSM Parameter Store, Data Lifecycle Manager, S3 (state)
 - **OpenTofu** – IaC (`tofu` CLI)
-- **Cloudflare** – DNS, HTTPS, Tunnel, Access, rate limiting, Pages, Workers, redirect rules
+- **Cloudflare** – DNS, HTTPS, Tunnel, WAF custom rules, rate limiting, Pages, Workers, redirect rules
 
 ## Setup
 
 Before the first apply:
 
-1. Enable Cloudflare Zero Trust on the account (the Free plan is enough) and pick a team name.
-   Access returns 403 "Access is not enabled" without it, and the editor has no protection until Access exists.
-2. Create the AWS CLI profile `portfolio` (below).
-3. Fill in `terraform.tfvars` (below).
-4. Right after the first apply, open `admin_hostname` and create the n8n owner account.
+1. Create the AWS CLI profile `portfolio` (below).
+2. Fill in `terraform.tfvars` (below).
+3. Right after the first apply, open `admin_hostname` and create the n8n owner account.
 
 Tofu uses the AWS CLI profile `portfolio`, for both the state backend and the provider.
 Its access keys go in `~/.aws/credentials`.
@@ -50,11 +48,11 @@ Set these in `terraform.tfvars` (or your chosen `*.tfvars` file).
 | `ec2_keypair_name` | Name of the EC2 key pair used for SSH. Key pairs are per region, so create it in `us-east-2`. |
 | `home_ip_cidr` | Your IP in CIDR form (e.g. `1.2.3.4/32`) so the security group allows SSH only from you |
 
-**Cloudflare (tunnel, DNS, Access, rate limit, site):**
+**Cloudflare (tunnel, DNS, WAF rules, site):**
 
 | Variable | Meaning |
 |----------|---------|
-| `cloudflare_api_token` | API token (sensitive). Permissions: Account > Cloudflare Tunnel > Edit, Account > Access: Apps and Policies > Edit, Account > Cloudflare Pages > Edit, Account > Workers Scripts > Edit, Zone > DNS > Edit, Zone > Zone WAF > Edit, Zone > Workers Routes > Edit, Zone > Single Redirect > Edit. |
+| `cloudflare_api_token` | API token (sensitive). Permissions: Account > Cloudflare Tunnel > Edit, Account > Cloudflare Pages > Edit, Account > Workers Scripts > Edit, Zone > DNS > Edit, Zone > Zone WAF > Edit (the editor rule and the rate limit), Zone > Workers Routes > Edit, Zone > Single Redirect > Edit. |
 | `cloudflare_account_id` | Account ID from the Cloudflare dashboard account Overview |
 | `cloudflare_zone_id` | Zone ID from Cloudflare dashboard → zone Overview |
 | `api_hostname` | Hostname for n8n webhooks, e.g. `api.example.com`. Only `/webhook/*` is served. |
