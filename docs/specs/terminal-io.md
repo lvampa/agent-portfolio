@@ -47,8 +47,13 @@ On a first visit the screen shows, top to bottom:
 4. A blank line, the guidance line `Ask about the author, or type help for other commands.`, and another blank line before the input prompt.
 5. From then on, a line that is exactly a command name runs that command, and anything else goes to the chat.
 
-This PR builds the structure only, so the command registry ships empty and every line goes to the chat for now.
-Commands such as `help`, `cls`, and `whoami` land in later PRs.
+The registry ships with three commands:
+
+- `help`, `h` prints one line per command, built from `state.commands`, such as `help, h - List the commands.`
+- `cls`, `clear` clears the screen and the saved history.
+  After a reload the history is empty, so the startup replays, without the question when a name is saved.
+- `whoami` prints `name: <name>` (or `unknown`), then the client info as `label: value` lines when it loaded.
+
 A command runs only when nothing follows it, so `help me understand his AWS work` will go to the chat.
 A blank line in command mode prints an empty prompt line and does nothing else.
 On a reload, stored history renders as before and the startup does not replay.
@@ -304,7 +309,7 @@ terminal/
   index.ts         re-exports, pure modules only
   SessionContext.tsx
   AnimationContext.tsx
-  commands/        one file per command, added in later PRs
+  commands/        help.ts cls.ts whoami.ts index.ts, one file per command
   questions/       identify.ts registry.ts index.ts
   history/
     schemas.ts     one schema per item type, and the union

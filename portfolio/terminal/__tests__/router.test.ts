@@ -5,7 +5,7 @@ import { route } from '../router';
 import type { Command, Effect, Mode, TerminalState } from '../types';
 import { chat, echo, printText, promptFor, setName } from '../utils';
 
-// The registry ships empty, so routing is tested against a command that exists only here.
+// A command that exists only here, so routing tests do not depend on the real commands.
 const ping: Command = {
   names: ['ping'],
   description: 'Replies pong.',
