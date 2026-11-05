@@ -45,11 +45,12 @@ resource "aws_route" "internet_access" {
   gateway_id             = aws_internet_gateway.this.id
 }
 
-# Security group for EC2: SSH and HTTP rules added via aws_security_group_rule (VPC + EC2 modules)
+# Security group for EC2: the SSH rule is a standalone aws_security_group_rule
 # so we avoid perpetual plan drift from mixing inline ingress with standalone rules.
+# Web traffic arrives through the Cloudflare Tunnel (outbound only), so there is no HTTP rule.
 resource "aws_security_group" "ecs_sg" {
   name        = "${var.project_name}-ec2-sg"
-  description = "EC2: SSH from home IP, HTTP from Cloudflare; all outbound"
+  description = "EC2: SSH from home IP; all outbound"
   vpc_id      = aws_vpc.this.id
 
   egress {
@@ -69,6 +70,5 @@ resource "aws_security_group_rule" "ssh" {
   security_group_id = aws_security_group.ecs_sg.id
   description       = "SSH from home IP"
 }
-
 
 data "aws_availability_zones" "available" {}

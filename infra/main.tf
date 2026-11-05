@@ -11,27 +11,19 @@ module "ec2" {
   security_group_id = module.vpc.security_group_id
   ec2_keypair_name  = var.ec2_keypair_name
   ecs_cluster_name  = "${var.project_name}-cluster"
+
+  data_volume_size_gib     = var.n8n_data_volume_size_gib
+  snapshot_retention_count = var.n8n_snapshot_retention_count
 }
 
-# ECS cluster, task (Caddy + n8n), and service. No load balancer; Caddy in the task routes by host.
+# ECS cluster, task (cloudflared + Caddy + n8n), and service. No load balancer; Caddy in the task routes by host.
 module "ecs" {
   source             = "./modules/ecs"
   project_name       = var.project_name
   aws_region         = var.region
   n8n_encryption_key = var.n8n_encryption_key
+  tunnel_token       = data.cloudflare_zero_trust_tunnel_cloudflared_token.n8n.token
   n8n_timezone       = var.n8n_timezone
   api_hostname       = var.api_hostname
   admin_hostname     = var.admin_hostname
-}
-
-# Both hostnames point at the Elastic IP; Caddy routes by host.
-resource "cloudflare_dns_record" "n8n" {
-  for_each = toset([var.api_hostname, var.admin_hostname])
-
-  zone_id = var.cloudflare_zone_id
-  name    = each.value
-  type    = "A"
-  content = module.ec2.public_ip
-  ttl     = 1
-  proxied = true
 }

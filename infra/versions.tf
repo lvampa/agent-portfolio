@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">= 1.6.0" # OpenTofu
+  required_version = ">= 1.11.0" # OpenTofu; ephemeral variables and value_wo need 1.11
 
   backend "s3" {
     bucket       = "ai-agent-portfolio-tfstate"

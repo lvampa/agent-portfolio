@@ -39,6 +39,18 @@ variable "n8n_timezone" {
   default     = "America/New_York"
 }
 
+variable "n8n_data_volume_size_gib" {
+  description = "Size of the n8n data volume in GiB"
+  type        = number
+  default     = 10
+}
+
+variable "n8n_snapshot_retention_count" {
+  description = "Daily snapshots of the n8n data volume to keep"
+  type        = number
+  default     = 7
+}
+
 variable "api_hostname" {
   description = "Public hostname for n8n webhooks, e.g. api.example.com"
   type        = string
@@ -49,11 +61,29 @@ variable "admin_hostname" {
   type        = string
 }
 
-# Cloudflare DNS – A record for EC2 (n8n) origin
+# Cloudflare zone and API access
 variable "cloudflare_api_token" {
-  description = "Cloudflare API token (DNS edit permission for the zone)"
+  description = "Cloudflare API token (permissions listed in the README)"
   type        = string
   sensitive   = true
+}
+
+variable "cloudflare_account_id" {
+  description = "Cloudflare account ID, for the tunnel and Access (dashboard account Overview page)"
+  type        = string
+}
+
+# Free plan: one rule, 10 second period, block for the same 10 seconds.
+variable "rate_limit_requests" {
+  description = "Webhook requests allowed per IP in each rate-limit period"
+  type        = number
+  default     = 10
+}
+
+variable "rate_limit_period_seconds" {
+  description = "Rate-limit counting period, also used as the block duration. The free plan only allows 10."
+  type        = number
+  default     = 10
 }
 
 variable "cloudflare_zone_id" {

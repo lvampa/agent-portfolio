@@ -6,14 +6,6 @@ mock_provider "aws" {
   }
 }
 
-mock_provider "cloudflare" {
-  mock_data "cloudflare_ip_ranges" {
-    defaults = {
-      ipv4_cidrs = ["173.245.48.0/20"]
-    }
-  }
-}
-
 variables {
   project_name      = "test"
   subnet_ids        = ["subnet-0123456789abcdef0"]
@@ -35,7 +27,22 @@ run "plans" {
   }
 
   assert {
-    condition     = aws_dlm_lifecycle_policy.n8n_data.policy_details[0].target_tags["Snapshot"] == aws_instance.ecs.root_block_device[0].tags["Snapshot"]
-    error_message = "The snapshot policy must target the root volume, where n8n keeps its data."
+    condition     = aws_dlm_lifecycle_policy.n8n_data.policy_details[0].target_tags["Snapshot"] == aws_ebs_volume.n8n_data.tags["Snapshot"]
+    error_message = "The snapshot policy must target the data volume's tag."
+  }
+
+  assert {
+    condition     = aws_ebs_volume.n8n_data.encrypted && aws_ebs_volume.n8n_data.type == "gp3"
+    error_message = "The data volume must be encrypted gp3."
+  }
+
+  assert {
+    condition     = aws_volume_attachment.n8n_data.device_name == "/dev/sdf" && aws_volume_attachment.n8n_data.stop_instance_before_detaching
+    error_message = "The attachment must use /dev/sdf and stop the instance before detaching."
+  }
+
+  assert {
+    condition     = strcontains(base64decode(aws_instance.ecs.user_data_base64), "nvme-Amazon_Elastic_Block_Store_")
+    error_message = "user_data must find the data volume by its stable by-id link, not nvmeXn1."
   }
 }

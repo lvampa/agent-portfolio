@@ -8,7 +8,7 @@ variable "subnet_ids" {
 }
 
 variable "security_group_id" {
-  description = "Security group (SSH from home IP, 80 from Cloudflare)"
+  description = "Security group (SSH from home IP)"
   type        = string
 }
 
@@ -20,13 +20,13 @@ variable "ec2_keypair_name" {
 variable "instance_type" {
   description = "EC2 instance type"
   type        = string
-  default     = "t4g.micro"
+  default     = "t4g.small"
 }
 
 variable "ami_id" {
   description = <<-EOT
-    AL2023 arm64 ECS-optimized AMI in us-east-2. Changing it replaces the instance and its root volume,
-    so back up /opt/n8n-data first. Current ID:
+    AL2023 arm64 ECS-optimized AMI in us-east-2. Changing it replaces the instance but keeps the n8n data volume.
+    Snapshot the data volume first (docs/specs/n8n-data-volume.md). Current ID:
     aws ssm get-parameter --region us-east-2 --name /aws/service/ecs/optimized-ami/amazon-linux-2023/arm64/recommended/image_id --query Parameter.Value --output text
   EOT
   type        = string
@@ -39,3 +39,15 @@ variable "ecs_cluster_name" {
 }
 
 
+
+variable "data_volume_size_gib" {
+  description = "Size of the n8n data volume in GiB"
+  type        = number
+  default     = 10
+}
+
+variable "snapshot_retention_count" {
+  description = "Daily snapshots of the data volume to keep"
+  type        = number
+  default     = 7
+}
