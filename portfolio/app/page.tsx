@@ -1,15 +1,13 @@
 'use client';
 
-import { HISTORY_ITEM_TYPES } from '@app/components/History';
-import { AnimationProvider } from '@app/contexts/AnimationContext';
-import { useHistory } from '@app/contexts/HistoryContext';
+import { Terminal } from '@components/ui/shadcn-io/terminal';
 import { useClientInfo } from '@lib/hooks/useClientInfo';
 import { buildUserInfoForUi } from '@lib/utils/clientInfo';
+import { AnimationProvider } from '@terminal/AnimationContext';
+import { HISTORY_ITEM_TYPES } from '@terminal/history';
+import { useHistory } from '@terminal/history/HistoryContext';
+import Repl from '@terminal/repl/Repl';
 import { useEffect } from 'react';
-
-import { Terminal } from '@/components/ui/shadcn-io/terminal';
-
-import Repl from './components/Repl/Repl';
 
 export default function Home() {
   const { append, items, hasLoaded } = useHistory();

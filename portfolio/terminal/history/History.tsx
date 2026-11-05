@@ -1,7 +1,7 @@
-import { useHistory } from '@app/contexts/HistoryContext';
+import { useHistory } from '@terminal/history/HistoryContext';
 import React from 'react';
 
-import { renderers } from './constants';
+import { renderers } from './registry';
 import type { HistoryItem } from './types';
 
 export function History() {

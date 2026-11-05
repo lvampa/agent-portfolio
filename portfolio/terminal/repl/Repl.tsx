@@ -1,10 +1,10 @@
-import type { HistoryItem } from '@app/components/History';
-import { History, HISTORY_ITEM_TYPES } from '@app/components/History';
-import { EVENTS } from '@app/constants/events';
-import { useAnimation } from '@app/contexts/AnimationContext';
-import { useEventBus } from '@app/contexts/EventBusContext';
-import { useHistory } from '@app/contexts/HistoryContext';
 import useChat from '@lib/hooks/useChat';
+import { useAnimation } from '@terminal/AnimationContext';
+import type { HistoryItem } from '@terminal/history';
+import { History, HISTORY_ITEM_TYPES } from '@terminal/history';
+import { useHistory } from '@terminal/history/HistoryContext';
+import { EVENTS } from '@terminal/repl/constants';
+import { useEventBus } from '@terminal/repl/EventBusContext';
 import { useEffect } from 'react';
 
 import { InputForm } from './InputForm';

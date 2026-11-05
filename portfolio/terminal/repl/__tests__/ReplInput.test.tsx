@@ -1,7 +1,7 @@
 import '@testing-library/jest-dom';
 
-import { HISTORY_ITEM_TYPES } from '@app/components/History';
-import { EVENTS } from '@app/constants/events';
+import { HISTORY_ITEM_TYPES } from '@terminal/history';
+import { EVENTS } from '@terminal/repl/constants';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -9,7 +9,7 @@ import { InputForm } from '../InputForm';
 
 const emit = jest.fn();
 
-jest.mock('@app/contexts/EventBusContext', () => ({
+jest.mock('@terminal/repl/EventBusContext', () => ({
   useEventBus: () => ({ emit }),
 }));
 

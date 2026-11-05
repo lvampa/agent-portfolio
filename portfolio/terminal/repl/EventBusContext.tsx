@@ -1,7 +1,7 @@
 'use client';
 
-import { type EventMap } from '@app/types/events';
 import { createEventBus } from '@lib/event-bus';
+import { type EventMap } from '@terminal/repl/types';
 import React, { createContext, useContext, useState } from 'react';
 
 type EventBusInstance = ReturnType<typeof createEventBus<EventMap>>;

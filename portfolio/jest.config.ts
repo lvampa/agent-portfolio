@@ -8,10 +8,9 @@ const createJestConfig = nextJest({
 const sharedConfig: Config = {
   testEnvironment: 'jsdom',
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/$1',
-    '^@app/(.*)$': '<rootDir>/app/$1',
-    '^@components/(.*)$': '<rootDir>/components/$1',
+    '^@terminal/(.*)$': '<rootDir>/terminal/$1',
     '^@lib/(.*)$': '<rootDir>/lib/$1',
+    '^@components/(.*)$': '<rootDir>/components/$1',
   },
 };
 
@@ -23,10 +22,10 @@ export default async (): Promise<Config> => {
     projects: [
       {
         ...baseConfig,
-        displayName: 'app',
+        displayName: 'terminal',
         testMatch: [
-          '<rootDir>/app/**/__tests__/**/*.test.[jt]s?(x)',
-          '<rootDir>/app/**/*.test.[jt]s?(x)',
+          '<rootDir>/terminal/**/__tests__/**/*.test.[jt]s?(x)',
+          '<rootDir>/terminal/**/*.test.[jt]s?(x)',
         ],
       },
       {

@@ -1,4 +1,4 @@
-import { TypingAnimation } from '@/components/ui/shadcn-io/terminal';
+import { TypingAnimation } from '@components/ui/shadcn-io/terminal';
 
 export default function ReplLoading({ isVisible }: { isVisible: boolean }) {
   if (!isVisible) return null;

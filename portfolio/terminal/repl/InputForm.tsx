@@ -1,10 +1,9 @@
-import { HISTORY_ITEM_TYPES } from '@app/components/History';
-import { EVENTS } from '@app/constants/events';
-import { useEventBus } from '@app/contexts/EventBusContext';
+import { CommandPrompt } from '@components/ui/command-prompt';
+import { Input } from '@components/ui/input';
+import { HISTORY_ITEM_TYPES } from '@terminal/history';
+import { EVENTS } from '@terminal/repl/constants';
+import { useEventBus } from '@terminal/repl/EventBusContext';
 import React, { useEffect, useRef, useState } from 'react';
-
-import { CommandPrompt } from '@/components/ui/command-prompt';
-import { Input } from '@/components/ui/input';
 
 export function InputForm({ isVisible }: { isVisible: boolean }) {
   const eventBus = useEventBus();

@@ -1,8 +1,8 @@
 'use client';
 
-import type { HistoryItem } from '@app/components/History';
-import { HistoryItemSchema } from '@app/components/History/schemas';
 import { storage } from '@lib/storage';
+import type { HistoryItem } from '@terminal/history';
+import { HistoryItemSchema } from '@terminal/history/schemas';
 import React, { createContext, startTransition, useContext, useEffect, useState } from 'react';
 
 interface HistoryContextValue {
