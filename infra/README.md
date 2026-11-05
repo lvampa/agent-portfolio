@@ -96,4 +96,4 @@ tofu test
 
 ## Networking diagram
 
-![Networking Diagram](./docs/networking.jpg)
+See [docs/networking.md](./docs/networking.md).
