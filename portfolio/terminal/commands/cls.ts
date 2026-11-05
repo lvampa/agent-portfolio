@@ -3,6 +3,6 @@ import { clearScreen, newConversation } from '../utils';
 
 export const cls: Command = {
   names: ['cls', 'clear'],
-  description: 'Clear the screen and start a new conversation.',
+  description: 'Clear the screen.',
   run: () => [clearScreen(), newConversation()],
 };
