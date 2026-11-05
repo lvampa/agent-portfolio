@@ -46,7 +46,10 @@ resource "cloudflare_dns_record" "n8n" {
 }
 
 # Only the home IP may open the editor. Every request arrives through the tunnel, so the check has to happen at Cloudflare.
-# Cloudflare allows one custom-rules ruleset per zone, so rules added in the dashboard would be overwritten here.
+# A zone has one http_request_firewall_custom entry point, so creating this fails if the dashboard already made one.
+# Delete that ruleset or import it first (docs/specs/cloudflare-tunnel.md).
+# http.host is the raw Host header, and the docs do not say a port or trailing dot is stripped.
+# wildcard is case-insensitive and its * also catches "admin.example.com." and "admin.example.com:443".
 resource "cloudflare_ruleset" "admin_home_ip" {
   zone_id = var.cloudflare_zone_id
   name    = "n8n editor from home IP only"
@@ -55,7 +58,7 @@ resource "cloudflare_ruleset" "admin_home_ip" {
 
   rules = [{
     description = "Block the n8n editor except from the home IP"
-    expression  = "http.host eq \"${var.admin_hostname}\" and not ip.src in {${var.home_ip_cidr}}"
+    expression  = "http.host wildcard \"${lower(var.admin_hostname)}*\" and not ip.src in {${var.home_ip_cidr}}"
     action      = "block"
     enabled     = true
   }]

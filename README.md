@@ -62,7 +62,7 @@ The `infra` project provisions n8n on AWS through modules:
 - VPC + public subnets + security group
 - One arm64 EC2 instance (with IAM profile, Elastic IP, and an n8n data volume with daily snapshots)
 - An ECS task on that instance running cloudflared, Caddy, and n8n
-- A Cloudflare Tunnel, DNS records, Access, and rate limiting for the webhook and editor hostnames
+- A Cloudflare Tunnel, DNS records, a WAF rule that limits the editor to the home IP, and rate limiting for the webhooks
 
 Webhooks are served at `agent.connorabdelnoor.com` (only `/webhook/*` and `/webhook-test/*`).
 The n8n editor is served at `admin.connorabdelnoor.com`.

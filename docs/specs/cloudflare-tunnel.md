@@ -25,9 +25,14 @@ The instance has no web port open, so there is nothing to reach by IP.
   The VPC module no longer needs a Cloudflare provider.
   The SSH rule from `home_ip_cidr` stays.
 - **Admin access.** A WAF custom rule blocks `admin_hostname` unless `ip.src` is in `home_ip_cidr`.
+  It matches `http.host wildcard "<admin_hostname>*"`, which is case-insensitive and also catches a Host with a trailing dot or a port.
+  [`http.host`](https://developers.cloudflare.com/ruleset-engine/rules-language/fields/reference/http.host/) is the client's raw `Host` header, and the docs do not say it is normalized.
+  [`wildcard`](https://developers.cloudflare.com/ruleset-engine/rules-language/operators/) is case-insensitive, and its `*` matches zero or more characters.
+  `matches` would be stricter but needs a Business plan.
   It replaced a Cloudflare Access application, which needed a Zero Trust organization for the same IP-only check.
   The n8n DNS records wait for the rule, so the editor is never reachable without it.
-  n8n's own login is the second layer.
+  Caddy is the second layer: on the admin host it proxies to n8n only when the client IP from `CF-Connecting-IP` is in `home_ip_cidr`, and answers 403 otherwise.
+  n8n's own login is the third.
 - **Caddy.** The api host serves `/webhook/*` and `/webhook-test/*`, and everything else is a 404.
   Test webhooks stay public so "Listen for test event" works.
   n8n only answers them while the editor is listening.
@@ -63,6 +68,21 @@ The instance has no web port open, so there is nothing to reach by IP.
 One `tofu apply` creates everything.
 The data source waits for the tunnel, and the SSM parameter waits for the data source.
 
+### Existing deploy with Access in state
+
+A zone has one `http_request_firewall_custom` entry point ruleset, so the rule fails to create if the dashboard already made one.
+Add the rule before Access goes, so the editor is never open in between.
+
+1. Look for an existing custom-rules ruleset:
+   ```bash
+   curl -s -H "Authorization: Bearer $TOFU_TOKEN" "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/rulesets" \
+     | jq '.result[] | select(.phase == "http_request_firewall_custom") | {id, name, kind}'
+   ```
+   If one exists, delete it in the dashboard or import it as `cloudflare_ruleset.admin_home_ip` (`zones/<zone_id>/<ruleset_id>`).
+   Importing replaces its rules with this one.
+2. `tofu apply -target=cloudflare_ruleset.admin_home_ip`.
+3. `tofu apply`, which removes the Access application and policy.
+
 ## Verify after apply
 
 - `curl -m 5 http://<elastic ip>/` times out or is refused.
@@ -72,11 +92,21 @@ The data source waits for the tunnel, and the SSM parameter waits for the data s
 - `curl -i -X POST https://<api_hostname>/webhook/x -d "$(head -c 5000 /dev/zero | tr '\0' a)"` returns 413.
 - Twelve quick requests to `https://<api_hostname>/webhook/x` end in 429 or a Cloudflare block page.
 - `https://<admin_hostname>` from a non-home IP (phone on mobile data) shows a Cloudflare block page.
+- From a non-home IP, each of these returns the Cloudflare block page or Caddy's 403, never n8n:
+  ```bash
+  curl -si -H 'Host: ADMIN.<domain>' https://<admin_hostname>/
+  curl -si -H 'Host: <admin_hostname>.' https://<admin_hostname>/
+  curl -si -H 'Host: <admin_hostname>:443' https://<admin_hostname>/
+  ```
 - `https://<admin_hostname>` from the home IP loads n8n, and login works with the secure cookie.
 - The n8n execution log shows real client IPs for webhook calls, not a `172.x` address.
 - In the dashboard, the tunnel shows healthy.
 
 Change the free-plan rate limit values only through the two variables.
+
+If the home network has IPv6, the browser may reach the editor over IPv6, which `home_ip_cidr` does not cover.
+Open the editor over IPv4, or add the home /64 to the rule.
+`home_ip_cidr` is IPv4 only, because the SSH security group rule is.
 
 ## Follow-up
 

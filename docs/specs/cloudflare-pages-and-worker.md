@@ -366,7 +366,7 @@ Nothing is live today, so the steps favor simple over seamless.
    If a zone ruleset with phase `http_request_dynamic_redirect` exists, delete it too.
 4. **Infra PR: the whole `site` module**, with `pages_project_name` and `site_hostname` in `terraform.tfvars`.
    Delete the old `solitary-breeze-9668` Worker in the dashboard first; tofu recreates it under the same name, so its `workers.dev` URL stays the same.
-   The Worker had no bindings or settings worth keeping, and `tofu import` fails on this config because it cannot count the VPC subnets in that mode.
+   Recreating it was simpler than importing it, because the Worker had no bindings or settings worth keeping.
    `tofu plan` must show only creates, for the Pages project, Pages domain, apex and `www` records, ruleset, Worker, its `workers.dev` setting, and route, and no destroys.
    Apply, then plan again: it must be empty.
 5. **Set the GitHub variables from outputs:**

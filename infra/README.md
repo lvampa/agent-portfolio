@@ -46,7 +46,7 @@ Set these in `terraform.tfvars` (or your chosen `*.tfvars` file).
 | Variable | Meaning |
 |----------|---------|
 | `ec2_keypair_name` | Name of the EC2 key pair used for SSH. Key pairs are per region, so create it in `us-east-2`. |
-| `home_ip_cidr` | Your IP in CIDR form (e.g. `1.2.3.4/32`) so the security group allows SSH only from you |
+| `home_ip_cidr` | Your home IP as CIDR (e.g. `1.2.3.4/32`). The only source allowed to SSH in and to open the n8n editor. IPv4, `/24` to `/32`. |
 
 **Cloudflare (tunnel, DNS, WAF rules, site):**
 

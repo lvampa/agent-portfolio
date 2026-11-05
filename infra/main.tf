@@ -26,6 +26,7 @@ module "ecs" {
   n8n_timezone       = var.n8n_timezone
   api_hostname       = var.api_hostname
   admin_hostname     = var.admin_hostname
+  home_ip_cidr       = var.home_ip_cidr
 }
 
 # Pages project, apex and www DNS, the www redirect, and the client-info Worker at /info.
