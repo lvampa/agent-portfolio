@@ -39,7 +39,16 @@ const mockedLoadSession = sessionStore.loadValue as jest.Mock;
 const mockedClearHistory = historyStore.clear as jest.Mock;
 const mockedClearSession = sessionStore.clear as jest.Mock;
 
-const VISITOR = { organization: 'Acme ISP', country: 'US' };
+const VISITOR = {
+  city: 'Seattle',
+  country: 'US',
+  organization: 'Acme ISP',
+  browser: 'Chrome 120.0',
+  os: 'Mac OS 14',
+  device: 'desktop',
+  referer: 'Direct',
+  botRisk: 'low',
+};
 const SESSION_ID = '00000000-0000-4000-8000-000000000000';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 const IDENTIFY_PROMPT = 'User unknown, please identify:';
@@ -131,7 +140,7 @@ describe('Repl', () => {
     );
   });
 
-  test('a chat sends the session id, name, and visitor, and never the IP', async () => {
+  test('a chat sends the session id, name, and visitor', async () => {
     mockedPost.mockResolvedValue({ data: [{ output: 'reply' }] });
     mockedLoadSession.mockReturnValue({
       name: 'tester',
@@ -144,7 +153,7 @@ describe('Repl', () => {
 
     await user.type(await screen.findByLabelText(COMMAND_INPUT_LABEL), 'hi{enter}');
 
-    // toEqual on the whole body, so any extra field such as an IP fails the test.
+    // toEqual on the whole body, so any extra field fails the test.
     expect(mockedPost).toHaveBeenCalledWith('webhooks', {
       chatInput: 'hi',
       sessionId: SESSION_ID,

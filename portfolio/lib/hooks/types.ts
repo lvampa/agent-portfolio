@@ -10,12 +10,23 @@ export type ChatResponse = z.infer<typeof ChatResponseSchema>;
 export interface ClientInfo {
   request: ClientInfoRequest | null;
   parsedUA: ParsedUA | null;
+  /**
+   * Where the visitor came from, from document.referrer. The Worker's referer is the page itself, because the page fetches /info.
+   * Null outside the browser.
+   */
+  referrer: string | null;
 }
 
-/** What the agent may know about the visitor. Never the IP. */
+/** What the agent may know about the visitor. Never the IP or coordinates. Each field is null when not loaded. */
 export interface ChatVisitor {
-  organization: string | null;
+  city: string | null;
   country: string | null;
+  organization: string | null;
+  browser: string | null;
+  os: string | null;
+  device: string | null;
+  referer: string | null;
+  botRisk: string | null;
 }
 
 /** The body of a chat request. sessionId keys the agent's memory. */

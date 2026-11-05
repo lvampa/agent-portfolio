@@ -2,7 +2,7 @@
 
 import { infoClient } from '@lib/api';
 import { ClientInfoRequestSchema } from '@lib/hooks/schemas';
-import { getParsedUA } from '@lib/utils/clientInfo';
+import { getParsedUA, getReferrer } from '@lib/utils/clientInfo';
 import { useEffect, useMemo, useState } from 'react';
 
 import type { ClientInfoRequest, UseClientInfo } from './types';
@@ -10,11 +10,13 @@ import type { ClientInfoRequest, UseClientInfo } from './types';
 export function useClientInfo(): UseClientInfo {
   const [request, setRequest] = useState<ClientInfoRequest | null>(null);
   const [parsedUA, setParsedUA] = useState<ReturnType<typeof getParsedUA>>(null);
+  const [referrer, setReferrer] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     setParsedUA(getParsedUA());
+    setReferrer(getReferrer());
 
     async function fetchClientInfo() {
       try {
@@ -35,7 +37,7 @@ export function useClientInfo(): UseClientInfo {
     void fetchClientInfo();
   }, []);
 
-  const userInfo = useMemo(() => ({ request, parsedUA }), [request, parsedUA]);
+  const userInfo = useMemo(() => ({ request, parsedUA, referrer }), [request, parsedUA, referrer]);
 
   return { userInfo, isLoading, error };
 }

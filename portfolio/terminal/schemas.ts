@@ -1,3 +1,4 @@
+import { randomUuid } from '@lib/utils/uuid';
 import { z } from 'zod';
 
 import { QUESTION_IDS } from './constants';
@@ -29,5 +30,5 @@ export const SessionSchema = z.object({
   // An unknown question id or a stale effect drops back to command mode but keeps the name.
   mode: ModeSchema.catch({ type: 'command' }),
   // A session stored before ids existed gets one on load, so session.v1 needs no new key.
-  sessionId: z.uuid().catch(() => crypto.randomUUID()),
+  sessionId: z.uuid().catch(() => randomUuid()),
 });

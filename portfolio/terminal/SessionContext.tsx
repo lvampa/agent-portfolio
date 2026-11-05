@@ -1,5 +1,6 @@
 'use client';
 
+import { randomUuid } from '@lib/utils/uuid';
 import React, {
   createContext,
   startTransition,
@@ -64,7 +65,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const newConversation = useCallback(() => {
-    setSession((previous) => ({ ...previous, sessionId: crypto.randomUUID() }));
+    setSession((previous) => ({ ...previous, sessionId: randomUuid() }));
   }, []);
 
   const value = useMemo(

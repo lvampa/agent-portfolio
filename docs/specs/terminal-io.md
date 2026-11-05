@@ -316,7 +316,7 @@ The item shape changes, so the version moves to `history.v2`, and the legacy `hi
 `Storage` gains `loadValue(schema)` and `save(value)` for the session object.
 Name the instance `sessionStore`, not `sessionStorage`, which would shadow `window.sessionStorage`.
 A session that fails validation loads as `{ name: null, mode: { type: 'command' } }` with a new `sessionId`, and a loaded name goes through `sanitizeName` again.
-`sessionId` is a `crypto.randomUUID()`.
+`sessionId` comes from `randomUuid()` in `lib/utils/uuid.ts`, which uses `crypto.randomUUID` and falls back to `getRandomValues`, because `randomUUID` only exists in secure contexts and `npm run dev` may be opened over plain http on the LAN.
 A stored session without one, from before ids existed, gets one on load through `.catch` in `SessionSchema`, so the key stays `session.v1`.
 
 ### Chat request
@@ -328,13 +328,25 @@ A stored session without one, from before ids existed, gets one on load through 
   "chatInput": "<message>",
   "sessionId": "<uuid>",
   "name": "<name or null>",
-  "client": { "organization": "<org or null>", "country": "<country or null>" }
+  "client": {
+    "city": "<or null>",
+    "country": "<or null>",
+    "organization": "<or null>",
+    "browser": "<or null>",
+    "os": "<or null>",
+    "device": "<or null>",
+    "referer": "<or null>",
+    "botRisk": "<low, high, or null>"
+  }
 }
 ```
 
 `sessionId` keys the agent's memory.
-`client` comes from the raw client info request, and both fields are null when it failed to load.
-The IP is never sent.
+`buildChatVisitor` in `lib/utils/clientInfo.ts` builds `client` from the client info request and the UA parse the UI already uses.
+Each field is null when its source did not load.
+`referer` is the page's `document.referrer`, or `Direct` when it is empty, because the Worker's `referer` header is the page itself, which fetches `/info`.
+The whoami and startup `referer` row uses the same value.
+It lists the fields one by one, so the IP, latitude, and longitude are never sent.
 `useInterpreter` builds the body, because the session and the visitor belong to the adapters, not the pure core.
 The storage instances are created in the terminal, not in `lib/storage`, since the keys belong to the terminal.
 
