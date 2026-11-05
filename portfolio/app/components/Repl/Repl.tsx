@@ -1,51 +1,68 @@
 import type { HistoryItem } from '@app/components/History';
-import { History, HISTORY_ITEM_TYPES } from '@app/components/History';
+import { History } from '@app/components/History';
 import { EVENTS } from '@app/constants/events';
 import { useAnimation } from '@app/contexts/AnimationContext';
 import { useEventBus } from '@app/contexts/EventBusContext';
 import { useHistory } from '@app/contexts/HistoryContext';
-import useChat from '@lib/hooks/useChat';
-import { useEffect } from 'react';
+import { useSession } from '@app/contexts/SessionContext';
+import {
+  acceptsInput,
+  COMMANDS,
+  currentPrompt,
+  getInputState,
+  route,
+  type TerminalState,
+} from '@app/terminal';
+import type { UserInfo } from '@lib/utils/types';
+import { useEffect, useMemo } from 'react';
 
-import { CHAT_ERROR_MESSAGE } from './constants';
 import { InputForm } from './InputForm';
 import ReplLoading from './ReplLoading';
+import { useInterpreter } from './useInterpreter';
+import { useStartup } from './useStartup';
 
-/**
- * Bridges user input to the chat API and records both the command and the response in history.
- * The prompt stays hidden until `isReady`, so it does not flash before the startup sequence.
- */
-export default function Repl({ isReady }: { isReady: boolean }) {
+interface ReplProps {
+  /** Null when client info failed to load; the startup then skips that step. */
+  clientInfo: UserInfo | null;
+  isClientInfoLoading: boolean;
+}
+
+/** Routes each submitted line to a command, a pending question, or the chat. */
+export default function Repl({ clientInfo, isClientInfoLoading }: ReplProps) {
   const eventBus = useEventBus();
-  const { isLoading, sendMessage } = useChat();
   const { isAnimating } = useAnimation();
-  const { append } = useHistory();
+  const { hasLoaded: hasHistoryLoaded } = useHistory();
+  const { name, mode, hasLoaded: hasSessionLoaded } = useSession();
+  const { apply, busy } = useInterpreter();
+
+  const state: TerminalState = useMemo(
+    () => ({ name, clientInfo, commands: COMMANDS }),
+    [name, clientInfo],
+  );
+
+  const hasStarted = useStartup({
+    isReady: hasHistoryLoaded && hasSessionLoaded && !isClientInfoLoading,
+    state,
+    apply,
+  });
+  const inputState = getInputState({ hasStarted, busy, isAnimating, mode });
 
   useEffect(() => {
-    async function handleSubmit(command: HistoryItem) {
-      append({ value: command.value, type: HISTORY_ITEM_TYPES.COMMAND });
-
-      const result = await sendMessage(command.value);
-
-      if (!result) {
-        append({ value: CHAT_ERROR_MESSAGE, type: HISTORY_ITEM_TYPES.ERROR });
-        return;
-      }
-
-      result.forEach((item) => {
-        append({ value: item.output, type: HISTORY_ITEM_TYPES.MESSAGE });
-      });
+    function handleSubmit(command: HistoryItem) {
+      // The input is hidden in other states, so this only guards against a stray submit.
+      if (!acceptsInput(inputState)) return;
+      void apply(route(command.value, mode, state));
     }
 
     const unregister = eventBus.on(EVENTS.SUBMIT, handleSubmit);
     return () => unregister();
-  }, [eventBus, sendMessage, append]);
+  }, [eventBus, apply, inputState, mode, state]);
 
   return (
     <div>
       <History />
-      <ReplLoading isVisible={isLoading} />
-      <InputForm isVisible={isReady && !isLoading && !isAnimating} />
+      <ReplLoading isVisible={inputState === 'busy'} />
+      <InputForm isVisible={acceptsInput(inputState)} prompt={currentPrompt(mode, name)} />
     </div>
   );
 }

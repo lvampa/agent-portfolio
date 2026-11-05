@@ -6,7 +6,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { CommandPrompt } from '@/components/ui/command-prompt';
 import { Input } from '@/components/ui/input';
 
-export function InputForm({ isVisible }: { isVisible: boolean }) {
+export function InputForm({ isVisible, prompt }: { isVisible: boolean; prompt: string }) {
   const eventBus = useEventBus();
   const [value, setValue] = useState('');
   const inputElementRef = useRef<HTMLInputElement>(null);
@@ -32,7 +32,7 @@ export function InputForm({ isVisible }: { isVisible: boolean }) {
 
   return (
     <form onSubmit={handleSubmit}>
-      <CommandPrompt>
+      <CommandPrompt prompt={prompt}>
         <label htmlFor="input-prompt" className="sr-only">
           Input Prompt
         </label>

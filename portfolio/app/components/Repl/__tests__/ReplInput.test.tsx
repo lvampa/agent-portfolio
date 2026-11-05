@@ -7,6 +7,7 @@ import userEvent from '@testing-library/user-event';
 
 import { InputForm } from '../InputForm';
 
+const PROMPT = 'Please Identify:';
 const emit = jest.fn();
 
 jest.mock('@app/contexts/EventBusContext', () => ({
@@ -19,15 +20,20 @@ describe('ReplInput', () => {
   });
 
   describe('Given the input is visible', () => {
+    test('Then it shows the given prompt', () => {
+      render(<InputForm isVisible={true} prompt={PROMPT} />);
+      expect(screen.getByText(PROMPT)).toBeInTheDocument();
+    });
+
     test('Then it focuses the prompt on first render', () => {
-      render(<InputForm isVisible={true} />);
+      render(<InputForm isVisible={true} prompt={PROMPT} />);
 
       const input = screen.getByLabelText('Input Prompt');
       expect(input).toHaveFocus();
     });
 
     test('When the user clicks elsewhere, Then focus returns to the prompt', async () => {
-      render(<InputForm isVisible={true} />);
+      render(<InputForm isVisible={true} prompt={PROMPT} />);
       const user = userEvent.setup();
       const input = screen.getByLabelText('Input Prompt');
 
@@ -36,7 +42,7 @@ describe('ReplInput', () => {
     });
 
     test('When the user submits text, Then it emits a submit event and clears the input', async () => {
-      render(<InputForm isVisible={true} />);
+      render(<InputForm isVisible={true} prompt={PROMPT} />);
       const user = userEvent.setup();
       const input = screen.getByLabelText('Input Prompt');
 
@@ -52,7 +58,7 @@ describe('ReplInput', () => {
 
   describe('Given the input is not visible', () => {
     test('Then it does not render the prompt', () => {
-      render(<InputForm isVisible={false} />);
+      render(<InputForm isVisible={false} prompt={PROMPT} />);
       expect(screen.queryByLabelText('Input Prompt')).not.toBeInTheDocument();
     });
   });

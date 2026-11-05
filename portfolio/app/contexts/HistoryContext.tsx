@@ -2,7 +2,7 @@
 
 import type { HistoryItem } from '@app/components/History';
 import { HistoryItemSchema } from '@app/components/History/schemas';
-import { storage } from '@lib/storage';
+import { isHistoryDisabled, storage } from '@lib/storage';
 import React, {
   createContext,
   startTransition,
@@ -17,13 +17,14 @@ interface HistoryContextValue {
   items: HistoryItem[];
   hasLoaded: boolean;
   append: (item: HistoryItem) => void;
+  clear: () => void;
 }
 
 const HistoryContext = createContext<HistoryContextValue | null>(null);
 
 // Local dev flag. Starting empty replays the startup sequence on every refresh.
 function loadOrResetHistory(): HistoryItem[] {
-  if (process.env.NEXT_PUBLIC_NO_HISTORY !== 'true') return storage.load(HistoryItemSchema);
+  if (!isHistoryDisabled()) return storage.load(HistoryItemSchema);
   storage.clear();
   return [];
 }
@@ -45,7 +46,15 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
     storage.append(item);
   }, []);
 
-  const value = useMemo(() => ({ items, hasLoaded, append }), [items, hasLoaded, append]);
+  const clear = useCallback(() => {
+    setItems([]);
+    storage.clear();
+  }, []);
+
+  const value = useMemo(
+    () => ({ items, hasLoaded, append, clear }),
+    [items, hasLoaded, append, clear],
+  );
 
   return <HistoryContext.Provider value={value}>{children}</HistoryContext.Provider>;
 }

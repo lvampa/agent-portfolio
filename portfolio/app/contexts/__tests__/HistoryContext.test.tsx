@@ -2,15 +2,22 @@ import '@testing-library/jest-dom';
 
 import { HISTORY_ITEM_TYPES } from '@app/components/History';
 import { HistoryProvider, useHistory } from '@app/contexts/HistoryContext';
-import { storage } from '@lib/storage';
+import { SessionProvider } from '@app/contexts/SessionContext';
+import { sessionStore, storage } from '@lib/storage';
 import { act, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import React from 'react';
 
 jest.mock('@lib/storage', () => ({
+  ...jest.requireActual('@lib/storage'),
   storage: {
     load: jest.fn(() => []),
     append: jest.fn(),
+    clear: jest.fn(),
+  },
+  sessionStore: {
+    loadValue: jest.fn(() => null),
+    save: jest.fn(),
     clear: jest.fn(),
   },
 }));
@@ -18,9 +25,14 @@ jest.mock('@lib/storage', () => ({
 const mockedLoad = storage.load as jest.Mock;
 const mockedAppend = storage.append as jest.Mock;
 const mockedClear = storage.clear as jest.Mock;
+const mockedSessionClear = sessionStore.clear as jest.Mock;
 
 function wrapper({ children }: { children: ReactNode }) {
-  return <HistoryProvider>{children}</HistoryProvider>;
+  return (
+    <HistoryProvider>
+      <SessionProvider>{children}</SessionProvider>
+    </HistoryProvider>
+  );
 }
 
 describe('HistoryContext', () => {
@@ -50,13 +62,14 @@ describe('HistoryContext', () => {
       expect(result.current.hasLoaded).toBe(true);
     });
 
-    test('clears stored history when NEXT_PUBLIC_NO_HISTORY is true', async () => {
+    test('clears stored history and session when NEXT_PUBLIC_NO_HISTORY is true', async () => {
       process.env.NEXT_PUBLIC_NO_HISTORY = 'true';
       mockedLoad.mockReturnValue([{ value: 'hello', type: HISTORY_ITEM_TYPES.COMMAND }]);
       try {
         const { result } = renderHook(() => useHistory(), { wrapper });
         await act(async () => {});
         expect(mockedClear).toHaveBeenCalled();
+        expect(mockedSessionClear).toHaveBeenCalled();
         expect(result.current.items).toEqual([]);
         expect(result.current.hasLoaded).toBe(true);
       } finally {
@@ -87,6 +100,16 @@ describe('HistoryContext', () => {
       act(() => result.current.append(first));
       act(() => result.current.append(second));
       expect(result.current.items).toEqual([first, second]);
+    });
+  });
+
+  describe('clear', () => {
+    test('empties items and stored history', () => {
+      const { result } = renderHook(() => useHistory(), { wrapper });
+      act(() => result.current.append({ value: 'hello', type: HISTORY_ITEM_TYPES.COMMAND }));
+      act(() => result.current.clear());
+      expect(result.current.items).toEqual([]);
+      expect(mockedClear).toHaveBeenCalled();
     });
   });
 
