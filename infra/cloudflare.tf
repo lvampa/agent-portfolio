@@ -67,7 +67,8 @@ resource "cloudflare_zero_trust_access_application" "admin" {
 }
 
 # The free plan allows one rule, a 10 second period and only the path field in the expression,
-# so the rule cannot be limited to the api host. The editor never serves /webhook/ paths.
+# so the rule cannot be limited to the api host. The prefix covers /webhook/ and /webhook-test/,
+# and the editor never serves either.
 # Cloudflare allows one rate-limit ruleset per zone, so rules added in the dashboard would be overwritten here.
 resource "cloudflare_ruleset" "webhook_rate_limit" {
   zone_id = var.cloudflare_zone_id
@@ -77,7 +78,7 @@ resource "cloudflare_ruleset" "webhook_rate_limit" {
 
   rules = [{
     description = "Rate limit webhooks per IP"
-    expression  = "starts_with(http.request.uri.path, \"/webhook/\")"
+    expression  = "starts_with(http.request.uri.path, \"/webhook\")"
     action      = "block"
     enabled     = true
     ratelimit = {

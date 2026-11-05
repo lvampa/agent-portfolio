@@ -6,7 +6,7 @@ Port 80 on the Elastic IP accepts traffic from Cloudflare's IP ranges.
 Those ranges are shared by every Cloudflare customer.
 Anyone can point their own zone at the Elastic IP and send `Host: admin.<domain>`.
 That request comes from an allowed range and never touches our zone, so the WAF rule that protects the editor does not run.
-The webhook host also has no rate limit, no body cap, and still exposes `/webhook-test/*`.
+The webhook host also has no rate limit and no body cap.
 
 ## Design
 
@@ -28,14 +28,16 @@ The instance has no web port open, so there is nothing to reach by IP.
   Its policy uses the `bypass` decision with an `ip` include of `home_ip_cidr`.
   Bypass skips the login page for the home IP, and Access denies everyone else by default.
   An `allow` policy would still ask for an identity, and we do not use a login provider.
-- **Caddy.** The api host serves `/webhook/*` only, so `/webhook-test/*` is a 404.
+- **Caddy.** The api host serves `/webhook/*` and `/webhook-test/*`, and everything else is a 404.
+  Test webhooks stay public so "Listen for test event" works.
+  n8n only answers them while the editor is listening.
   Request bodies on the api host are capped at 4 KB.
   Caddy trusts private ranges as proxies and reads the client IP from `CF-Connecting-IP`.
   It sets `X-Forwarded-For` to that single IP, which is what `N8N_PROXY_HOPS=1` reads.
-- **Rate limit.** A `http_ratelimit` ruleset blocks an IP for 10 seconds after 10 requests in 10 seconds on `/webhook/*`.
+- **Rate limit.** A `http_ratelimit` ruleset blocks an IP for 10 seconds after 10 requests in 10 seconds on paths starting with `/webhook`, which covers both webhook paths.
   The free plan allows one rule, a 10 second period, and only the path field in the expression.
   So the rule matches the path on the whole zone, not just the api host.
-  The editor does not serve `/webhook/` paths, so this does not affect it.
+  The editor does not serve those paths, so this does not affect it.
 - **Cookie.** `N8N_SECURE_COOKIE=false` is removed.
   It was added when the origin switched to plain HTTP, and browsers reach n8n over HTTPS at the Cloudflare edge, so secure cookies work.
 
@@ -68,7 +70,7 @@ The data source waits for the tunnel, and the SSM parameter waits for the data s
 
 - `curl -m 5 http://<elastic ip>/` times out or is refused.
 - `ssh` to the Elastic IP still works from the home IP.
-- `curl -i https://<api_hostname>/webhook-test/x` returns 404.
+- With "Listen for test event" running in the editor, a call to the test URL reaches the workflow.
 - `curl -i https://<api_hostname>/` returns 404.
 - `curl -i -X POST https://<api_hostname>/webhook/x -d "$(head -c 5000 /dev/zero | tr '\0' a)"` returns 413.
 - Twelve quick requests to `https://<api_hostname>/webhook/x` end in 429 or a Cloudflare block page.

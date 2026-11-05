@@ -57,6 +57,7 @@ resource "aws_iam_role_policy" "ecs_execution_read_secrets" {
 }
 
 # The api host only serves webhooks, so the editor is reachable on the admin host alone.
+# Test webhooks stay public, because n8n only answers them while the editor is listening.
 # The http:// prefix stops Caddy from requesting certificates; Cloudflare terminates HTTPS.
 # Only the cloudflared sidecar can reach Caddy, so private addresses are the proxies we trust.
 # Caddy then takes the client IP from CF-Connecting-IP and hands n8n a single X-Forwarded-For entry,
@@ -71,7 +72,7 @@ locals {
     }
 
     http://${var.api_hostname} {
-      @webhooks path /webhook/*
+      @webhooks path /webhook/* /webhook-test/*
       handle @webhooks {
         request_body {
           max_size 4KB

@@ -55,7 +55,7 @@ run "plans" {
   }
 
   assert {
-    condition     = strcontains({ for e in one([for c in jsondecode(aws_ecs_task_definition.n8n.container_definitions) : c if c.name == "caddy"]).environment : e.name => e.value }["CADDYFILE"], "@webhooks path /webhook/*\n")
-    error_message = "The api host must only proxy /webhook/ paths, not /webhook-test/."
+    condition     = strcontains({ for e in one([for c in jsondecode(aws_ecs_task_definition.n8n.container_definitions) : c if c.name == "caddy"]).environment : e.name => e.value }["CADDYFILE"], "@webhooks path /webhook/* /webhook-test/*\n")
+    error_message = "The api host must proxy only /webhook/ and /webhook-test/ paths."
   }
 }
