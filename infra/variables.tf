@@ -25,8 +25,8 @@ variable "home_ip_cidr" {
   type        = string
 
   validation {
-    condition     = can(regex("^\\d+\\.\\d+\\.\\d+\\.\\d+/(2[4-9]|3[0-2])$", var.home_ip_cidr)) && can(cidrhost(var.home_ip_cidr, 0))
-    error_message = "home_ip_cidr must be an IPv4 CIDR from /24 to /32, such as 1.2.3.4/32. A wide range like 0.0.0.0/0 would open both the editor rule and SSH, and the SSH security group rule is IPv4 only."
+    condition     = can(regex("^\\d+\\.\\d+\\.\\d+\\.\\d+/(2[4-9]|3[0-2])$", var.home_ip_cidr)) && try(cidrsubnet(var.home_ip_cidr, 0, 0) == var.home_ip_cidr, false)
+    error_message = "home_ip_cidr must be an IPv4 network from /24 to /32, such as 1.2.3.4/32 or 1.2.3.0/24. A wide range like 0.0.0.0/0 would open both the editor rule and SSH, and the SSH security group rule is IPv4 only."
   }
 }
 

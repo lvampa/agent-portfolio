@@ -45,7 +45,8 @@ resource "cloudflare_dns_record" "n8n" {
   depends_on = [cloudflare_ruleset.admin_home_ip]
 }
 
-# Only the home IP may open the editor. Every request arrives through the tunnel, so the check has to happen at Cloudflare.
+# Only the home IP may open the editor. Every request arrives through the tunnel, so the origin never sees a client address of its own.
+# This edge rule is the first check, and Caddy repeats it.
 # A zone has one http_request_firewall_custom entry point, so creating this fails if the dashboard already made one.
 # Delete that ruleset or import it first (docs/specs/cloudflare-tunnel.md).
 # http.host is the raw Host header, and the docs do not say a port or trailing dot is stripped.

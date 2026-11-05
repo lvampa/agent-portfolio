@@ -81,7 +81,9 @@ Add the rule before Access goes, so the editor is never open in between.
    If one exists, delete it in the dashboard or import it as `cloudflare_ruleset.admin_home_ip` (`zones/<zone_id>/<ruleset_id>`).
    Importing replaces its rules with this one.
 2. `tofu apply -target=cloudflare_ruleset.admin_home_ip`.
-3. `tofu apply`, which removes the Access application and policy.
+3. From a non-home IP (a phone on mobile data), `https://<admin_hostname>` shows the Cloudflare block page.
+   Do not go on until it does.
+4. `tofu apply`, which removes the Access application and policy.
 
 ## Verify after apply
 
