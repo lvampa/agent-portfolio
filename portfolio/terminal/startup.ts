@@ -6,7 +6,7 @@ export function startupEffects(state: TerminalState): Effect[] {
   return [
     ...BANNER_LINES.map(printText),
     ...(state.clientInfo ? [print({ type: 'clientInfo', info: state.clientInfo })] : []),
-    ...(state.name ? [] : [ask(QUESTION_IDS.IDENTIFY)]),
+    ...(state.name ? [] : [printText(''), ask(QUESTION_IDS.IDENTIFY)]),
     printText(GUIDANCE_LINE),
   ];
 }

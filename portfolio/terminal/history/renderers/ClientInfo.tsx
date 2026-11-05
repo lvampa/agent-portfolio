@@ -20,7 +20,7 @@ export const ClientInfo: React.FC<{ item: HistoryItemOf<'clientInfo'> }> = ({ it
       {item.info.map((infoItem) => (
         <div key={infoItem.label}>
           <TypingAnimation
-            delay={2500}
+            delay={600}
             duration={10}
             onStart={startAnimation}
             onComplete={endAnimation}

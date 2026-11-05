@@ -28,7 +28,7 @@ const mockedLoadSession = sessionStore.loadValue as jest.Mock;
 const mockedClearHistory = historyStore.clear as jest.Mock;
 const mockedClearSession = sessionStore.clear as jest.Mock;
 
-const IDENTIFY_PROMPT = 'Please Identify:';
+const IDENTIFY_PROMPT = 'User unknown, please identify:';
 const EARLIER_LINE = 'an earlier line';
 
 // NODE_ENV is typed read-only, so tests write it through a widened view of process.env.
