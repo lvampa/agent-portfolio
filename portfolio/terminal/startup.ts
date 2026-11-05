@@ -7,6 +7,8 @@ export function startupEffects(state: TerminalState): Effect[] {
     ...BANNER_LINES.map(printText),
     ...(state.clientInfo ? [print({ type: 'clientInfo', info: state.clientInfo })] : []),
     ...(state.name ? [] : [printText(''), ask(QUESTION_IDS.IDENTIFY)]),
+    printText(''),
     printText(GUIDANCE_LINE),
+    printText(''),
   ];
 }

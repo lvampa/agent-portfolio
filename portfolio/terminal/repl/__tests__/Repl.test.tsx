@@ -68,7 +68,7 @@ describe('Repl', () => {
     await user.type(screen.getByLabelText('Input Prompt'), 'tester{enter}');
 
     expect(await screen.findByText(GUIDANCE_LINE)).toBeInTheDocument();
-    expect(screen.getByText('C:\\Users\\tester >')).toBeInTheDocument();
+    expect(screen.getByText('C:\\Users\\tester>')).toBeInTheDocument();
   });
 
   test('restored history skips the startup and is inside the log when it mounts', async () => {
