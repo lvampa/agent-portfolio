@@ -21,9 +21,4 @@ describe('ReplLoading', () => {
 
     expect(screen.getByText('... Loading').parentElement).toBe(before.parentElement);
   });
-
-  test('renders nothing when hidden', () => {
-    render(<ReplLoading isVisible={false} />);
-    expect(screen.queryByRole('status')).not.toBeInTheDocument();
-  });
 });

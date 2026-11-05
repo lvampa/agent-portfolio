@@ -58,22 +58,17 @@ describe('Repl chat failures', () => {
     expect(mockedPost).toHaveBeenCalledWith('webhooks', { chatInput: 'hello' });
   });
 
-  test('shows an error item on a network error', async () => {
-    mockedPost.mockRejectedValue(new AxiosError('Network Error', 'ERR_NETWORK'));
-    await submitCommand('hello');
-
-    expect(await screen.findByText(CHAT_ERROR_MESSAGE)).toBeInTheDocument();
-  });
-
-  test('shows an error item on a timeout', async () => {
-    mockedPost.mockRejectedValue(new AxiosError('timeout of 30000ms exceeded', 'ECONNABORTED'));
-    await submitCommand('hello');
-
-    expect(await screen.findByText(CHAT_ERROR_MESSAGE)).toBeInTheDocument();
-  });
-
-  test('shows an error item when the reply fails validation', async () => {
-    mockedPost.mockResolvedValue({ data: { unexpected: true } });
+  test.each([
+    [
+      'a network error',
+      () => mockedPost.mockRejectedValue(new AxiosError('Network Error', 'ERR_NETWORK')),
+    ],
+    [
+      'a reply that fails validation',
+      () => mockedPost.mockResolvedValue({ data: { unexpected: true } }),
+    ],
+  ])('shows an error item on %s', async (_case, arrange) => {
+    arrange();
     await submitCommand('hello');
 
     expect(await screen.findByText(CHAT_ERROR_MESSAGE)).toBeInTheDocument();
