@@ -4,8 +4,10 @@ The frontend in `portfolio/` is a Next.js static export hosted on Cloudflare Pag
 
 ## How a deploy happens
 
-A push to `main` that touches `portfolio/**`, `deploy-frontend.yml`, or `frontend-checks.yml` runs `.github/workflows/deploy-frontend.yml`.
-The `checks` job runs type check, lint, format check, tests, and the production build, then uploads `portfolio/out` as the `site` artifact.
+Merging a PR to `main` that touches `portfolio/**` or `deploy-frontend.yml` runs `.github/workflows/deploy-frontend.yml`.
+The PR already passed `ci`, so the deploy does not repeat the checks.
+The `build` job builds with the real URLs, checks they made it into the bundle, and uploads `portfolio/out` as the `site` artifact.
+It has no secrets, so dependency install scripts never see the Cloudflare token.
 The `deploy` job runs in the `production` environment and uploads that artifact with `wrangler pages deploy`.
 It then curls the deployment URL and `SITE_URL` and fails if either does not return an HTML page.
 The job summary lists the commit, deployment URL, site URL, and Pages deployment ID.
@@ -25,13 +27,13 @@ Set these under Settings, Secrets and variables, Actions.
 | `NEXT_PUBLIC_CHAT_WEBHOOK_URL` | Variable | Repository | Inlined into the build |
 | `NEXT_PUBLIC_INFO_URL` | Variable | Repository | Inlined into the build |
 
-The checks job fails early if either `NEXT_PUBLIC_*` variable is empty.
+The build job fails early if either `NEXT_PUBLIC_*` variable is empty.
 The deploy job fails early if `CLOUDFLARE_ACCOUNT_ID`, `CF_PAGES_PROJECT`, or `SITE_URL` is empty.
 
 ## Redeploy
 
-Go to Actions, "Deploy frontend to Cloudflare Pages", "Run workflow", and pick `main`.
-This rebuilds and deploys the current head of `main`.
+Open the latest run of "Deploy frontend to Cloudflare Pages" under Actions and choose "Re-run all jobs".
+It rebuilds the same commit with the current variables, which is how to pick up a changed `NEXT_PUBLIC_*` value.
 
 ## Roll back
 
