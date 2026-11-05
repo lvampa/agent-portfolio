@@ -1,8 +1,8 @@
 import { CommandPrompt } from '@components/ui/command-prompt';
 import { Input } from '@components/ui/input';
-import { EVENTS } from '@terminal/constants';
-import { useEventBus } from '@terminal/contexts/EventBusContext';
 import { HISTORY_ITEM_TYPES } from '@terminal/history';
+import { EVENTS } from '@terminal/repl/constants';
+import { useEventBus } from '@terminal/repl/EventBusContext';
 import React, { useEffect, useRef, useState } from 'react';
 
 export function InputForm({ isVisible }: { isVisible: boolean }) {

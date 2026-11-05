@@ -1,7 +1,7 @@
 import { CommandPrompt } from '@components/ui/command-prompt';
 import { TypingAnimation } from '@components/ui/shadcn-io/terminal';
 import { UserInfoSchema } from '@lib/utils/schemas';
-import { useAnimation } from '@terminal/contexts/AnimationContext';
+import { useAnimation } from '@terminal/AnimationContext';
 import React from 'react';
 
 import { type HistoryItem } from '../types';

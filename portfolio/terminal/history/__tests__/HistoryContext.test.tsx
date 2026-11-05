@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import React from 'react';
 
 import { HISTORY_ITEM_TYPES } from '@terminal/history';
-import { HistoryProvider, useHistory } from '@terminal/contexts/HistoryContext';
+import { HistoryProvider, useHistory } from '@terminal/history/HistoryContext';
 import { storage } from '@lib/storage';
 
 jest.mock('@lib/storage', () => ({

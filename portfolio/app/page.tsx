@@ -3,9 +3,9 @@
 import { Terminal } from '@components/ui/shadcn-io/terminal';
 import { useClientInfo } from '@lib/hooks/useClientInfo';
 import { buildUserInfoForUi } from '@lib/utils/clientInfo';
-import { AnimationProvider } from '@terminal/contexts/AnimationContext';
-import { useHistory } from '@terminal/contexts/HistoryContext';
+import { AnimationProvider } from '@terminal/AnimationContext';
 import { HISTORY_ITEM_TYPES } from '@terminal/history';
+import { useHistory } from '@terminal/history/HistoryContext';
 import Repl from '@terminal/repl/Repl';
 import { useEffect } from 'react';
 

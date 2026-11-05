@@ -1,7 +1,3 @@
-import { Command, Help, Message, Thinking, User } from '@terminal/history/renderers';
-import { type HistoryItem, type HistoryItemType } from '@terminal/history/types';
-import type React from 'react';
-
 export const HISTORY_ITEM_TYPES = {
   THINKING: 'thinking',
   COMMAND: 'command',
@@ -9,11 +5,3 @@ export const HISTORY_ITEM_TYPES = {
   HELP: 'help',
   USER: 'user',
 } as const;
-
-export const renderers: Record<HistoryItemType, React.FC<{ item: HistoryItem }>> = {
-  [HISTORY_ITEM_TYPES.COMMAND]: Command,
-  [HISTORY_ITEM_TYPES.MESSAGE]: Message,
-  [HISTORY_ITEM_TYPES.THINKING]: Thinking,
-  [HISTORY_ITEM_TYPES.HELP]: Help,
-  [HISTORY_ITEM_TYPES.USER]: User,
-};
