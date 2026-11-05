@@ -8,6 +8,7 @@ import localFont from 'next/font/local';
 import React from 'react';
 
 import {
+  EXAMPLE_QUESTIONS,
   PERSON_JSON_LD,
   SHARE_TITLE,
   SITE_DESCRIPTION,
@@ -60,14 +61,23 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(PERSON_JSON_LD) }}
         />
         <noscript>
-          <p className="text-terminal m-8">
-            An agent that describes Connor Abdelnoor, in a 90s command prompt. For the static
-            portfolio, see{' '}
-            <a href={STATIC_PORTFOLIO_URL} className="underline">
-              connorabdelnoor.github.io
-            </a>
-            .
-          </p>
+          <div className="text-terminal m-8">
+            <p>
+              Connor&apos;s AI Agent answers questions about Connor Abdelnoor, a software engineer
+              who builds enterprise software from user interfaces to infrastructure. It runs in a
+              90s command prompt and needs JavaScript; without it, see the static portfolio at{' '}
+              <a href={STATIC_PORTFOLIO_URL} className="underline">
+                connorabdelnoor.github.io
+              </a>
+              .
+            </p>
+            <p className="mt-4">Questions people ask it:</p>
+            <ul>
+              {EXAMPLE_QUESTIONS.map((question) => (
+                <li key={question}>- {question}</li>
+              ))}
+            </ul>
+          </div>
         </noscript>
         <EventBusProvider>
           <HistoryProvider>
