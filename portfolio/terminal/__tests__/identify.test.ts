@@ -1,10 +1,9 @@
 import { MAX_NAME_LENGTH, STAYING_UNKNOWN_LINE } from '../constants';
 import { identify } from '../questions';
-import { COMMANDS } from '../registry';
 import type { TerminalState } from '../types';
 import { printText, setName } from '../utils';
 
-const state: TerminalState = { name: null, clientInfo: null, commands: COMMANDS };
+const state: TerminalState = { name: null, clientInfo: null, commands: [] };
 
 describe('identify', () => {
   test('a name sets it', () => {

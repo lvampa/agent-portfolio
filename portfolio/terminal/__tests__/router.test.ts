@@ -1,12 +1,17 @@
-import { help } from '../commands';
 import { GUIDANCE_LINE, QUESTION_IDS } from '../constants';
 import { identify } from '../questions';
-import { COMMANDS } from '../registry';
+import { createRegistry } from '../registry';
 import { route } from '../router';
-import type { Effect, Mode, TerminalState } from '../types';
+import type { Command, Effect, Mode, TerminalState } from '../types';
 import { chat, echo, printText, promptFor, setName } from '../utils';
 
-const state: TerminalState = { name: null, clientInfo: null, commands: COMMANDS };
+// The registry ships empty, so routing is tested against a command that exists only here.
+const ping: Command = {
+  names: ['ping'],
+  description: 'Replies pong.',
+  run: () => [printText('pong')],
+};
+const state: TerminalState = { name: null, clientInfo: null, commands: createRegistry([ping]) };
 const commandMode: Mode = { type: 'command' };
 const awaitingIdentify: Mode = {
   type: 'awaiting',
@@ -25,15 +30,15 @@ describe('route', () => {
     ],
     [
       'a command name matches case-insensitively',
-      'HELP',
+      'PING',
       commandMode,
-      [echo('HELP', prompt), ...help.run(state)],
+      [echo('PING', prompt), printText('pong')],
     ],
     [
       'a command word followed by more text goes to the chat',
-      'help me understand his AWS work',
+      'ping me about his AWS work',
       commandMode,
-      [echo('help me understand his AWS work', prompt), chat('help me understand his AWS work')],
+      [echo('ping me about his AWS work', prompt), chat('ping me about his AWS work')],
     ],
     ['a blank line in command mode is only echoed', '  ', commandMode, [echo('  ', prompt)]],
   ])('%s', (_description, line, mode, expected) => {

@@ -47,15 +47,9 @@ On a first visit the screen shows, top to bottom:
 4. The guidance line: `Ask about the author, or type help for other commands.`
 5. From then on, a line that is exactly a command name runs that command, and anything else goes to the chat.
 
-Launch commands:
-
-| Names | Does |
-|---|---|
-| `help`, `h` | Prints one line per command, generated from the registry. |
-| `cls`, `clear` | Clears the screen and the stored history. |
-| `whoami` | Prints the name and the loaded client info lines. |
-
-A command runs only when nothing follows it, so `help me understand his AWS work` goes to the chat.
+This PR builds the structure only, so the command registry ships empty and every line goes to the chat for now.
+Commands such as `help`, `cls`, and `whoami` land in later PRs.
+A command runs only when nothing follows it, so `help me understand his AWS work` will go to the chat.
 A blank line in command mode prints an empty prompt line and does nothing else.
 On a reload, stored history renders as before and the startup does not replay.
 
@@ -150,7 +144,7 @@ interface TerminalState {
 `run` takes no arguments, since a command only runs when nothing follows its name.
 Add an `args` parameter when the first command needs one.
 
-`COMMANDS = createRegistry([help, cls, whoami])` lowercases every name and throws at module load if a name appears twice.
+`COMMANDS = createRegistry([...])` lowercases every name and throws at module load if a name appears twice.
 Matching is case-insensitive.
 
 ### Questions
@@ -304,7 +298,7 @@ terminal/
   index.ts         re-exports, pure modules only
   SessionContext.tsx
   AnimationContext.tsx
-  commands/        help.ts cls.ts whoami.ts index.ts
+  commands/        one file per command, added in later PRs
   questions/       identify.ts registry.ts index.ts
   history/
     schemas.ts     one schema per item type, and the union
@@ -336,7 +330,7 @@ A table or an image is the same three steps.
 
 A few tests for the real risks:
 
-- `router.test.ts`: one table through `route`. Awaiting sends the line to the question and appends `then`. `HELP` runs `help`. A command word followed by more text goes to the chat. A blank line is only echoed.
+- `router.test.ts`: one table through `route`. Awaiting sends the line to the question and appends `then`. A test-only command matches case-insensitively. A command word followed by more text goes to the chat. A blank line is only echoed.
 - `identify.test.ts`: a name sets it, a blank or all-stripped answer stays unknown, and the cap never splits an emoji.
 - `registry.test.ts`: a duplicate name throws.
 - `interpreter.test.ts`, with fake ports: effects apply in order, an `ask` parks the rest in `then` and stops, and a failed chat appends an `error` item.
@@ -353,8 +347,6 @@ Update the existing tests the change touches, and delete ones that only test the
 
 ## Decided while reviewing the spec
 
-- `help` and `whoami` print text lines for now (`whoami` as `label: value`), and are the only exceptions to "never format structure into text".
-  Reusing the `clientInfo` item would replay its loading animation, and a new type is out of scope.
-  Both move to the list type when it lands.
+- No commands ship in this PR. The router and registry are tested with a command that exists only in the test.
 - Whether `busy` comes from `useChat` or the interpreter.
 - The exact `Command` renderer markup, as long as it shows the stored prompt.
