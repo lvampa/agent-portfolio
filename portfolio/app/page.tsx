@@ -22,7 +22,7 @@ export default function Home() {
     if (userInfoItems) {
       append({ type: HISTORY_ITEM_TYPES.USER, value: JSON.stringify(userInfoItems) });
     }
-  }, [hasLoaded, isLoading, userInfo]);
+  }, [hasLoaded, isLoading, userInfo, items.length, append]);
 
   return (
     <main className="flex h-screen w-full justify-center">
