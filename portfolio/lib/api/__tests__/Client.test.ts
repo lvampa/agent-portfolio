@@ -1,64 +1,50 @@
-import axios from 'axios';
-
 import { Client } from '../Client';
+import { REQUEST_TIMEOUT_MS } from '../constants';
 
-jest.mock('axios');
+const mockedFetch = jest.fn();
 
-const mockedAxios = axios as jest.Mocked<typeof axios>;
+function jsonResponse(body: unknown, status = 200) {
+  return { ok: status >= 200 && status < 300, status, json: async () => body };
+}
 
 describe('Client', () => {
-  const mockPost = jest.fn();
-
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockedAxios.create = jest.fn().mockReturnValue({
-      post: mockPost,
-    });
+    mockedFetch.mockReset();
+    globalThis.fetch = mockedFetch;
+    // jsdom has no AbortSignal.timeout, which every current browser has.
+    AbortSignal.timeout = jest.fn(() => new AbortController().signal);
   });
 
-  describe('constructor', () => {
-    test('creates axios instance with JSON content type', () => {
-      new Client('https://example.com');
-      expect(mockedAxios.create).toHaveBeenCalledWith({
-        baseURL: 'https://example.com',
-        timeout: 30_000,
-        headers: { 'Content-Type': 'application/json' },
-      });
+  test('post sends JSON to the base plus path and returns the parsed body', async () => {
+    mockedFetch.mockResolvedValue(jsonResponse([{ output: 'hi' }]));
+
+    const body = await new Client('https://agent.example.com/webhook/abc').post('webhooks', {
+      chatInput: 'hello',
     });
+
+    const [url, init] = mockedFetch.mock.calls[0];
+    expect(String(url)).toBe('https://agent.example.com/webhook/abc/webhooks');
+    expect(init).toMatchObject({
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chatInput: 'hello' }),
+    });
+    expect(init.signal).toBeInstanceOf(AbortSignal);
+    expect(AbortSignal.timeout).toHaveBeenCalledWith(REQUEST_TIMEOUT_MS);
+    expect(body).toEqual([{ output: 'hi' }]);
   });
 
-  describe('post', () => {
-    test('sends POST request with payload and returns response data', async () => {
-      const response = { reply: 'Hello back' };
-      mockPost.mockResolvedValue({ data: response });
+  test('a relative base such as /info resolves against the page origin', async () => {
+    mockedFetch.mockResolvedValue(jsonResponse({ timestamp: 'now' }));
 
-      const client = new Client('https://example.com/webhook');
-      const result = await client.post('', { message: 'Hello' });
+    await new Client('/info').get('');
 
-      expect(mockPost).toHaveBeenCalledTimes(1);
-      expect(mockPost).toHaveBeenCalledWith('', { message: 'Hello' });
-      expect(result.data).toEqual(response);
-    });
+    expect(String(mockedFetch.mock.calls[0][0])).toBe(`${window.location.origin}/info`);
+  });
 
-    test('propagates axios errors', async () => {
-      const networkError = new Error('Network Error');
-      mockPost.mockRejectedValue(networkError);
+  test('a non-2xx status rejects, so callers treat it as a failure', async () => {
+    mockedFetch.mockResolvedValue(jsonResponse({ error: 'nope' }, 502));
 
-      const client = new Client('https://example.com/webhook');
-
-      await expect(client.post('', { message: 'Hi' })).rejects.toThrow('Network Error');
-    });
-
-    test('returns typed response when generic is provided', async () => {
-      const response = { id: 1, text: 'typed' };
-      mockPost.mockResolvedValue({ data: response });
-
-      const client = new Client('https://example.com/webhook');
-      const result = await client.post<{ id: number; text: string }>('', { message: 'Hi' });
-
-      expect(result.data).toEqual(response);
-      expect(result.data.id).toBe(1);
-      expect(result.data.text).toBe('typed');
-    });
+    await expect(new Client('/info').get('')).rejects.toThrow('Request failed with status 502');
   });
 });

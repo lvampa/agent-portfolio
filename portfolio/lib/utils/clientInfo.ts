@@ -1,5 +1,4 @@
 import type { ChatVisitor, ClientInfo, ClientInfoRequest } from '@lib/hooks/types';
-import { UAParser } from 'ua-parser-js';
 
 import type { ParsedUA, UserInfo } from './types';
 
@@ -7,9 +6,11 @@ export type { ParsedUA, UserInfo, UserInfoItem } from './types';
 
 /**
  * Parse the current browser user agent. Returns null when run outside the browser (e.g. SSR).
+ * The parser loads on demand, so it stays out of the first bundle.
  */
-export function getParsedUA(): ParsedUA | null {
+export async function getParsedUA(): Promise<ParsedUA | null> {
   if (typeof window === 'undefined') return null;
+  const { UAParser } = await import('ua-parser-js');
   const result = new UAParser().getResult();
   return {
     ua: result.ua,

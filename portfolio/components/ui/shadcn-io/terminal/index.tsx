@@ -1,10 +1,10 @@
 'use client';
 
+import { usePrefersReducedMotion } from '@lib/hooks/usePrefersReducedMotion';
 import { cn } from '@lib/utils/cn';
-import { motion, type MotionProps, useReducedMotion } from 'motion/react';
 import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
 
-interface TypingAnimationProps extends MotionProps {
+interface TypingAnimationProps {
   children: string;
   className?: string;
   duration?: number;
@@ -22,14 +22,13 @@ export const TypingAnimation = ({
   delay = 0,
   onStart,
   onComplete,
-  ...props
 }: TypingAnimationProps) => {
   if (typeof children !== 'string') {
     throw new Error('TypingAnimation: children must be a string. Received:');
   }
 
   // Under reduced motion the text shows at once and never counts as animating, so nothing waits on it.
-  const isInstant = useReducedMotion() === true;
+  const isInstant = usePrefersReducedMotion();
   const [displayedText, setDisplayedText] = useState<string>('');
   const [started, setStarted] = useState(false);
   const onCompleteCalledRef = useRef(false);
@@ -77,10 +76,10 @@ export const TypingAnimation = ({
   }, [children, duration, started]);
 
   return (
-    <motion.span className={className} {...props}>
+    <span className={className}>
       <span className="sr-only select-none">{children}</span>
       <span aria-hidden>{isInstant ? children : displayedText}</span>
-    </motion.span>
+    </span>
   );
 };
 

@@ -117,10 +117,10 @@ describe('Repl', () => {
   });
 
   test('Enter during a chat submits the buffered line once the reply lands', async () => {
-    let replyToFirst: (response: { data: { output: string }[] }) => void = () => {};
+    let replyToFirst: (body: { output: string }[]) => void = () => {};
     mockedPost
       .mockReturnValueOnce(new Promise((resolve) => (replyToFirst = resolve)))
-      .mockResolvedValueOnce({ data: [{ output: 'second reply' }] });
+      .mockResolvedValueOnce([{ output: 'second reply' }]);
     mockedLoadSession.mockReturnValue({ name: 'tester', mode: { type: 'command' } });
     mockedLoadHistory.mockReturnValue([{ type: 'text', text: EARLIER_LINE }]);
     renderRepl();
@@ -131,7 +131,7 @@ describe('Repl', () => {
     await user.type(input, 'second{enter}');
     expect(mockedPost).toHaveBeenCalledTimes(1);
 
-    replyToFirst({ data: [{ output: 'first reply' }] });
+    replyToFirst([{ output: 'first reply' }]);
 
     await waitFor(() => expect(mockedPost).toHaveBeenCalledTimes(2));
     expect(mockedPost).toHaveBeenLastCalledWith(
@@ -141,7 +141,7 @@ describe('Repl', () => {
   });
 
   test('a chat sends the session id, name, and visitor', async () => {
-    mockedPost.mockResolvedValue({ data: [{ output: 'reply' }] });
+    mockedPost.mockResolvedValue([{ output: 'reply' }]);
     mockedLoadSession.mockReturnValue({
       name: 'tester',
       mode: { type: 'command' },
@@ -163,7 +163,7 @@ describe('Repl', () => {
   });
 
   test('cls starts a new conversation with a new session id', async () => {
-    mockedPost.mockResolvedValue({ data: [{ output: 'reply' }] });
+    mockedPost.mockResolvedValue([{ output: 'reply' }]);
     mockedLoadSession.mockReturnValue({
       name: 'tester',
       mode: { type: 'command' },

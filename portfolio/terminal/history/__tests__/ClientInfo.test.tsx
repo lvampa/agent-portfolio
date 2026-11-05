@@ -6,10 +6,17 @@ import React from 'react';
 
 import { ClientInfo } from '../renderers/ClientInfo';
 
-jest.mock('motion/react', () => ({
-  ...jest.requireActual('motion/react'),
-  useReducedMotion: () => true,
-}));
+beforeEach(() => {
+  jest.spyOn(window, 'matchMedia').mockImplementation(
+    (query) =>
+      ({
+        matches: query === '(prefers-reduced-motion: reduce)',
+        media: query,
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+      }) as unknown as MediaQueryList,
+  );
+});
 
 function AnimatingProbe() {
   const { isAnimating } = useAnimation();

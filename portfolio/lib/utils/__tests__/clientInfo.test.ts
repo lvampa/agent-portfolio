@@ -3,8 +3,8 @@ import type { ClientInfo } from '@lib/hooks/types';
 import { buildChatVisitor, buildUserInfoForUi, getParsedUA, getReferrer } from '../clientInfo';
 
 describe('getParsedUA', () => {
-  test('returns ParsedUA shape when run in browser (jsdom)', () => {
-    const result = getParsedUA();
+  test('returns ParsedUA shape when run in browser (jsdom)', async () => {
+    const result = await getParsedUA();
     expect(result).not.toBeNull();
     expect(result).toMatchObject({
       ua: expect.any(String),

@@ -17,10 +17,12 @@ import {
 } from './constants';
 
 const dosFont = localFont({
-  src: '../public/fonts/PerfectDOSVGA437.ttf',
+  src: './fonts/PerfectDOSVGA437.woff2',
   variable: '--font-dos',
   display: 'swap',
   fallback: ['monospace'],
+  // A metric-matched fallback would be a proportional font, so the swap goes straight to monospace.
+  adjustFontFallback: false,
 });
 
 export const metadata: Metadata = {
