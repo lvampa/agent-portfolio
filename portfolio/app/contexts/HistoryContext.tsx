@@ -21,12 +21,19 @@ interface HistoryContextValue {
 
 const HistoryContext = createContext<HistoryContextValue | null>(null);
 
+// Local dev flag. Starting empty replays the startup sequence on every refresh.
+function loadOrResetHistory(): HistoryItem[] {
+  if (process.env.NEXT_PUBLIC_NO_HISTORY !== 'true') return storage.load(HistoryItemSchema);
+  storage.clear();
+  return [];
+}
+
 export function HistoryProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<HistoryItem[]>([]);
   const [hasLoaded, setHasLoaded] = useState(false);
 
   useEffect(() => {
-    const stored = storage.load(HistoryItemSchema);
+    const stored = loadOrResetHistory();
     startTransition(() => {
       setItems(stored);
       setHasLoaded(true);

@@ -25,6 +25,7 @@ Next.js inlines them at build time.
 | ------------------------------ | ------------------------------------------------------------------------------ |
 | `NEXT_PUBLIC_CHAT_WEBHOOK_URL` | Base URL of the n8n chat webhook.                                              |
 | `NEXT_PUBLIC_INFO_URL`         | URL that returns the visitor's request info, shown in the first history entry. |
+| `NEXT_PUBLIC_NO_HISTORY`       | Local development only. Set to `true` to clear history on every page load.     |
 
 ## How it talks to n8n
 

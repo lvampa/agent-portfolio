@@ -11,11 +11,13 @@ jest.mock('@lib/storage', () => ({
   storage: {
     load: jest.fn(() => []),
     append: jest.fn(),
+    clear: jest.fn(),
   },
 }));
 
 const mockedLoad = storage.load as jest.Mock;
 const mockedAppend = storage.append as jest.Mock;
+const mockedClear = storage.clear as jest.Mock;
 
 function wrapper({ children }: { children: ReactNode }) {
   return <HistoryProvider>{children}</HistoryProvider>;
@@ -46,6 +48,20 @@ describe('HistoryContext', () => {
       const { result } = renderHook(() => useHistory(), { wrapper });
       await act(async () => {});
       expect(result.current.hasLoaded).toBe(true);
+    });
+
+    test('clears stored history when NEXT_PUBLIC_NO_HISTORY is true', async () => {
+      process.env.NEXT_PUBLIC_NO_HISTORY = 'true';
+      mockedLoad.mockReturnValue([{ value: 'hello', type: HISTORY_ITEM_TYPES.COMMAND }]);
+      try {
+        const { result } = renderHook(() => useHistory(), { wrapper });
+        await act(async () => {});
+        expect(mockedClear).toHaveBeenCalled();
+        expect(result.current.items).toEqual([]);
+        expect(result.current.hasLoaded).toBe(true);
+      } finally {
+        delete process.env.NEXT_PUBLIC_NO_HISTORY;
+      }
     });
   });
 
