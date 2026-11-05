@@ -107,4 +107,26 @@ describe('Storage', () => {
       expect(storage.load(itemSchema)).toEqual([]);
     });
   });
+
+  describe('legacy keys', () => {
+    test('removes the legacy key on load without reading it', () => {
+      localStorage.setItem('legacy-key', JSON.stringify([{ id: 1 }]));
+      const versioned = new Storage('test-key.v2', ['legacy-key']);
+
+      expect(versioned.load(itemSchema)).toEqual([]);
+      expect(localStorage.getItem('legacy-key')).toBeNull();
+    });
+  });
+
+  describe('loadValue and save', () => {
+    test('round-trips a single value', () => {
+      storage.save({ id: 7 });
+      expect(storage.loadValue(itemSchema)).toEqual({ id: 7 });
+    });
+
+    test('returns null when the stored value fails validation', () => {
+      localStorage.setItem('test-key', JSON.stringify({ id: 'bad' }));
+      expect(storage.loadValue(itemSchema)).toBeNull();
+    });
+  });
 });
