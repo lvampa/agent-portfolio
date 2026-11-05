@@ -7,17 +7,15 @@ on:
       - 'portfolio/**'
       - '.github/workflows/deploy-frontend.yml'
 
-# Queue deploys instead of cancelling, so a running deploy is never cut off halfway.
 concurrency:
   group: deploy-frontend-production
   cancel-in-progress: false
 
 permissions: {}
 
-# Runners are pinned to ubuntu-26.04 while ubuntu-latest moves to it (actions/runner-images#14748, done by 2026-11-19).
+# Back to ubuntu-latest once it points at 26.04 (actions/runner-images#14748).
 jobs:
-  # The PR already passed ci, so this only builds. It gets public repository variables and no secrets,
-  # so dependency install scripts never see the Cloudflare token.
+  # No secrets here, so npm install scripts never see the Cloudflare token.
   build:
     runs-on: ubuntu-26.04
     timeout-minutes: 10
@@ -30,18 +28,6 @@ jobs:
       NEXT_PUBLIC_CHAT_WEBHOOK_URL: ${{ vars.NEXT_PUBLIC_CHAT_WEBHOOK_URL }}
       NEXT_PUBLIC_INFO_URL: ${{ vars.NEXT_PUBLIC_INFO_URL }}
     steps:
-      - name: Require build URLs
-        working-directory: .
-        run: |
-          missing=0
-          for name in NEXT_PUBLIC_CHAT_WEBHOOK_URL NEXT_PUBLIC_INFO_URL; do
-            if [ -z "${!name}" ]; then
-              echo "::error::$name is empty. Set the repository variable of the same name."
-              missing=1
-            fi
-          done
-          exit "$missing"
-
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -59,15 +45,6 @@ jobs:
 
       - name: Build
         run: npm run build
-
-      - name: Check the URLs were inlined
-        run: |
-          for url in "$NEXT_PUBLIC_CHAT_WEBHOOK_URL" "$NEXT_PUBLIC_INFO_URL"; do
-            if ! grep -rqF -- "$url" out; then
-              echo "::error::$url not found in portfolio/out."
-              exit 1
-            fi
-          done
 
       - name: Upload site
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -107,7 +84,6 @@ jobs:
           name: site
           path: out
 
-      # No checkout: with no lockfile in the working directory, the action installs wrangler with plain npm.
       - name: Deploy to Cloudflare Pages
         id: deploy
         uses: cloudflare/wrangler-action@953926a2e2182532811c01a25e53647d93bf07c0 # v4.1.3

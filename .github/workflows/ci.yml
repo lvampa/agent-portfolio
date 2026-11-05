@@ -1,10 +1,8 @@
 name: CI
 
-# Pull requests only: main changes only through PRs that passed this check, so a run after merge would repeat it.
 on:
   pull_request:
 
-# A new push to a PR cancels its older run.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
   cancel-in-progress: true
@@ -12,9 +10,8 @@ concurrency:
 permissions:
   contents: read
 
-# Runners are pinned to ubuntu-26.04 while ubuntu-latest moves to it (actions/runner-images#14748, done by 2026-11-19).
+# Back to ubuntu-latest once it points at 26.04 (actions/runner-images#14748).
 jobs:
-  # Both jobs run on every PR, in parallel, which is simpler than filtering by path.
   frontend:
     runs-on: ubuntu-26.04
     timeout-minutes: 10
@@ -22,7 +19,6 @@ jobs:
       run:
         working-directory: portfolio
     env:
-      # The build refuses to run without these. CI never calls them.
       NEXT_PUBLIC_CHAT_WEBHOOK_URL: https://example.invalid/webhook/chat
       NEXT_PUBLIC_INFO_URL: https://example.invalid/webhook/info
     steps:
@@ -53,7 +49,6 @@ jobs:
       - name: Test
         run: npm test
 
-      # No .next/cache: a cold static export build takes about 8 s and a warm one about 6 s, which a cache restore and save would eat.
       - name: Build
         run: npm run build
 
@@ -92,7 +87,7 @@ jobs:
       - name: Validate bootstrap
         run: tofu -chdir=bootstrap validate
 
-  # The single required status check, so the ruleset never changes when jobs are added or renamed.
+  # The only required check.
   ci:
     name: ci
     if: always()

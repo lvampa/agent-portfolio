@@ -6,7 +6,7 @@ The frontend in `portfolio/` is a Next.js static export hosted on Cloudflare Pag
 
 Merging a PR to `main` that touches `portfolio/**` or `deploy-frontend.yml` runs `.github/workflows/deploy-frontend.yml`.
 The PR already passed `ci`, so the deploy does not repeat the checks.
-The `build` job builds with the real URLs, checks they made it into the bundle, and uploads `portfolio/out` as the `site` artifact.
+The `build` job builds with the real URLs and uploads `portfolio/out` as the `site` artifact.
 It has no secrets, so dependency install scripts never see the Cloudflare token.
 The `deploy` job runs in the `production` environment and uploads that artifact with `wrangler pages deploy`.
 It then curls the deployment URL and `SITE_URL` and fails if either does not return an HTML page.
@@ -27,7 +27,7 @@ Set these under Settings, Secrets and variables, Actions.
 | `NEXT_PUBLIC_CHAT_WEBHOOK_URL` | Variable | Repository | Inlined into the build |
 | `NEXT_PUBLIC_INFO_URL` | Variable | Repository | Inlined into the build |
 
-The build job fails early if either `NEXT_PUBLIC_*` variable is empty.
+The build fails if either `NEXT_PUBLIC_*` variable is missing or not a URL, because `portfolio/lib/env.ts` validates them when `next.config.ts` loads.
 The deploy job fails early if `CLOUDFLARE_ACCOUNT_ID`, `CF_PAGES_PROJECT`, or `SITE_URL` is empty.
 
 ## Redeploy
