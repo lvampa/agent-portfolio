@@ -19,7 +19,7 @@ npx tsc --noEmit     # Type check
 ## Environment variables
 
 Set these in `.env.local`.
-Next.js inlines them at build time.
+Next.js inlines the `NEXT_PUBLIC_*` ones at build time.
 `lib/env.ts` validates the chat URL, so the build fails if it is missing.
 
 | Variable                       | Meaning                                                                                                                             |
