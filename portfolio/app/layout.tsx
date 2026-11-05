@@ -2,6 +2,7 @@ import './globals.css';
 
 import { HistoryProvider } from '@terminal/history/HistoryContext';
 import { EventBusProvider } from '@terminal/repl/EventBusContext';
+import { SessionProvider } from '@terminal/SessionContext';
 import localFont from 'next/font/local';
 import React from 'react';
 
@@ -21,7 +22,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${dosFont.variable} bg-background font-sans antialiased`}>
         <EventBusProvider>
-          <HistoryProvider>{children}</HistoryProvider>
+          <HistoryProvider>
+            <SessionProvider>{children}</SessionProvider>
+          </HistoryProvider>
         </EventBusProvider>
       </body>
     </html>

@@ -1,9 +1,9 @@
 import React from 'react';
 
-import { type HistoryItem } from '../types';
+import type { HistoryItemOf } from '../types';
 
-export const Message: React.FC<{ item: HistoryItem }> = ({ item }) => (
+export const Message: React.FC<{ item: HistoryItemOf<'message'> }> = ({ item }) => (
   <div>
-    <p>{item.value}</p>
+    <p>{item.text}</p>
   </div>
 );

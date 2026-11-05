@@ -6,7 +6,8 @@ export const ClientInfoRequestSchema = z.object({
   city: z.string(),
   latitude: z.union([z.string(), z.number()]),
   longitude: z.union([z.string(), z.number()]),
-  asn: z.string(),
+  // The info Worker sends the ASN as a number.
+  asn: z.union([z.string(), z.number()]),
   organization: z.string(),
   timezone: z.string(),
   deviceType: z.string(),

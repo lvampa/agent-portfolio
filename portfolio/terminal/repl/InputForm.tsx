@@ -1,11 +1,10 @@
 import { CommandPrompt } from '@components/ui/command-prompt';
 import { Input } from '@components/ui/input';
-import { HISTORY_ITEM_TYPES } from '@terminal/history';
 import { EVENTS } from '@terminal/repl/constants';
 import { useEventBus } from '@terminal/repl/EventBusContext';
 import React, { useEffect, useRef, useState } from 'react';
 
-export function InputForm({ isVisible }: { isVisible: boolean }) {
+export function InputForm({ isVisible, prompt }: { isVisible: boolean; prompt: string }) {
   const eventBus = useEventBus();
   const [value, setValue] = useState('');
   const inputElementRef = useRef<HTMLInputElement>(null);
@@ -26,12 +25,12 @@ export function InputForm({ isVisible }: { isVisible: boolean }) {
     e.preventDefault();
     setValue('');
 
-    eventBus.emit(EVENTS.SUBMIT, { value, type: HISTORY_ITEM_TYPES.COMMAND });
+    eventBus.emit(EVENTS.SUBMIT, value);
   }
 
   return (
     <form onSubmit={handleSubmit}>
-      <CommandPrompt>
+      <CommandPrompt prompt={prompt}>
         <label htmlFor="input-prompt" className="sr-only">
           Input Prompt
         </label>

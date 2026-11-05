@@ -1,17 +1,38 @@
+import { UserInfoSchema } from '@lib/utils/schemas';
 import { z } from 'zod';
 
-import { HISTORY_ITEM_TYPES } from './constants';
-
-export const HistoryItemTypeSchema = z.enum([
-  HISTORY_ITEM_TYPES.THINKING,
-  HISTORY_ITEM_TYPES.COMMAND,
-  HISTORY_ITEM_TYPES.MESSAGE,
-  HISTORY_ITEM_TYPES.HELP,
-  HISTORY_ITEM_TYPES.USER,
-]);
-
-export const HistoryItemSchema = z.object({
-  value: z.string(),
-  type: HistoryItemTypeSchema,
-  animate: z.boolean().optional(),
+// Empty text is a blank line.
+export const TextItemSchema = z.object({
+  type: z.literal('text'),
+  text: z.string(),
 });
+
+// The prompt at the time the line was typed, so a later rename does not rewrite old lines.
+export const CommandItemSchema = z.object({
+  type: z.literal('command'),
+  line: z.string(),
+  prompt: z.string(),
+});
+
+export const MessageItemSchema = z.object({
+  type: z.literal('message'),
+  text: z.string(),
+});
+
+export const ErrorItemSchema = z.object({
+  type: z.literal('error'),
+  text: z.string(),
+});
+
+export const ClientInfoItemSchema = z.object({
+  type: z.literal('clientInfo'),
+  info: UserInfoSchema,
+});
+
+export const HistoryItemSchema = z.discriminatedUnion('type', [
+  TextItemSchema,
+  CommandItemSchema,
+  MessageItemSchema,
+  ErrorItemSchema,
+  ClientInfoItemSchema,
+]);

@@ -1,6 +1,7 @@
 import type { z } from 'zod';
 
-import type { HistoryItemSchema, HistoryItemTypeSchema } from './schemas';
+import type { HistoryItemSchema } from './schemas';
 
-export type HistoryItemType = z.infer<typeof HistoryItemTypeSchema>;
 export type HistoryItem = z.infer<typeof HistoryItemSchema>;
+export type HistoryItemType = HistoryItem['type'];
+export type HistoryItemOf<K extends HistoryItemType> = Extract<HistoryItem, { type: K }>;

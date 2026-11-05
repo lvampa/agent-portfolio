@@ -1,25 +1,14 @@
 import { CommandPrompt } from '@components/ui/command-prompt';
 import { TypingAnimation } from '@components/ui/shadcn-io/terminal';
-import { UserInfoSchema } from '@lib/utils/schemas';
 import { useAnimation } from '@terminal/AnimationContext';
 import React from 'react';
 
-import { type HistoryItem } from '../types';
+import type { HistoryItemOf } from '../types';
 
-export const User: React.FC<{ item: HistoryItem }> = ({ item }) => {
+export const ClientInfo: React.FC<{ item: HistoryItemOf<'clientInfo'> }> = ({ item }) => {
   const { startAnimation, endAnimation } = useAnimation();
 
-  let rawValue: unknown;
-  try {
-    rawValue = JSON.parse(item.value);
-  } catch {
-    return null;
-  }
-
-  const parsed = UserInfoSchema.safeParse(rawValue);
-  if (!parsed.success || !parsed.data.length) {
-    return null;
-  }
+  if (!item.info.length) return null;
 
   return (
     <div>
@@ -28,8 +17,8 @@ export const User: React.FC<{ item: HistoryItem }> = ({ item }) => {
           Loading Client Information . . . .
         </TypingAnimation>
       </CommandPrompt>
-      {parsed.data.map((infoItem) => (
-        <div key={infoItem.value}>
+      {item.info.map((infoItem) => (
+        <div key={infoItem.label}>
           <TypingAnimation
             delay={2500}
             duration={10}

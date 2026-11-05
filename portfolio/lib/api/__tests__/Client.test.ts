@@ -26,6 +26,7 @@ describe('Client', () => {
       new Client('https://example.com');
       expect(mockedAxios.create).toHaveBeenCalledWith({
         baseURL: 'https://example.com',
+        timeout: 30_000,
         headers: { 'Content-Type': 'application/json' },
       });
     });

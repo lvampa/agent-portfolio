@@ -28,6 +28,10 @@ describe('ClientInfoRequestSchema', () => {
     expect(ClientInfoRequestSchema.safeParse(validRequest).success).toBe(true);
   });
 
+  test('accepts a numeric asn, as the info Worker sends it', () => {
+    expect(ClientInfoRequestSchema.safeParse({ ...validRequest, asn: 13977 }).success).toBe(true);
+  });
+
   test('accepts null for nullable fields', () => {
     expect(
       ClientInfoRequestSchema.safeParse({

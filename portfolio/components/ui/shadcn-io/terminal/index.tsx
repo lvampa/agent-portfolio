@@ -2,7 +2,7 @@
 
 import { cn } from '@lib/utils';
 import { motion, type MotionProps } from 'motion/react';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react';
 
 interface AnimatedSpanProps extends MotionProps {
   children: React.ReactNode;
@@ -27,8 +27,9 @@ interface TypingAnimationProps extends MotionProps {
   className?: string;
   duration?: number;
   delay?: number;
-  as?: React.ElementType;
+  /** Called on mount, before paint, so the wait before typing counts as animating. */
   onStart?: () => void;
+  /** Called once when typing ends, or on unmount if it never finished. */
   onComplete?: () => void;
 }
 
@@ -37,7 +38,6 @@ export const TypingAnimation = ({
   className,
   duration = 60,
   delay = 0,
-  as: Component = 'span',
   onStart,
   onComplete,
   ...props
@@ -46,27 +46,36 @@ export const TypingAnimation = ({
     throw new Error('TypingAnimation: children must be a string. Received:');
   }
 
-  const MotionComponent = motion.create(Component, {
-    forwardMotionProps: true,
-  });
-
   const [displayedText, setDisplayedText] = useState<string>('');
   const [started, setStarted] = useState(false);
-  const elementRef = useRef<HTMLElement | null>(null);
   const onCompleteCalledRef = useRef(false);
 
+  // Effect events keep a caller's inline callbacks from restarting the animation on every render.
+  const start = useEffectEvent(() => {
+    onCompleteCalledRef.current = false;
+    onStart?.();
+  });
+
+  const complete = useEffectEvent(() => {
+    if (onCompleteCalledRef.current) return;
+    onCompleteCalledRef.current = true;
+    onComplete?.();
+  });
+
+  // Starting before paint closes the gap where nothing counts as animating and the prompt flashes.
+  useLayoutEffect(() => {
+    start();
+    return () => complete();
+  }, []);
+
   useEffect(() => {
-    const startTimeout = setTimeout(() => {
-      setStarted(true);
-      onStart?.();
-    }, delay);
+    const startTimeout = setTimeout(() => setStarted(true), delay);
     return () => clearTimeout(startTimeout);
-  }, [delay, onStart]);
+  }, [delay]);
 
   useEffect(() => {
     if (!started) return;
 
-    onCompleteCalledRef.current = false;
     let i = 0;
     const typingEffect = setInterval(() => {
       if (i < children.length) {
@@ -74,26 +83,17 @@ export const TypingAnimation = ({
         i++;
       } else {
         clearInterval(typingEffect);
-        if (!onCompleteCalledRef.current) {
-          onCompleteCalledRef.current = true;
-          onComplete?.();
-        }
+        complete();
       }
     }, duration);
 
-    return () => {
-      clearInterval(typingEffect);
-      if (!onCompleteCalledRef.current && onComplete) {
-        onCompleteCalledRef.current = true;
-        onComplete();
-      }
-    };
-  }, [children, duration, started, onComplete]);
+    return () => clearInterval(typingEffect);
+  }, [children, duration, started]);
 
   return (
-    <MotionComponent ref={elementRef} className={cn('tracking-tight', className)} {...props}>
+    <motion.span className={cn('tracking-tight', className)} {...props}>
       {displayedText}
-    </MotionComponent>
+    </motion.span>
   );
 };
 

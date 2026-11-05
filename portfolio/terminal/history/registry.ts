@@ -1,13 +1,14 @@
-import type React from 'react';
+import { ClientInfo } from './renderers/ClientInfo';
+import { Command } from './renderers/Command';
+import { ErrorLine } from './renderers/ErrorLine';
+import { Message } from './renderers/Message';
+import { Text } from './renderers/Text';
+import type { Renderers } from './renderers/types';
 
-import { HISTORY_ITEM_TYPES } from './constants';
-import { Command, Help, Message, Thinking, User } from './renderers';
-import type { HistoryItem, HistoryItemType } from './types';
-
-export const renderers: Record<HistoryItemType, React.FC<{ item: HistoryItem }>> = {
-  [HISTORY_ITEM_TYPES.COMMAND]: Command,
-  [HISTORY_ITEM_TYPES.MESSAGE]: Message,
-  [HISTORY_ITEM_TYPES.THINKING]: Thinking,
-  [HISTORY_ITEM_TYPES.HELP]: Help,
-  [HISTORY_ITEM_TYPES.USER]: User,
+export const renderers: Renderers = {
+  text: Text,
+  command: Command,
+  message: Message,
+  error: ErrorLine,
+  clientInfo: ClientInfo,
 };
