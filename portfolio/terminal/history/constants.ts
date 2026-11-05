@@ -1,7 +1,7 @@
 export const HISTORY_ITEM_TYPES = {
-  THINKING: 'thinking',
+  TEXT: 'text',
   COMMAND: 'command',
   MESSAGE: 'message',
-  HELP: 'help',
-  USER: 'user',
+  ERROR: 'error',
+  CLIENT_INFO: 'clientInfo',
 } as const;

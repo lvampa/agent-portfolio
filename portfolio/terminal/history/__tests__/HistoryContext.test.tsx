@@ -3,19 +3,19 @@ import { act, renderHook } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import React from 'react';
 
-import { HISTORY_ITEM_TYPES } from '@terminal/history';
 import { HistoryProvider, useHistory } from '@terminal/history/HistoryContext';
-import { storage } from '@lib/storage';
+import { historyStore } from '@terminal/storage';
 
-jest.mock('@lib/storage', () => ({
-  storage: {
+jest.mock('@terminal/storage', () => ({
+  historyStore: {
     load: jest.fn(() => []),
     append: jest.fn(),
+    clear: jest.fn(),
   },
 }));
 
-const mockedLoad = storage.load as jest.Mock;
-const mockedAppend = storage.append as jest.Mock;
+const mockedLoad = historyStore.load as jest.Mock;
+const mockedAppend = historyStore.append as jest.Mock;
 
 function wrapper({ children }: { children: ReactNode }) {
   return <HistoryProvider>{children}</HistoryProvider>;
@@ -35,7 +35,7 @@ describe('HistoryContext', () => {
     });
 
     test('seeds items from storage when history exists', async () => {
-      const storedItems = [{ value: 'hello', type: HISTORY_ITEM_TYPES.COMMAND }];
+      const storedItems = [{ type: 'text' as const, text: 'hello' }];
       mockedLoad.mockReturnValue(storedItems);
       const { result } = renderHook(() => useHistory(), { wrapper });
       await act(async () => {});
@@ -52,21 +52,21 @@ describe('HistoryContext', () => {
   describe('append', () => {
     test('adds item to items', () => {
       const { result } = renderHook(() => useHistory(), { wrapper });
-      const item = { value: 'hello', type: HISTORY_ITEM_TYPES.COMMAND };
+      const item = { type: 'text' as const, text: 'hello' };
       act(() => result.current.append(item));
       expect(result.current.items).toContainEqual(item);
     });
 
     test('persists item to storage', () => {
       const { result } = renderHook(() => useHistory(), { wrapper });
-      const item = { value: 'hello', type: HISTORY_ITEM_TYPES.COMMAND };
+      const item = { type: 'text' as const, text: 'hello' };
       act(() => result.current.append(item));
       expect(mockedAppend).toHaveBeenCalledWith(item);
     });
 
     test('appends to existing items', () => {
-      const first = { value: 'first', type: HISTORY_ITEM_TYPES.COMMAND };
-      const second = { value: 'second', type: HISTORY_ITEM_TYPES.MESSAGE };
+      const first = { type: 'text' as const, text: 'first' };
+      const second = { type: 'message' as const, text: 'second' };
       const { result } = renderHook(() => useHistory(), { wrapper });
       act(() => result.current.append(first));
       act(() => result.current.append(second));

@@ -1,14 +1,24 @@
 'use client';
 
-import { storage } from '@lib/storage';
-import type { HistoryItem } from '@terminal/history';
-import { HistoryItemSchema } from '@terminal/history/schemas';
-import React, { createContext, startTransition, useContext, useEffect, useState } from 'react';
+import { historyStore } from '@terminal/storage';
+import React, {
+  createContext,
+  startTransition,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+
+import { HistoryItemSchema } from './schemas';
+import type { HistoryItem } from './types';
 
 interface HistoryContextValue {
   items: HistoryItem[];
   hasLoaded: boolean;
   append: (item: HistoryItem) => void;
+  clear: () => void;
 }
 
 const HistoryContext = createContext<HistoryContextValue | null>(null);
@@ -18,23 +28,29 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
   const [hasLoaded, setHasLoaded] = useState(false);
 
   useEffect(() => {
-    const stored = storage.load(HistoryItemSchema);
+    const stored = historyStore.load(HistoryItemSchema);
     startTransition(() => {
       setItems(stored);
       setHasLoaded(true);
     });
   }, []);
 
-  function append(item: HistoryItem) {
+  const append = useCallback((item: HistoryItem) => {
     setItems((previous) => [...previous, item]);
-    storage.append(item);
-  }
+    historyStore.append(item);
+  }, []);
 
-  return (
-    <HistoryContext.Provider value={{ items, hasLoaded, append }}>
-      {children}
-    </HistoryContext.Provider>
+  const clear = useCallback(() => {
+    setItems([]);
+    historyStore.clear();
+  }, []);
+
+  const value = useMemo(
+    () => ({ items, hasLoaded, append, clear }),
+    [items, hasLoaded, append, clear],
   );
+
+  return <HistoryContext.Provider value={value}>{children}</HistoryContext.Provider>;
 }
 
 export function useHistory(): HistoryContextValue {

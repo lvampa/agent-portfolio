@@ -1,34 +1,17 @@
-import { HISTORY_ITEM_TYPES } from '@terminal/history/constants';
-import { HistoryItemSchema, HistoryItemTypeSchema } from '@terminal/history/schemas';
-
-describe('HistoryItemTypeSchema', () => {
-  test('accepts valid item types', () => {
-    Object.values(HISTORY_ITEM_TYPES).forEach((type) => {
-      expect(HistoryItemTypeSchema.safeParse(type).success).toBe(true);
-    });
-  });
-
-  test('rejects unknown type', () => {
-    expect(HistoryItemTypeSchema.safeParse('unknown').success).toBe(false);
-  });
-});
+import { Storage } from '@lib/storage';
+import { HistoryItemSchema } from '@terminal/history/schemas';
 
 describe('HistoryItemSchema', () => {
-  test('accepts valid history item', () => {
-    expect(HistoryItemSchema.safeParse({ value: 'hello', type: 'command' }).success).toBe(true);
-  });
+  test('drops an invalid stored item and keeps the valid ones', () => {
+    const valid = [
+      { type: 'text', text: '' },
+      { type: 'command', line: 'help', prompt: 'C:\\Users\\unknown >' },
+      { type: 'clientInfo', info: [{ label: 'ip', value: '127.0.0.1' }] },
+    ];
+    // The old string-value shape, which no longer validates.
+    const invalid = { type: 'command', value: 'help' };
+    localStorage.setItem('history-test', JSON.stringify([valid[0], invalid, ...valid.slice(1)]));
 
-  test('accepts item with animate flag', () => {
-    expect(
-      HistoryItemSchema.safeParse({ value: 'hi', type: 'message', animate: true }).success,
-    ).toBe(true);
-  });
-
-  test('rejects item with unknown type', () => {
-    expect(HistoryItemSchema.safeParse({ value: 'hi', type: 'bogus' }).success).toBe(false);
-  });
-
-  test('rejects item missing value', () => {
-    expect(HistoryItemSchema.safeParse({ type: 'command' }).success).toBe(false);
+    expect(new Storage('history-test').load(HistoryItemSchema)).toEqual(valid);
   });
 });
