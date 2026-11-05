@@ -58,7 +58,7 @@ Set these in `terraform.tfvars` (or your chosen `*.tfvars` file).
 
 Access needs a Zero Trust organization on the account before the first apply.
 See `docs/specs/cloudflare-tunnel.md` for the apply order and checks.
-The client-info Worker predates tofu and was imported, as in [the Pages and Worker spec](../docs/specs/cloudflare-pages-and-worker.md).
+The client-info Worker predates tofu. It was deleted by hand and recreated by tofu under the same name, as in [the Pages and Worker spec](../docs/specs/cloudflare-pages-and-worker.md).
 
 **n8n (app config, sensitive):**
 

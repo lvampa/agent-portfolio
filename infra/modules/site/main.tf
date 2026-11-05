@@ -70,6 +70,13 @@ resource "cloudflare_workers_script" "info" {
   compatibility_date = "2026-11-01"
 }
 
+# npm run dev reaches the Worker on workers.dev through DEV_INFO_URL, so keep it on.
+resource "cloudflare_workers_script_subdomain" "info" {
+  account_id  = var.account_id
+  script_name = cloudflare_workers_script.info.script_name
+  enabled     = true
+}
+
 resource "cloudflare_workers_route" "info" {
   zone_id = var.zone_id
   pattern = "${var.hostname}/info*"
