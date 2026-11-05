@@ -8,7 +8,7 @@ export function currentPrompt(mode: Mode, name: string | null): string {
   return mode.type === 'awaiting' ? QUESTIONS[mode.questionId].text : promptFor(name);
 }
 
-/** Returns every effect of a submitted line, starting with its echo. Chat is the fallback. */
+/** Returns every effect of a submitted line, starting with its echo. Chat is the fallback, including for a command word followed by more text. */
 export function route(line: string, mode: Mode, state: TerminalState): Effect[] {
   const lineEcho = echo(line, currentPrompt(mode, state.name));
 
@@ -21,7 +21,8 @@ export function route(line: string, mode: Mode, state: TerminalState): Effect[] 
 
   const { commandName, args } = splitLine(line);
   const command = findCommand(state.commands, commandName);
-  if (command) return [lineEcho, ...command.run(args, state)];
+  // A sentence that starts with a command word, like "help me with...", is meant for the chat.
+  if (command && !args) return [lineEcho, ...command.run(args, state)];
 
   return [lineEcho, chat(line)];
 }

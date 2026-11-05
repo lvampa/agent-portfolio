@@ -35,6 +35,12 @@ describe('route', () => {
       commandMode,
       [echo('who is connor?', prompt), chat('who is connor?')],
     ],
+    [
+      'a command word followed by more text goes to the chat',
+      'help me understand his AWS work',
+      commandMode,
+      [echo('help me understand his AWS work', prompt), chat('help me understand his AWS work')],
+    ],
     ['a blank line in command mode is only echoed', '  ', commandMode, [echo('  ', prompt)]],
   ])('%s', (_description, line, mode, expected) => {
     expect(route(line, mode, state)).toEqual(expected);

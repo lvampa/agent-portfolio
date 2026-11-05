@@ -193,6 +193,7 @@ It still carries only `SUBMIT` from `InputForm` to `Repl`.
 1. If `mode` is awaiting, the line is the answer.
    Return `print(echo with question.text as prompt)`, then `question.onAnswer(line, state)`, then `mode.then`.
 2. Otherwise split off the first word and look it up in the registry, case-insensitive.
+   A command runs only when nothing follows it, so "help me with..." goes to the chat.
    If found, return `print(echo with promptFor(state.name))`, then `command.run(args, state)`.
 3. Otherwise return the echo, then `chat(line)`.
 

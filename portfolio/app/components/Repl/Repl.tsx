@@ -14,7 +14,7 @@ import {
   type TerminalState,
 } from '@app/terminal';
 import type { UserInfo } from '@lib/utils/types';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 
 import { InputForm } from './InputForm';
 import ReplLoading from './ReplLoading';
@@ -47,8 +47,17 @@ export default function Repl({ clientInfo, isClientInfoLoading }: ReplProps) {
   });
   const inputState = getInputState({ hasStarted, busy, isAnimating, mode });
 
+  // The input can appear in the same commit that changes these, before a passive effect would
+  // re-register the handler. Reading them from a ref updated before paint means an Enter pressed
+  // right away still sees the current mode.
+  const latest = useRef({ inputState, mode, state, apply });
+  useLayoutEffect(() => {
+    latest.current = { inputState, mode, state, apply };
+  });
+
   useEffect(() => {
     function handleSubmit(command: HistoryItem) {
+      const { inputState, mode, state, apply } = latest.current;
       // The input is hidden in other states, so this only guards against a stray submit.
       if (!acceptsInput(inputState)) return;
       void apply(route(command.value, mode, state));
@@ -56,7 +65,7 @@ export default function Repl({ clientInfo, isClientInfoLoading }: ReplProps) {
 
     const unregister = eventBus.on(EVENTS.SUBMIT, handleSubmit);
     return () => unregister();
-  }, [eventBus, apply, inputState, mode, state]);
+  }, [eventBus]);
 
   return (
     <div>

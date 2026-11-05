@@ -22,4 +22,9 @@ describe('identify', () => {
     const [effect] = identify.onAnswer('a'.repeat(MAX_NAME_LENGTH + 10), state);
     expect(effect).toEqual(setName('a'.repeat(MAX_NAME_LENGTH)));
   });
+
+  test('the cap never splits an emoji', () => {
+    const [effect] = identify.onAnswer(`${'a'.repeat(MAX_NAME_LENGTH - 1)}😀😀`, state);
+    expect(effect).toEqual(setName(`${'a'.repeat(MAX_NAME_LENGTH - 1)}😀`));
+  });
 });

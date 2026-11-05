@@ -7,8 +7,10 @@ import type { Effect, InputState, InputStateInput, QuestionId, Session } from '.
 
 /** The only place names are cleaned. `\` and `>` would break the prompt, so they are stripped. */
 export function sanitizeName(raw: string): string | null {
-  const cleaned = raw.replace(/[\\>]/g, '').trim().slice(0, MAX_NAME_LENGTH).trimEnd();
-  return cleaned || null;
+  const stripped = raw.replace(/[\\>]/g, '').trim();
+  // Array.from splits on code points, so the cap never cuts an emoji in half.
+  const capped = Array.from(stripped).slice(0, MAX_NAME_LENGTH).join('').trimEnd();
+  return capped || null;
 }
 
 export function promptFor(name: string | null): string {
