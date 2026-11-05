@@ -33,6 +33,7 @@ The deploy job fails early if `CLOUDFLARE_ACCOUNT_ID`, `CF_PAGES_PROJECT`, or `S
 ## Redeploy
 
 Open the latest run of "Deploy frontend to Cloudflare Pages" under Actions and choose "Re-run all jobs".
+Only re-run the latest one: re-running an older run deploys that older commit over the current site.
 It rebuilds the same commit with the current variables, which is how to pick up a changed `NEXT_PUBLIC_*` value.
 
 ## Roll back

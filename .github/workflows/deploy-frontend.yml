@@ -92,6 +92,16 @@ jobs:
           wranglerVersion: "4.158.0"
           command: pages deploy out --project-name=${{ vars.CF_PAGES_PROJECT }} --branch=main --commit-hash=${{ github.sha }}
 
+      # If the Pages project's production branch is not main, the deploy lands as a preview and the site keeps the old build.
+      - name: Require a production deploy
+        env:
+          PAGES_ENVIRONMENT: ${{ steps.deploy.outputs.pages-environment }}
+        run: |
+          if [ "$PAGES_ENVIRONMENT" != "production" ]; then
+            echo "::error::Deployed to '$PAGES_ENVIRONMENT', not production. Set the Pages project's production branch to main."
+            exit 1
+          fi
+
       - name: Write job summary
         env:
           SHA: ${{ github.sha }}
