@@ -14,47 +14,15 @@ permissions:
 
 # Runners are pinned to ubuntu-26.04 while ubuntu-latest moves to it (actions/runner-images#14748, done by 2026-11-19).
 jobs:
-  changes:
-    runs-on: ubuntu-26.04
-    timeout-minutes: 5
-    permissions:
-      contents: read
-      pull-requests: read
-    outputs:
-      frontend: ${{ steps.filter.outputs.frontend }}
-      infra: ${{ steps.filter.outputs.infra }}
-    steps:
-      # On pull_request, paths-filter lists files through the API and needs no checkout.
-      - name: Checkout
-        if: github.event_name == 'push'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
-
-      - name: Detect changed areas
-        id: filter
-        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
-        with:
-          filters: |
-            frontend:
-              - 'portfolio/**'
-              - '.github/workflows/frontend-checks.yml'
-              - '.github/workflows/ci.yml'
-            infra:
-              - 'infra/**'
-              - '.github/workflows/ci.yml'
-
+  # Every job runs on every PR. Both finish in about a minute in parallel, which is simpler than filtering by path.
   frontend:
-    needs: changes
     # On push to main, deploy-frontend.yml runs the same checks before deploying, so running them here too would be a duplicate.
-    if: needs.changes.outputs.frontend == 'true' && github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request'
     uses: ./.github/workflows/frontend-checks.yml
     permissions:
       contents: read
 
   infra:
-    needs: changes
-    if: needs.changes.outputs.infra == 'true'
     runs-on: ubuntu-26.04
     timeout-minutes: 10
     defaults:
@@ -101,12 +69,12 @@ jobs:
       - name: Validate bootstrap
         run: tofu -chdir=bootstrap validate
 
-  # The single required status check.
-  # A job skipped by its if reports success, so this passes when an area did not change.
+  # The single required status check, so the ruleset never changes when jobs are added or renamed.
+  # A job skipped by its if reports success, so this passes on push to main.
   ci:
     name: ci
     if: always()
-    needs: [changes, frontend, infra]
+    needs: [frontend, infra]
     runs-on: ubuntu-26.04
     timeout-minutes: 2
     steps:
