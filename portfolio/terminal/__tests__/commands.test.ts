@@ -28,14 +28,14 @@ describe('commands', () => {
     ]);
   });
 
-  test('whoami prints the name, then the client info only when it loaded', () => {
-    expect(run('whoami')).toEqual([printList([{ term: 'name', detail: 'unknown' }])]);
+  test('whoami lists the name, then the client info only when it loaded, each term with a colon', () => {
+    expect(run('whoami')).toEqual([printList([{ term: 'name:', detail: 'unknown' }])]);
     expect(
       run('whoami', { name: 'connor', clientInfo: [{ label: 'ip', value: '127.0.0.1' }] }),
     ).toEqual([
       printList([
-        { term: 'name', detail: 'connor' },
-        { term: 'ip', detail: '127.0.0.1' },
+        { term: 'name:', detail: 'connor' },
+        { term: 'ip:', detail: '127.0.0.1' },
       ]),
     ]);
   });

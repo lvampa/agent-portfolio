@@ -10,6 +10,11 @@ export function sanitizeName(raw: string): string | null {
   return capped || null;
 }
 
+/** A client info label as a list term. The colon is data, so List stays generic and help keeps none. */
+export function infoTerm(label: string): string {
+  return `${label}:`;
+}
+
 export function promptFor(name: string | null): string {
   return `C:\\Users\\${name ?? UNKNOWN_NAME}>`;
 }
