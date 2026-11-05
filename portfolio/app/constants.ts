@@ -15,7 +15,7 @@ export const PERSON_JSON_LD = {
   url: SITE_URL,
   jobTitle: 'Software Engineer',
   description:
-    'Software engineer who designs scalable enterprise software from user interfaces to infrastructure, leads high-performing teams, and works with executives to turn strategic goals into technical requirements. This site is an AI agent that answers questions about him.',
+    'Software engineer who designs scalable enterprise software from user interfaces to infrastructure, leads high-performing teams, and works with executives to turn strategic goals into technical requirements.',
   knowsAbout: [
     'Software Engineering',
     'AWS',
