@@ -1,6 +1,7 @@
 import { CommandPrompt } from '@components/ui/command-prompt';
 import { TypingAnimation } from '@components/ui/shadcn-io/terminal';
 import { useAnimation } from '@terminal/AnimationContext';
+import { formatInfoLine } from '@terminal/utils';
 import React from 'react';
 
 import {
@@ -57,7 +58,7 @@ export const ClientInfo: React.FC<RendererProps<'clientInfo'>> = ({ item, isRest
       {item.info.map((infoItem) => (
         <div key={infoItem.label}>
           <Line
-            text={`${infoItem.label}: ${infoItem.value}`}
+            text={formatInfoLine(infoItem)}
             isRestored={isRestored}
             delay={CLIENT_INFO_LINES_DELAY_MS}
             duration={INFO_TYPING_MS_PER_CHAR}

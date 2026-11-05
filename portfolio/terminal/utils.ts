@@ -1,3 +1,5 @@
+import type { UserInfoItem } from '@lib/utils/types';
+
 import { DEFAULT_SESSION, MAX_NAME_LENGTH, UNKNOWN_NAME } from './constants';
 import type { HistoryItem } from './history/types';
 import type { Effect, InputState, InputStateInput, QuestionId, Session } from './types';
@@ -8,6 +10,10 @@ export function sanitizeName(raw: string): string | null {
   // Array.from splits on code points, so the cap never cuts an emoji in half.
   const capped = Array.from(stripped).slice(0, MAX_NAME_LENGTH).join('').trimEnd();
   return capped || null;
+}
+
+export function formatInfoLine({ label, value }: UserInfoItem): string {
+  return `${label}: ${value}`;
 }
 
 export function promptFor(name: string | null): string {

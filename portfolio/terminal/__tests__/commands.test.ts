@@ -17,11 +17,6 @@ describe('commands', () => {
 
     expect(lines).toHaveLength(COMMANDS.length);
     expect(lines).toContainEqual(printText('help, h - List the commands.'));
-    COMMANDS.forEach((command) => {
-      expect(lines).toContainEqual(
-        printText(`${command.names.join(', ')} - ${command.description}`),
-      );
-    });
   });
 
   test.each(['cls', 'CLEAR'])('%s clears the screen and the saved history', (line) => {

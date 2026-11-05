@@ -51,7 +51,8 @@ The registry ships with three commands:
 
 - `help`, `h` prints one line per command, built from `state.commands`, such as `help, h - List the commands.`
 - `cls`, `clear` clears the screen and the saved history.
-  After a reload the history is empty, so the startup replays, without the question when a name is saved.
+  A reload right after `cls` finds the history empty, so the startup replays, without the question when a name is saved.
+  Anything typed after `cls` is saved, so a later reload restores it instead.
 - `whoami` prints `name: <name>` (or `unknown`), then the client info as `label: value` lines when it loaded.
 
 A command runs only when nothing follows it, so `help me understand his AWS work` will go to the chat.
