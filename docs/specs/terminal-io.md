@@ -47,8 +47,14 @@ On a first visit the screen shows, top to bottom:
 4. A blank line, the guidance line `Ask about the author, or type help for other commands.`, and another blank line before the input prompt.
 5. From then on, a line that is exactly a command name runs that command, and anything else goes to the chat.
 
-This PR builds the structure only, so the command registry ships empty and every line goes to the chat for now.
-Commands such as `help`, `cls`, and `whoami` land in later PRs.
+The registry ships with three commands:
+
+- `help`, `h` prints a `list` with one row per command, built from `state.commands`: the names, such as `help, h`, then the description.
+- `cls`, `clear` clears the screen and the saved history.
+  A reload right after `cls` finds the history empty, so the startup replays, without the question when a name is saved.
+  Anything typed after `cls` is saved, so a later reload restores it instead.
+- `whoami` prints a `list`: a `name` row with the name (or `unknown`), then a row per client info item when it loaded.
+
 A command runs only when nothing follows it, so `help me understand his AWS work` will go to the chat.
 A blank line in command mode prints an empty prompt line and does nothing else.
 On a reload, stored history renders as before and the startup does not replay.
@@ -86,7 +92,8 @@ type HistoryItem =
   | { type: 'command'; line: string; prompt: string } // The echo of a submitted line.
   | { type: 'message'; text: string }               // A chat reply.
   | { type: 'error'; text: string }                 // A failed chat request.
-  | { type: 'clientInfo'; info: UserInfo; prompt: string }; // The typed client info sequence.
+  | { type: 'clientInfo'; info: UserInfo; prompt: string } // The typed client info sequence.
+  | { type: 'list'; items: { term: string; detail: string }[] }; // Two aligned columns, used by help and whoami.
 ```
 
 The schema is built from one schema per type with `z.discriminatedUnion('type', [...])`, and the type is inferred from it.
@@ -106,6 +113,7 @@ export const renderers: Renderers = {
   message: Message,
   error: ErrorLine,
   clientInfo: ClientInfo,
+  list: List,
 };
 ```
 
@@ -304,13 +312,13 @@ terminal/
   index.ts         re-exports, pure modules only
   SessionContext.tsx
   AnimationContext.tsx
-  commands/        one file per command, added in later PRs
+  commands/        help.ts cls.ts whoami.ts index.ts, one file per command
   questions/       identify.ts registry.ts index.ts
   history/
     schemas.ts     one schema per item type, and the union
     types.ts constants.ts
     registry.ts    the renderers map
-    renderers/     Text Command Message ErrorLine ClientInfo
+    renderers/     Text Command Message ErrorLine ClientInfo List, and Columns, which List and ClientInfo share
     History.tsx HistoryContext.tsx
   repl/
     Repl.tsx InputForm.tsx ReplLoading.tsx
@@ -323,13 +331,17 @@ The event payload becomes the submitted line, not a history item.
 
 ## Worked example: adding a list output
 
-When `help` should print a list, three files change and nothing else.
+A new output type takes three files, and `list` was added this way.
+`printList`, the `ListRow` type, and the shared `Columns` came on top, for the call sites and the startup.
 
-1. `history/schemas.ts`: add `ListItemSchema = z.object({ type: z.literal('list'), items: z.array(z.object({ term: z.string(), detail: z.string() })) })` to the union.
+1. `history/schemas.ts`: `ListItemSchema = z.object({ type: z.literal('list'), items: z.array(ListRowSchema) })`, with `ListRowSchema = z.object({ term: z.string(), detail: z.string() })`, added to the union.
 2. `history/renderers/List.tsx`: the component.
-3. `history/registry.ts`: add `list: List`. Until this line exists, `tsc` fails.
+   It renders `Columns`, a `<dl>` grid with `grid-cols-[max-content_1fr]` and a two-character column gap, so terms take the widest term's width and the details line up after it, as in DOS.
+   It renders at once, with no animation.
+3. `history/registry.ts`: `list: List`. Until this line exists, `tsc` fails.
 
-Then `help.run` returns `[print({ type: 'list', items: commands.map(...) })]` instead of one text line per command.
+`printList(items)` in `utils.ts` builds the effect, so `help.run` returns `[printList(commands.map(...))]`.
+The startup client info uses the same `Columns`, typing each cell, so it looks the same as `whoami`.
 A table or an image is the same three steps.
 
 ## Testing

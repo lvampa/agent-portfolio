@@ -19,16 +19,18 @@ npx tsc --noEmit     # Type check
 ## Environment variables
 
 Set these in `.env.local`.
-Next.js inlines them at build time.
+Next.js inlines the `NEXT_PUBLIC_*` ones at build time.
 `lib/env.ts` validates the chat URL, so the build fails if it is missing.
 
 | Variable                       | Meaning                                                                                                                             |
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `NEXT_PUBLIC_CHAT_WEBHOOK_URL` | Base URL of the n8n chat webhook.                                                                                                   |
 | `NEXT_PUBLIC_NO_HISTORY`       | Only applies under `npm run dev`. Set to `true` to clear the stored history and session on every page load, so the startup replays. |
+| `DEV_INFO_URL`                 | Only applies under `npm run dev`. The client-info Worker's `workers.dev` URL, which the dev server proxies `/info` to.              |
 
 Client info comes from `/info` on the site's own domain, served by the client-info Worker in `infra/workers/info/`.
-`npm run dev` has no `/info`, so it runs without client info.
+`npm run dev` proxies `/info` to `DEV_INFO_URL`, a rewrite in `next.config.ts` that the build leaves out.
+Without `DEV_INFO_URL`, dev runs without client info.
 
 ## How it talks to n8n
 
@@ -50,6 +52,6 @@ Once you have read one registry, you can read the rest.
 - Chain of responsibility: `ROUTES` in `terminal/routes.ts` tries each way of handling a line in turn. The chat is just the last link.
 - Strategy, via exhaustive mapped types: the effect handlers and the history renderers are each keyed by type. A missing handler or renderer fails `tsc`.
 
-To add a command, write one file in `terminal/commands/` and add it to `COMMANDS` in `terminal/registry.ts`.
+To add a command, write one file in `terminal/commands/`, re-export it from `terminal/commands/index.ts`, and add it to `COMMANDS` in `terminal/registry.ts`.
 To add a question, write one file in `terminal/questions/`, add its id to `QUESTION_IDS`, and add it to `QUESTIONS`.
 To add an output type, add a schema to `terminal/history/schemas.ts`, a renderer in `terminal/history/renderers/`, and an entry in `terminal/history/registry.ts`.

@@ -31,10 +31,22 @@ export const ClientInfoItemSchema = z.object({
   prompt: z.string(),
 });
 
+export const ListRowSchema = z.object({
+  term: z.string(),
+  detail: z.string(),
+});
+
+// Two aligned columns, like DOS output.
+export const ListItemSchema = z.object({
+  type: z.literal('list'),
+  items: z.array(ListRowSchema),
+});
+
 export const HistoryItemSchema = z.discriminatedUnion('type', [
   TextItemSchema,
   CommandItemSchema,
   MessageItemSchema,
   ErrorItemSchema,
   ClientInfoItemSchema,
+  ListItemSchema,
 ]);

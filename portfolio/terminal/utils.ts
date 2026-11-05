@@ -1,5 +1,5 @@
 import { DEFAULT_SESSION, MAX_NAME_LENGTH, UNKNOWN_NAME } from './constants';
-import type { HistoryItem } from './history/types';
+import type { HistoryItem, ListRow } from './history/types';
 import type { Effect, InputState, InputStateInput, QuestionId, Session } from './types';
 
 /** The only place names are cleaned. `\` and `>` would break the prompt, so they are stripped. */
@@ -45,6 +45,10 @@ export function print(item: HistoryItem): Effect {
 
 export function printText(text: string): Effect {
   return print({ type: 'text', text });
+}
+
+export function printList(items: ListRow[]): Effect {
+  return print({ type: 'list', items });
 }
 
 export function echo(line: string, prompt: string): Effect {

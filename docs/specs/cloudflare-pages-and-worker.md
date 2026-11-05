@@ -387,7 +387,8 @@ Nothing is live today, so the steps favor simple over seamless.
    - `curl -sI "https://www.$SITE_HOSTNAME/a/b?x=1"` returns 301 to `https://$SITE_HOSTNAME/a/b?x=1`.
    - The site shows client info, and chat works.
    If `/info` returns the site's HTML instead of JSON, the route is not taking precedence over the Pages domain; stop and revisit the design.
-7. **Clean up:** `gh variable delete NEXT_PUBLIC_INFO_URL`, and optionally turn off the Worker's `workers.dev` URL, since nothing calls it.
+7. **Clean up:** `gh variable delete NEXT_PUBLIC_INFO_URL`.
+   Keep the Worker's `workers.dev` URL on: `DEV_INFO_URL` points `npm run dev`'s `/info` at it.
    Confirm the old AWS deploy IAM role and the GitHub OIDC provider are gone along with the hosting.
 
 ## Docs to update

@@ -37,7 +37,14 @@ const eslintConfig = defineConfig([
       eqeqeq: ['error', 'always'],
     },
   },
-  globalIgnores(['.next/**', 'out/**', 'build/**', 'next-env.d.ts', '**/__tests__/**']),
+  globalIgnores([
+    '.next/**',
+    'out/**',
+    'build/**',
+    'next-env.d.ts',
+    '**/__tests__/**',
+    '.claude/**',
+  ]),
 ]);
 
 export default eslintConfig;

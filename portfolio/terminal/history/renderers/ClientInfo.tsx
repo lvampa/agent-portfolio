@@ -3,6 +3,7 @@ import { TypingAnimation } from '@components/ui/shadcn-io/terminal';
 import { useAnimation } from '@terminal/AnimationContext';
 import React from 'react';
 
+import { Columns } from './Columns';
 import {
   CLIENT_INFO_COMMAND,
   CLIENT_INFO_LINES_DELAY_MS,
@@ -54,16 +55,29 @@ export const ClientInfo: React.FC<RendererProps<'clientInfo'>> = ({ item, isRest
           duration={TYPING_MS_PER_CHAR}
         />
       </div>
-      {item.info.map((infoItem) => (
-        <div key={infoItem.label}>
-          <Line
-            text={`${infoItem.label}: ${infoItem.value}`}
-            isRestored={isRestored}
-            delay={CLIENT_INFO_LINES_DELAY_MS}
-            duration={INFO_TYPING_MS_PER_CHAR}
-          />
-        </div>
-      ))}
+      {/* The same columns as whoami, so both show client info the same way. */}
+      <Columns>
+        {item.info.map(({ label, value }) => (
+          <React.Fragment key={label}>
+            <dt>
+              <Line
+                text={label}
+                isRestored={isRestored}
+                delay={CLIENT_INFO_LINES_DELAY_MS}
+                duration={INFO_TYPING_MS_PER_CHAR}
+              />
+            </dt>
+            <dd>
+              <Line
+                text={value}
+                isRestored={isRestored}
+                delay={CLIENT_INFO_LINES_DELAY_MS}
+                duration={INFO_TYPING_MS_PER_CHAR}
+              />
+            </dd>
+          </React.Fragment>
+        ))}
+      </Columns>
     </div>
   );
 };
