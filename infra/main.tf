@@ -27,3 +27,14 @@ module "ecs" {
   api_hostname       = var.api_hostname
   admin_hostname     = var.admin_hostname
 }
+
+# Pages project, apex and www DNS, the www redirect, and the client-info Worker at /info.
+module "site" {
+  source         = "./modules/site"
+  account_id     = var.cloudflare_account_id
+  zone_id        = var.cloudflare_zone_id
+  project_name   = var.pages_project_name
+  hostname       = var.site_hostname
+  worker_name    = "solitary-breeze-9668"
+  worker_content = file("${path.module}/workers/info/index.js")
+}

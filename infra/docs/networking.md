@@ -9,6 +9,10 @@ flowchart LR
     direction TB
     apiHost["api host<br/>webhooks, rate limited"]
     adminHost["admin host<br/>home IP only"]
+    wwwHost["www host<br/>301 to apex"]
+    apexHost["apex host"]
+    pages["Pages<br/>static site"]
+    worker["info Worker<br/>/info"]
     tunnel["Tunnel"]
   end
 
@@ -21,6 +25,11 @@ flowchart LR
     ssm["SSM<br/>secrets"]
   end
 
+  visitor -->|HTTPS| apexHost
+  visitor -->|HTTPS| wwwHost
+  wwwHost -.->|redirect| apexHost
+  apexHost --> pages
+  apexHost -->|/info| worker
   visitor -->|HTTPS| apiHost
   operator -->|HTTPS| adminHost
   apiHost --> tunnel
@@ -36,7 +45,7 @@ flowchart LR
   classDef data fill:#ecfdf3,stroke:#2f9e5b,color:#18181b
 
   class visitor,operator external
-  class apiHost,adminHost,tunnel cloudflare
+  class apiHost,adminHost,wwwHost,apexHost,pages,worker,tunnel cloudflare
   class cloudflared,caddy,n8n compute
   class ebs,ssm data
 

@@ -20,13 +20,15 @@ npx tsc --noEmit     # Type check
 
 Set these in `.env.local`.
 Next.js inlines them at build time.
-`lib/env.ts` validates the two URLs, so the build fails if either is missing.
+`lib/env.ts` validates the chat URL, so the build fails if it is missing.
 
 | Variable                       | Meaning                                                                                                                             |
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------- |
 | `NEXT_PUBLIC_CHAT_WEBHOOK_URL` | Base URL of the n8n chat webhook.                                                                                                   |
-| `NEXT_PUBLIC_INFO_URL`         | URL that returns the visitor's request info, shown in the first history entry.                                                      |
 | `NEXT_PUBLIC_NO_HISTORY`       | Only applies under `npm run dev`. Set to `true` to clear the stored history and session on every page load, so the startup replays. |
+
+Client info comes from `/info` on the site's own domain, served by the client-info Worker in `infra/workers/info/`.
+`npm run dev` has no `/info`, so it runs without client info.
 
 ## How it talks to n8n
 

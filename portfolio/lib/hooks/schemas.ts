@@ -10,7 +10,6 @@ export const ClientInfoRequestSchema = z.object({
   asn: z.union([z.string(), z.number()]),
   organization: z.string(),
   timezone: z.string(),
-  deviceType: z.string(),
   userAgent: z.string().nullable(),
   acceptLanguage: z.string().nullable(),
   acceptEncoding: z.string().nullable(),

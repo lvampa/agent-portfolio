@@ -19,7 +19,6 @@ jobs:
         working-directory: portfolio
     env:
       NEXT_PUBLIC_CHAT_WEBHOOK_URL: https://example.invalid/webhook/chat
-      NEXT_PUBLIC_INFO_URL: https://example.invalid/webhook/info
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

@@ -25,7 +25,6 @@ jobs:
         working-directory: portfolio
     env:
       NEXT_PUBLIC_CHAT_WEBHOOK_URL: ${{ vars.NEXT_PUBLIC_CHAT_WEBHOOK_URL }}
-      NEXT_PUBLIC_INFO_URL: ${{ vars.NEXT_PUBLIC_INFO_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -125,17 +124,21 @@ jobs:
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
           SITE_URL: ${{ vars.SITE_URL }}
         run: |
+          is_html() { grep -qF '</html>'; }
+          is_info() { jq -e '.timestamp' > /dev/null; }
           check() {
             for attempt in 1 2 3 4 5 6; do
-              if body=$(curl -fsSL --max-time 10 "$1") && grep -qF '</html>' <<< "$body"; then
+              if body=$(curl -fsSL --max-time 10 "$1") && "$2" <<< "$body"; then
                 echo "OK: $1"
                 return 0
               fi
               echo "Attempt $attempt failed for $1, retrying."
               sleep 10
             done
-            echo "::error::$1 did not return an HTML page."
+            echo "::error::$1 did not return the expected response ($2 failed)."
             return 1
           }
-          check "$DEPLOYMENT_URL"
-          check "$SITE_URL"
+          # The pages.dev deployment URL has no Worker route, so /info is only checked on the site.
+          check "$DEPLOYMENT_URL" is_html
+          check "$SITE_URL" is_html
+          check "$SITE_URL/info" is_info
