@@ -16,6 +16,8 @@ import type { HistoryItem } from './types';
 
 interface HistoryContextValue {
   items: HistoryItem[];
+  /** Items before this index came from storage, so they were already seen on an earlier visit. */
+  restoredCount: number;
   hasLoaded: boolean;
   append: (item: HistoryItem) => void;
   clear: () => void;
@@ -31,12 +33,14 @@ function loadHistory(): HistoryItem[] {
 
 export function HistoryProvider({ children }: { children: React.ReactNode }) {
   const [items, setItems] = useState<HistoryItem[]>([]);
+  const [restoredCount, setRestoredCount] = useState(0);
   const [hasLoaded, setHasLoaded] = useState(false);
 
   useEffect(() => {
     const stored = loadHistory();
     startTransition(() => {
       setItems(stored);
+      setRestoredCount(stored.length);
       setHasLoaded(true);
     });
   }, []);
@@ -48,12 +52,13 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
 
   const clear = useCallback(() => {
     setItems([]);
+    setRestoredCount(0);
     historyStore.clear();
   }, []);
 
   const value = useMemo(
-    () => ({ items, hasLoaded, append, clear }),
-    [items, hasLoaded, append, clear],
+    () => ({ items, restoredCount, hasLoaded, append, clear }),
+    [items, restoredCount, hasLoaded, append, clear],
   );
 
   return <HistoryContext.Provider value={value}>{children}</HistoryContext.Provider>;

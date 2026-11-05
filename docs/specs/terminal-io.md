@@ -52,6 +52,8 @@ Commands such as `help`, `cls`, and `whoami` land in later PRs.
 A command runs only when nothing follows it, so `help me understand his AWS work` will go to the chat.
 A blank line in command mode prints an empty prompt line and does nothing else.
 On a reload, stored history renders as before and the startup does not replay.
+Restored items render at once, without typing, so the prompt shows right away.
+`HistoryContext` keeps how many items came from storage, and `History` passes `isRestored` to each renderer.
 
 ## Architecture
 
@@ -95,7 +97,7 @@ Renderers are registered in a mapped type, so each one receives its own item sha
 
 ```ts
 type Renderers = {
-  [K in HistoryItemType]: React.FC<{ item: Extract<HistoryItem, { type: K }> }>;
+  [K in HistoryItemType]: React.FC<{ item: Extract<HistoryItem, { type: K }>; isRestored: boolean }>;
 };
 
 export const renderers: Renderers = {
@@ -341,7 +343,7 @@ A few tests for the real risks:
 - `routes.test.ts`: `sendToChat` is the last route.
 - `startup.test.ts`: no name includes the ask, a saved name leaves it out, and missing client info skips that step.
 - `history/__tests__/schemas.test.ts`: an invalid stored item is dropped and valid ones survive.
-- One Repl integration test file: a first visit asks and then prints the guidance, restored history skips the startup, a reload mid-question asks again, and the prompt stays hidden while client info types.
+- One Repl integration test file: a first visit asks and then prints the guidance, restored history skips the startup, a reload mid-question asks again, the prompt stays hidden while client info types, and restored client info shows in full without holding back the prompt.
 
 Update the existing tests the change touches, and delete ones that only test the old string items.
 

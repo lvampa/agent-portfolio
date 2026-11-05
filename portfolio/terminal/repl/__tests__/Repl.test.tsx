@@ -86,6 +86,24 @@ describe('Repl', () => {
     expect(screen.queryByText(BANNER_LINES[0])).not.toBeInTheDocument();
   });
 
+  test('restored client info shows in full at once and does not hold back the prompt', async () => {
+    mockedLoadHistory.mockReturnValue([
+      {
+        type: 'clientInfo',
+        info: [{ label: 'ip', value: '127.0.0.1' }],
+        prompt: 'C:\\Users\\unknown>',
+      },
+    ]);
+    mockedLoadSession.mockReturnValue({ name: 'tester', mode: { type: 'command' } });
+    renderRepl();
+
+    await screen.findByRole('log');
+
+    expect(screen.getByLabelText('Input Prompt')).toBeInTheDocument();
+    // An animating line starts with only its screen-reader copy filled in.
+    expect(screen.getByText('ip: 127.0.0.1')).not.toHaveClass('sr-only');
+  });
+
   test('NEXT_PUBLIC_NO_HISTORY clears both stores and replays the startup in development', async () => {
     const originalNodeEnv = process.env.NODE_ENV;
     setNodeEnv('development');

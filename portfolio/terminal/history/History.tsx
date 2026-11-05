@@ -4,10 +4,10 @@ import { useHistory } from './HistoryContext';
 import { renderers } from './registry';
 import type { HistoryItem } from './types';
 
-type AnyRenderer = React.FC<{ item: HistoryItem }>;
+type AnyRenderer = React.FC<{ item: HistoryItem; isRestored: boolean }>;
 
 export function History() {
-  const { items, hasLoaded } = useHistory();
+  const { items, restoredCount, hasLoaded } = useHistory();
 
   // Mounting the log after load keeps restored items from being announced as new.
   if (!hasLoaded) return null;
@@ -20,7 +20,7 @@ export function History() {
         // History only appends or clears, so an index key stays stable.
         return (
           <div key={index}>
-            <Renderer item={item} />
+            <Renderer item={item} isRestored={index < restoredCount} />
           </div>
         );
       })}
