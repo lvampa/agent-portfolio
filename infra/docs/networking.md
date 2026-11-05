@@ -12,10 +12,10 @@ flowchart LR
     tunnel["Tunnel"]
   end
 
-  subgraph aws["AWS VPC"]
+  subgraph aws["AWS"]
     subgraph ec2["EC2 t4g.small, ECS task"]
       direction LR
-      cloudflared["cloudflared<br/>tunnel connector"] --> caddy["Caddy"] --> n8n["n8n"]
+      cloudflared["cloudflared"] --> caddy["Caddy"] --> n8n["n8n"]
     end
     ebs[("EBS volume<br/>daily snapshots")]
     ssm["SSM<br/>secrets"]
@@ -25,7 +25,7 @@ flowchart LR
   operator -->|HTTPS| adminHost
   apiHost --> tunnel
   adminHost --> tunnel
-  cloudflared -. "dials out" .-> tunnel
+  cloudflared -.-> tunnel
   n8n --- ebs
   ssm -.-> ec2
   operator -->|SSH| ec2
@@ -40,11 +40,7 @@ flowchart LR
   class cloudflared,caddy,n8n compute
   class ebs,ssm data
 
-  style cf fill:#fffaf5,stroke:#f38020
-  style aws fill:#fafafa,stroke:#ff9900
-  style ec2 fill:#f8faff,stroke:#3b6fd8
+  style cf fill:#fffaf5,stroke:#f38020,color:#18181b
+  style aws fill:#fafafa,stroke:#ff9900,color:#18181b
+  style ec2 fill:#f8faff,stroke:#3b6fd8,color:#18181b
 ```
-
-The instance has no open web port.
-`cloudflared` dials out to Cloudflare, and requests come back over that connection to Caddy and then n8n.
-SSH from the home IP is the only inbound rule.
