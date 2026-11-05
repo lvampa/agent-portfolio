@@ -15,7 +15,7 @@ Port code from PR #10 where it fits, adapted to the paths and item shapes below.
 ## Goals
 
 - Adding a command is one file plus one registry entry.
-- Adding a question is one file plus one registry entry.
+- Adding a question is one file, one id in `QUESTION_IDS`, and one registry entry. The id schema is derived from `QUESTION_IDS`.
 - Adding an output type is one schema, one renderer, and one registry entry, and TypeScript fails the build if the renderer is missing.
 - Commands, questions, the router, and the startup are pure functions that are easy to test without React.
 - One place decides whether the prompt accepts input.
@@ -237,10 +237,10 @@ A handler that returns `'continue'` synchronously keeps the walk synchronous.
 Effects before the first chat apply in the same tick, which the startup relies on.
 
 `useInterpreter()` is the adapter.
-It builds the ports from `HistoryContext`, `SessionContext`, and `useChat`, memoizes the interpreter, and returns `{ apply, busy }`, with `busy` true while a chat is in flight.
+It builds the ports from `HistoryContext`, `SessionContext`, and `useChat`, memoizes the interpreter, and returns `{ apply, busy }`, with `busy` true for the whole apply of any list that contains a chat, so the input returns in the same render as the reply.
 `createInterpreter` is tested with fake ports, with no rendering.
 
-`Repl` registers its submit handler once and reads the current mode, state, and input state from a ref updated in a layout effect.
+`Repl` registers its submit handler once, as a `useEffectEvent`, so it always reads the current mode, state, and input state.
 Otherwise an Enter pressed in the frame the input appears can reach a stale handler and be dropped.
 
 ## Startup
@@ -348,5 +348,4 @@ Update the existing tests the change touches, and delete ones that only test the
 ## Decided while reviewing the spec
 
 - No commands ship in this PR. The router and registry are tested with a command that exists only in the test.
-- Whether `busy` comes from `useChat` or the interpreter.
 - The exact `Command` renderer markup, as long as it shows the stored prompt.

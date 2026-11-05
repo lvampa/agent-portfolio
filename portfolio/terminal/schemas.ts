@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { QUESTION_IDS } from './constants';
 import { HistoryItemSchema } from './history/schemas';
 
-export const QuestionIdSchema = z.enum([QUESTION_IDS.IDENTIFY]);
+export const QuestionIdSchema = z.enum(QUESTION_IDS);
 
 // Effects have a schema because a pending question stores them in the session.
 export const EffectSchema = z.discriminatedUnion('type', [

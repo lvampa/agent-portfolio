@@ -1,5 +1,4 @@
 import { DEFAULT_SESSION, MAX_NAME_LENGTH, UNKNOWN_NAME } from './constants';
-import { HISTORY_ITEM_TYPES } from './history/constants';
 import type { HistoryItem } from './history/types';
 import type { Effect, InputState, InputStateInput, QuestionId, Session } from './types';
 
@@ -45,11 +44,11 @@ export function print(item: HistoryItem): Effect {
 }
 
 export function printText(text: string): Effect {
-  return print({ type: HISTORY_ITEM_TYPES.TEXT, text });
+  return print({ type: 'text', text });
 }
 
 export function echo(line: string, prompt: string): Effect {
-  return print({ type: HISTORY_ITEM_TYPES.COMMAND, line, prompt });
+  return print({ type: 'command', line, prompt });
 }
 
 export function clearScreen(): Effect {

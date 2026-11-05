@@ -46,8 +46,13 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     setSession((previous) => ({ ...previous, name }));
   }, []);
 
+  // Every apply resets to command mode, so returning the same object skips a render and a save.
   const setMode = useCallback((mode: Mode) => {
-    setSession((previous) => ({ ...previous, mode }));
+    setSession((previous) =>
+      mode.type === 'command' && previous.mode.type === 'command'
+        ? previous
+        : { ...previous, mode },
+    );
   }, []);
 
   const value = useMemo(

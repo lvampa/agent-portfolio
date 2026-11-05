@@ -6,7 +6,8 @@ import { startTransition, useLayoutEffect, useRef, useState } from 'react';
 /**
  * Runs the startup once everything has loaded, unless stored history is being restored.
  * The items append in a layout effect, before paint, and their animations report from mount.
- * `hasStarted` is set in the same effect, so no frame shows the prompt in between.
+ * `hasStarted` is set in a transition, because the lint rule bans a synchronous setState in an effect.
+ * Deferring it can only keep the prompt hidden longer, never show it early.
  */
 export function useStartup({
   isReady,

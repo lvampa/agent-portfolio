@@ -9,7 +9,7 @@ import { currentPrompt, route } from '@terminal/router';
 import { useSession } from '@terminal/SessionContext';
 import type { TerminalState } from '@terminal/types';
 import { acceptsInput, getInputState } from '@terminal/utils';
-import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { useEffect, useEffectEvent, useMemo } from 'react';
 
 import { InputForm } from './InputForm';
 import ReplLoading from './ReplLoading';
@@ -42,23 +42,16 @@ export default function Repl({ clientInfo, isClientInfoLoading }: ReplProps) {
   });
   const inputState = getInputState({ hasStarted, busy, isAnimating, mode });
 
-  // The input can appear in the same commit that changes these, before a passive effect would
-  // re-register the handler. Reading them from a ref updated before paint means an Enter pressed
-  // right away still sees the current mode.
-  const latest = useRef({ inputState, mode, state, apply });
-  useLayoutEffect(() => {
-    latest.current = { inputState, mode, state, apply };
+  // An effect event always sees the latest mode, even in the commit where the input first appears,
+  // so the handler is registered once instead of re-registering after every change.
+  const handleSubmit = useEffectEvent((line: string) => {
+    // The input is hidden in other states, so this only guards against a stray submit.
+    if (!acceptsInput(inputState)) return;
+    void apply(route(line, mode, state));
   });
 
   useEffect(() => {
-    function handleSubmit(line: string) {
-      const { inputState, mode, state, apply } = latest.current;
-      // The input is hidden in other states, so this only guards against a stray submit.
-      if (!acceptsInput(inputState)) return;
-      void apply(route(line, mode, state));
-    }
-
-    const unregister = eventBus.on(EVENTS.SUBMIT, handleSubmit);
+    const unregister = eventBus.on(EVENTS.SUBMIT, (line) => handleSubmit(line));
     return () => unregister();
   }, [eventBus]);
 

@@ -28,7 +28,7 @@ Once you have read one registry, you can read the rest.
 - Strategy, via exhaustive mapped types: the effect handlers and the history renderers are each keyed by type. A missing handler or renderer fails `tsc`.
 
 To add a command, write one file in `terminal/commands/` and add it to `COMMANDS` in `terminal/registry.ts`.
-To add a question, write one file in `terminal/questions/` and add it to `QUESTIONS`.
+To add a question, write one file in `terminal/questions/`, add its id to `QUESTION_IDS`, and add it to `QUESTIONS`.
 To add an output type, add a schema to `terminal/history/schemas.ts`, a renderer in `terminal/history/renderers/`, and an entry in `terminal/history/registry.ts`.
 
 ## Testing

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useCallback, useContext, useState } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 
 interface AnimationContextValue {
   isAnimating: boolean;
@@ -21,11 +21,11 @@ export function AnimationProvider({ children }: { children: React.ReactNode }) {
     setCount((c) => Math.max(0, c - 1));
   }, []);
 
-  const value: AnimationContextValue = {
-    isAnimating: count > 0,
-    startAnimation,
-    endAnimation,
-  };
+  const isAnimating = count > 0;
+  const value = useMemo(
+    () => ({ isAnimating, startAnimation, endAnimation }),
+    [isAnimating, startAnimation, endAnimation],
+  );
 
   return <AnimationContext.Provider value={value}>{children}</AnimationContext.Provider>;
 }

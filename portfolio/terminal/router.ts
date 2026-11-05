@@ -15,5 +15,6 @@ export function route(line: string, mode: Mode, state: TerminalState): Effect[] 
     const effects = link.handle(line, mode, state);
     if (effects) return [lineEcho, ...effects];
   }
-  return [lineEcho];
+  // sendToChat always claims the line, so reaching here means ROUTES lost its last link.
+  throw new Error('No route claimed the line');
 }

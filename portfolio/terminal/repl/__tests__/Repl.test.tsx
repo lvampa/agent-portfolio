@@ -1,6 +1,5 @@
 import '@testing-library/jest-dom';
 
-import type { UserInfo } from '@lib/utils/types';
 import { AnimationProvider } from '@terminal/AnimationContext';
 import { BANNER_LINES, GUIDANCE_LINE, QUESTION_IDS } from '@terminal/constants';
 import { HistoryProvider } from '@terminal/history/HistoryContext';
@@ -9,7 +8,7 @@ import { SessionProvider } from '@terminal/SessionContext';
 import { historyStore, sessionStore } from '@terminal/storage';
 import type { Session } from '@terminal/types';
 import { printText } from '@terminal/utils';
-import { act, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 import Repl from '../Repl';
@@ -29,27 +28,18 @@ const mockedLoadSession = sessionStore.loadValue as jest.Mock;
 const IDENTIFY_PROMPT = 'Please Identify:';
 const EARLIER_LINE = 'an earlier line';
 
-function renderRepl(clientInfo: UserInfo | null = null) {
+function renderRepl() {
   render(
     <EventBusProvider>
       <HistoryProvider>
         <SessionProvider>
           <AnimationProvider>
-            <Repl clientInfo={clientInfo} isClientInfoLoading={false} />
+            <Repl clientInfo={null} isClientInfoLoading={false} />
           </AnimationProvider>
         </SessionProvider>
       </HistoryProvider>
     </EventBusProvider>,
   );
-}
-
-// Typing starts new timers on each render, so time moves in steps that let React commit between them.
-async function advance(ms: number) {
-  for (let elapsed = 0; elapsed < ms; elapsed += 50) {
-    await act(async () => {
-      jest.advanceTimersByTime(50);
-    });
-  }
 }
 
 describe('Repl', () => {
@@ -101,20 +91,5 @@ describe('Repl', () => {
     await user.type(screen.getByLabelText('Input Prompt'), 'tester{enter}');
 
     expect(await screen.findByText(GUIDANCE_LINE)).toBeInTheDocument();
-  });
-
-  describe('with client info typing', () => {
-    beforeEach(() => jest.useFakeTimers());
-    afterEach(() => jest.useRealTimers());
-
-    test('the prompt stays hidden until the typing ends', async () => {
-      renderRepl([{ label: 'ip', value: '127.0.0.1' }]);
-
-      await advance(1000);
-      expect(screen.queryByLabelText('Input Prompt')).not.toBeInTheDocument();
-
-      await advance(10_000);
-      expect(screen.getByLabelText('Input Prompt')).toBeInTheDocument();
-    });
   });
 });

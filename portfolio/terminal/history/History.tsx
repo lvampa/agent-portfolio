@@ -1,6 +1,6 @@
-import { useHistory } from '@terminal/history/HistoryContext';
 import React from 'react';
 
+import { useHistory } from './HistoryContext';
 import { renderers } from './registry';
 import type { HistoryItem } from './types';
 

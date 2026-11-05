@@ -1,5 +1,4 @@
 import { CHAT_ERROR_MESSAGE, COMMAND_MODE } from './constants';
-import { HISTORY_ITEM_TYPES } from './history/constants';
 import type { Ports } from './ports';
 import type { Effect, EffectContext, EffectHandlers, EffectOutcome } from './types';
 
@@ -23,11 +22,9 @@ const effectHandlers: EffectHandlers = {
   chat: async ({ message }, { ports }): Promise<'continue'> => {
     const replies = await ports.chat.send(message);
     if (!replies) {
-      ports.history.append({ type: HISTORY_ITEM_TYPES.ERROR, text: CHAT_ERROR_MESSAGE });
+      ports.history.append({ type: 'error', text: CHAT_ERROR_MESSAGE });
     } else {
-      replies.forEach((reply) =>
-        ports.history.append({ type: HISTORY_ITEM_TYPES.MESSAGE, text: reply.output }),
-      );
+      replies.forEach((reply) => ports.history.append({ type: 'message', text: reply.output }));
     }
     return 'continue';
   },
