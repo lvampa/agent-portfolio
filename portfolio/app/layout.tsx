@@ -9,6 +9,7 @@ import React from 'react';
 
 import {
   PERSON_JSON_LD,
+  SHARE_TITLE,
   SITE_DESCRIPTION,
   SITE_NAME,
   SITE_TITLE,
@@ -32,12 +33,12 @@ export const metadata: Metadata = {
   alternates: { canonical: '/' },
   openGraph: {
     type: 'profile',
-    title: SITE_TITLE,
+    title: SHARE_TITLE,
     description: SITE_DESCRIPTION,
     url: '/',
     siteName: SITE_NAME,
   },
-  twitter: { card: 'summary_large_image' },
+  twitter: { card: 'summary_large_image', title: SHARE_TITLE, description: SITE_DESCRIPTION },
 };
 
 export const viewport: Viewport = {
