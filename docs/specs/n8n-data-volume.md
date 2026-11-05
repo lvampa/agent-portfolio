@@ -30,53 +30,10 @@ There was no restore procedure, and the workflows were not in git.
 - Workflows are backed up by downloading them from the editor.
   Downloads do not include credentials.
 
-## Migrating the existing instance
+## Verify after the first apply
 
-The current data sits on the root volume.
-A plain `tofu apply` would create the volume and replace the instance in one step, which destroys that data.
-Do it in this order instead.
-Everything marked "you run" is a manual command, and Connor runs all `tofu apply` calls.
-
-1. Back up.
-   - Snapshot the current root volume by hand:
-     `aws ec2 create-snapshot --region us-east-2 --volume-id <root volume id> --description "pre data-volume migration"`.
-   - Wait for it to reach `completed`.
-   - Also copy the data off the host:
-     `ssh ec2-user@<ip> 'sudo tar -C /opt -czf - n8n-data' > n8n-data-backup.tgz`.
-   - Download each workflow from the editor and keep the files somewhere safe.
-2. Create only the volume.
-   - You run: `tofu apply -target=module.ec2.aws_ebs_volume.n8n_data`.
-   - Read the plan first.
-     It must show one volume to add and nothing else.
-3. Stop n8n and copy the data.
-   - You run: `aws ecs update-service --region us-east-2 --cluster ai-agent-portfolio-cluster --service ai-agent-portfolio-n8n --desired-count 0`.
-   - Wait until the task is stopped, so SQLite is not being written.
-   - Attach the new volume to the old instance under a different device name than the one Tofu will use:
-     `aws ec2 attach-volume --region us-east-2 --volume-id <data volume id> --instance-id <instance id> --device /dev/sdg`.
-   - On the host, using the by-id link for that volume:
-     ```
-     dev=/dev/disk/by-id/nvme-Amazon_Elastic_Block_Store_<volume id without dash>
-     sudo mkfs.xfs "$dev"
-     sudo mkdir -p /mnt/new && sudo mount "$dev" /mnt/new
-     sudo rsync -a /opt/n8n-data/ /mnt/new/
-     sudo diff -r /opt/n8n-data /mnt/new && echo identical
-     sudo umount /mnt/new
-     ```
-   - The new filesystem has to exist before the replacement, or the new instance would format a blank disk and n8n would start empty.
-4. Detach the volume so Tofu can attach it.
-   - You run: `aws ec2 detach-volume --region us-east-2 --volume-id <data volume id>`.
-   - Wait for `available`.
-   - Take a manual snapshot of the data volume as a second safety copy.
-5. Replace the instance.
-   - You run: `tofu apply`.
-   - The plan should show the instance replaced (new `user_data`), the attachment created, the EIP association replaced, and the DLM policy unchanged.
-   - It must not show the data volume replaced or destroyed.
-   - The new instance mounts the volume, ECS starts the task, and `desired_count` goes back to 1.
-6. Verify.
-   - Open the editor and check that workflows and credentials are there.
-   - SSH in and check `findmnt /opt/n8n-data` and `grep n8n-data /etc/fstab`.
-   - Check that `aws ec2 describe-snapshots --filters Name=tag:Snapshot,Values=n8n-data` shows a new snapshot after 05:00 UTC.
-   - Delete the old root snapshot once you are confident.
+- SSH in and check `findmnt /opt/n8n-data` and `grep n8n-data /etc/fstab`.
+- After 05:00 UTC, check that `aws ec2 describe-snapshots --region us-east-2 --filters Name=tag:Snapshot,Values=n8n-data` shows a snapshot.
 
 ## Restoring from a DLM snapshot
 

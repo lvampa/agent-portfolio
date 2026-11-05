@@ -28,7 +28,6 @@ The instance has no web port open, so there is nothing to reach by IP.
   Its policy uses the `bypass` decision with an `ip` include of `home_ip_cidr`.
   Bypass skips the login page for the home IP, and Access denies everyone else by default.
   An `allow` policy would still ask for an identity, and we do not use a login provider.
-  The old zone WAF custom rule is removed.
 - **Caddy.** The api host serves `/webhook/*` only, so `/webhook-test/*` is a 404.
   Request bodies on the api host are capped at 4 KB.
   Caddy trusts private ranges as proxies and reads the client IP from `CF-Connecting-IP`.
@@ -58,17 +57,12 @@ The instance has no web port open, so there is nothing to reach by IP.
    - Account > Cloudflare Tunnel > Edit
    - Account > Access: Apps and Policies > Edit
    - Zone > DNS > Edit
-   - Zone > Zone WAF > Edit (covers the rate-limit ruleset and the removed custom rule)
-4. Run `tofu plan` and check that the two A records are replaced by CNAMEs and the zone custom rules ruleset is destroyed.
-   No `import` is needed.
-   If the provider cannot change a record's type in place, it replaces the record, and the hostnames are briefly unresolvable.
+   - Zone > Zone WAF > Edit (covers the rate-limit ruleset)
 
 ## Apply order
 
-One `tofu apply` is enough.
+One `tofu apply` creates everything.
 The data source waits for the tunnel, and the SSM parameter waits for the data source.
-The ECS task is replaced, and the old task stops first, so n8n is down for a minute or two.
-Back up `/opt/n8n-data` first if you want to be safe, though the data volume is not touched.
 
 ## Verify after apply
 
@@ -85,13 +79,6 @@ Back up `/opt/n8n-data` first if you want to be safe, though the data volume is 
 
 If the home IP check fails because Access still shows a login page, switch the policy decision to `allow` and add a login method.
 Change the free-plan rate limit values only through the two variables.
-
-## Rollback
-
-Revert the commits and run `tofu apply`.
-That restores the port-80 rule, the A records, the WAF custom rule, and the Caddy host port mapping, and destroys the tunnel, Access application, and rate-limit ruleset.
-The SSM tunnel parameter is destroyed with it.
-Your Elastic IP and n8n data are not affected.
 
 ## Follow-up
 

@@ -10,7 +10,7 @@ Highlights:
 - n8n data lives on its own encrypted EBS volume mounted at `/opt/n8n-data`, so replacing the instance keeps it.
 - The data volume has daily snapshots kept for 7 days (`n8n_snapshot_retention_count`).
 - Back up workflows by downloading them from the editor.
-- Migration, restore, re-import, and AMI bump steps are in [the data volume spec](../docs/specs/n8n-data-volume.md).
+- Restore, re-import, and AMI bump steps are in [the data volume spec](../docs/specs/n8n-data-volume.md).
 - The n8n encryption key is a write-only SSM parameter, so it never lands in state.
 - The tunnel token is a write-only SSM parameter too, but it is also in state as a sensitive data source value.
 
@@ -78,7 +78,7 @@ tofu plan
 tofu apply
 ```
 
-Outputs: `ec2_instance_id`, `ec2_elastic_ip`, `ec2_public_dns`.
+Outputs: `ec2_instance_id`, `ec2_elastic_ip`, `ec2_public_dns`, `n8n_data_volume_id`.
 The Elastic IP is only for SSH. Nothing answers on port 80.
 SSH in with `ssh -i your-key.pem ec2-user@<ec2_elastic_ip>`.
 
