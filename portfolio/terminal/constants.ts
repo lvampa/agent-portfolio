@@ -35,7 +35,12 @@ export const CHAT_FAILURES: Record<ChatFailure, { lines: HistoryItem[]; canRetry
     canRetry: true,
   },
   network: {
-    lines: [{ type: 'error', text: 'Could not reach the agent. Check your connection.' }],
+    lines: [
+      {
+        type: 'error',
+        text: 'Could not reach the agent. It may be offline. Try again in a moment.',
+      },
+    ],
     canRetry: true,
   },
   // A 429 may be the per-minute limit rather than the daily one, so it still offers a retry.

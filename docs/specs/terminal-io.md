@@ -66,7 +66,9 @@ Up recalls the last submitted command into the input, like `cmd`.
 Down clears it again, but only while the input still holds the recalled command, so a typed draft is never lost.
 Esc clears the line.
 Only the last command is kept, in memory for the visit, and an answer to a question is never recalled.
-Whenever the terminal grows, including while a reply streams, its end scrolls into view, unless the visitor scrolled up to read.
+The page's `<main>` is the only scroll container, at `100dvh`, and `useStickToBottom` from `use-stick-to-bottom` keeps it at the bottom whenever the content resizes, including while a reply streams.
+Any scroll up stops following, and scrolling back to the bottom resumes it; content shrinking, as after `cls` or when the keyboard closes, does not stop it.
+The viewport sets `interactive-widget=resizes-content`, so on Android the keyboard shrinks `100dvh` and the prompt stays above it.
 While the agent is working, `ReplLoading` shows a `|/-\` spinner, with `Waiting for the agent` for screen readers and under reduced motion.
 
 ## Architecture
@@ -359,7 +361,7 @@ A failure prints its lines from `CHAT_FAILURES`, then asks `RETRY_CHAT` with the
 | Failure | Lines |
 |---|---|
 | `timeout` | `The agent did not respond in 30 seconds.` |
-| `network` | `Could not reach the agent. Check your connection.` |
+| `network` | `Could not reach the agent. It may be offline. Try again in a moment.` |
 | `quota` | `Connor's free tier agent is refusing to work any more for the moment.`, then a link to LinkedIn |
 | `server` | `CHAT_ERROR_MESSAGE` |
 
@@ -441,7 +443,7 @@ terminal/
     History.tsx HistoryContext.tsx useReveal.ts
   repl/
     Repl.tsx InputForm.tsx ReplLoading.tsx
-    useInterpreter.ts useStartup.ts useSkipReveal.ts useFollowOutput.ts
+    useInterpreter.ts useStartup.ts useSkipReveal.ts
     EventBusContext.tsx constants.ts types.ts
 ```
 

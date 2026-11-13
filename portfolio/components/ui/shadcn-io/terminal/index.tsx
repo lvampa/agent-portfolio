@@ -14,7 +14,7 @@ export const Terminal = ({ children, className }: TerminalProps) => (
       className,
     )}
   >
-    <div className="grid gap-y-1 overflow-auto p-4 leading-normal font-medium text-inherit">
+    <div className="grid gap-y-1 p-4 leading-normal font-medium text-inherit">
       {children}
     </div>
   </section>

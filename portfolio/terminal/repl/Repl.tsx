@@ -15,7 +15,6 @@ import { useEffect, useEffectEvent, useMemo } from 'react';
 
 import { InputForm } from './InputForm';
 import ReplLoading from './ReplLoading';
-import { useFollowOutput } from './useFollowOutput';
 import { useInterpreter } from './useInterpreter';
 import { useSkipReveal } from './useSkipReveal';
 import { useStartup } from './useStartup';
@@ -46,7 +45,6 @@ export default function Repl({ clientInfo, isClientInfoLoading, visitor }: ReplP
     state,
     apply,
   });
-  const { contentRef, endRef } = useFollowOutput();
   useSkipReveal(isRevealing, revealAll);
   const inputState = getInputState({ hasStarted, busy, isRevealing, mode });
 
@@ -64,7 +62,7 @@ export default function Repl({ clientInfo, isClientInfoLoading, visitor }: ReplP
   }, [eventBus]);
 
   return (
-    <div ref={contentRef}>
+    <div>
       <History />
       <ReplLoading isVisible={inputState === 'busy'} />
       <InputForm
@@ -74,7 +72,6 @@ export default function Repl({ clientInfo, isClientInfoLoading, visitor }: ReplP
         label={currentInputLabel(mode)}
         answerKeys={mode.type === 'awaiting' ? QUESTIONS[mode.questionId].answerKeys : undefined}
       />
-      <div ref={endRef} />
     </div>
   );
 }

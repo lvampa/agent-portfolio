@@ -46,6 +46,8 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: '#212121',
   colorScheme: 'dark',
+  // Android then shrinks the layout viewport, and with it 100dvh, so the prompt stays above the keyboard.
+  interactiveWidget: 'resizes-content',
 };
 
 export default function RootLayout({

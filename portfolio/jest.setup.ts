@@ -12,17 +12,6 @@ if (typeof window !== 'undefined') {
     }),
   });
 
-  // jsdom does no layout, so nothing ever resizes.
-  Object.defineProperty(window, 'ResizeObserver', {
-    configurable: true,
-    writable: true,
-    value: class {
-      observe() {}
-      unobserve() {}
-      disconnect() {}
-    },
-  });
-
   // Tests mock fetch with jest.spyOn, so a real call fails loudly instead of reaching the network.
   Object.defineProperty(globalThis, 'fetch', {
     configurable: true,
