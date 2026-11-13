@@ -1,4 +1,5 @@
 import { REQUEST_TIMEOUT_MS } from './constants';
+import { HttpError } from './HttpError';
 import { type ClientInterface } from './types';
 
 export class Client implements ClientInterface {
@@ -21,7 +22,7 @@ export class Client implements ClientInterface {
       ...init,
       signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
-    if (!response.ok) throw new Error(`Request failed with status ${response.status}`);
+    if (!response.ok) throw new HttpError(response.status);
     return response.json();
   }
 

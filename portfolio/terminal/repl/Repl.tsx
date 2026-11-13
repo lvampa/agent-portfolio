@@ -1,8 +1,9 @@
 import type { ChatVisitor } from '@lib/hooks/types';
 import type { UserInfo } from '@lib/utils/types';
-import { useAnimation } from '@terminal/AnimationContext';
 import { History } from '@terminal/history/History';
 import { useHistory } from '@terminal/history/HistoryContext';
+import { useReveal } from '@terminal/history/useReveal';
+import { QUESTIONS } from '@terminal/questions';
 import { COMMANDS } from '@terminal/registry';
 import { EVENTS } from '@terminal/repl/constants';
 import { useEventBus } from '@terminal/repl/EventBusContext';
@@ -14,8 +15,8 @@ import { useEffect, useEffectEvent, useMemo } from 'react';
 
 import { InputForm } from './InputForm';
 import ReplLoading from './ReplLoading';
-import { useFollowOutput } from './useFollowOutput';
 import { useInterpreter } from './useInterpreter';
+import { useSkipReveal } from './useSkipReveal';
 import { useStartup } from './useStartup';
 
 interface ReplProps {
@@ -29,8 +30,8 @@ interface ReplProps {
 /** Routes each submitted line to a pending question, a command, or the chat. */
 export default function Repl({ clientInfo, isClientInfoLoading, visitor }: ReplProps) {
   const eventBus = useEventBus();
-  const { isAnimating } = useAnimation();
-  const { items, hasLoaded: hasHistoryLoaded } = useHistory();
+  const { isRevealing, revealAll } = useReveal();
+  const { hasLoaded: hasHistoryLoaded } = useHistory();
   const { name, mode, sessionId, hasLoaded: hasSessionLoaded } = useSession();
   const { apply, busy } = useInterpreter(visitor);
 
@@ -44,8 +45,8 @@ export default function Repl({ clientInfo, isClientInfoLoading, visitor }: ReplP
     state,
     apply,
   });
-  const endRef = useFollowOutput(items.length);
-  const inputState = getInputState({ hasStarted, busy, isAnimating, mode });
+  useSkipReveal(isRevealing, revealAll);
+  const inputState = getInputState({ hasStarted, busy, isRevealing, mode });
 
   // An effect event always sees the latest mode, even in the commit where the input first appears,
   // so the handler is registered once instead of re-registering after every change.
@@ -69,8 +70,8 @@ export default function Repl({ clientInfo, isClientInfoLoading, visitor }: ReplP
         isAnswering={mode.type === 'awaiting'}
         prompt={currentPrompt(mode, name)}
         label={currentInputLabel(mode)}
+        answerKeys={mode.type === 'awaiting' ? QUESTIONS[mode.questionId].answerKeys : undefined}
       />
-      <div ref={endRef} />
     </div>
   );
 }

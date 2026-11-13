@@ -37,8 +37,13 @@ export interface ChatRequest {
   client: ChatVisitor;
 }
 
+export type ChatFailure = 'timeout' | 'network' | 'quota' | 'server';
+
+export type ChatResult = { ok: true; replies: ChatResponse } | { ok: false; failure: ChatFailure };
+
 export interface UseChat {
-  sendMessage: (request: ChatRequest) => Promise<ChatResponse | undefined>;
+  /** Never rejects. A failed or invalid reply resolves to the kind of failure. */
+  sendMessage: (request: ChatRequest) => Promise<ChatResult>;
   isLoading: boolean;
   error: Error | null;
 }

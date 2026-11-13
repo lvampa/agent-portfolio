@@ -36,13 +36,14 @@ describe('route', () => {
         setName('connor'),
         printText('Confirmed identity: connor'),
         printText(GUIDANCE_LINE),
+        printText(''),
       ],
     ],
     [
       'a command name matches case-insensitively',
       'PING',
       commandMode,
-      [echo('PING', prompt), printText('pong')],
+      [echo('PING', prompt), printText('pong'), printText('')],
     ],
     [
       'a command word followed by more text goes to the chat',

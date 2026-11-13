@@ -7,7 +7,7 @@ export const answerPendingQuestion: Route = {
   name: 'answerPendingQuestion',
   handle: (line, mode, state) => {
     if (mode.type !== 'awaiting') return null;
-    return [...QUESTIONS[mode.questionId].onAnswer(line, state), ...mode.then];
+    return [...QUESTIONS[mode.questionId].onAnswer(line, state, mode.subject), ...mode.then];
   },
 };
 

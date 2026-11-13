@@ -12,7 +12,11 @@ export const EffectSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('clear') }),
   z.object({ type: z.literal('newConversation') }),
   z.object({ type: z.literal('setName'), name: z.string() }),
-  z.object({ type: z.literal('ask'), questionId: QuestionIdSchema }),
+  z.object({
+    type: z.literal('ask'),
+    questionId: QuestionIdSchema,
+    subject: z.string().optional(),
+  }),
   z.object({ type: z.literal('chat'), message: z.string() }),
 ]);
 
@@ -21,6 +25,7 @@ export const ModeSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('awaiting'),
     questionId: QuestionIdSchema,
+    subject: z.string().optional(),
     then: z.array(EffectSchema),
   }),
 ]);

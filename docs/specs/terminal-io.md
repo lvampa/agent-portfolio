@@ -23,14 +23,12 @@ Port code from PR #10 where it fits, adapted to the paths and item shapes below.
 ## Non-goals
 
 - The list, table, and image output types themselves. The model must make them easy, and `list` is the worked example below.
-- Parsing chat replies into structured output. Replies stay plain text for now.
 - Command arguments or flags.
 - A state machine library or a plugin system.
 - PR #10's `NEXT_PUBLIC_NO_HISTORY` flag and env check. They land with PR #10.
 
 Port these PR #10 changes, because this design depends on them:
 
-- The prompt flash fix (`41b25e0`): `TypingAnimation` reports `onStart` from mount in a layout effect, which the input gating relies on.
 - PR #10's `Storage` class as is (`354999e`, `dd9565e`), including legacy keys, the 200-item cap, and the try/catch around writes.
 - The chat error item and the 30 s request timeout (`c4b027b`).
 - The numeric `asn` fix (`ae773ad`). Without it the client info never loads and the startup cannot be seen.
@@ -39,9 +37,9 @@ Port these PR #10 changes, because this design depends on them:
 
 On a first visit the screen shows, top to bottom:
 
-1. The banner: `Portfolio Agent (Version 2.1.6)`, `(c) 2026 Connor Abdelnoor. All rights reserved.`, then a blank line.
+1. The banner: `Portfolio Agent (Version 2.1.6)`, `(c) 2026 Connor Abdelnoor. All rights reserved.`, `Traditional portfolio @: ` with the static portfolio URL as a link, then a blank line.
 2. The client info sequence: `clientinfo` typed after the prompt `C:\Users\unknown>`, then `Loading Client Information....`, then the info rows in two columns.
-   Each row's label, such as `ip:`, appears at once and its value types, so the value column never slides.
+   Every row is laid out up front and faded out; each row's label, such as `ip:`, appears when its row starts and its value streams, so the columns never slide.
 3. A blank line, then the question `User unknown, please identify:`, shown as the input prompt.
    A non-blank answer becomes the name, prints `Confirmed identity: <name>`, and changes the prompt from `C:\Users\unknown>` to `C:\Users\<name>>`.
    A blank answer prints `Unconfirmed identity`.
@@ -61,14 +59,17 @@ The registry ships with three commands:
 A command runs only when nothing follows it, so `help me understand his AWS work` will go to the chat.
 A blank line in command mode prints an empty prompt line and does nothing else.
 On a reload, stored history renders as before and the startup does not replay.
-Restored items render at once, without typing, so the prompt shows right away.
-Under `prefers-reduced-motion: reduce`, new lines render at once too, and nothing waits on them: `TypingAnimation` shows the full text and never reports that it is animating.
+Restored items render at once, so the prompt shows right away.
+New output reveals one item at a time (see Reveal), and any key or click shows the rest at once.
+Under `prefers-reduced-motion: reduce`, new output shows at once and nothing waits on it.
 Up recalls the last submitted command into the input, like `cmd`.
 Down clears it again, but only while the input still holds the recalled command, so a typed draft is never lost.
 Esc clears the line.
 Only the last command is kept, in memory for the visit, and an answer to a question is never recalled.
-After each append, the end of the terminal scrolls into view, unless the visitor scrolled up to read.
-`HistoryContext` keeps how many items came from storage, and `History` passes `isRestored` to each renderer.
+The page's `<main>` is the only scroll container, at `100dvh`, and `useStickToBottom` from `use-stick-to-bottom` keeps it at the bottom whenever the content resizes, including while a reply streams.
+Any scroll up stops following, and scrolling back to the bottom resumes it; content shrinking, as after `cls` or when the keyboard closes, does not stop it.
+The viewport sets `interactive-widget=resizes-content`, so on Android the keyboard shrinks `100dvh` and the prompt stays above it.
+While the agent is working, `ReplLoading` shows a `|/-\` spinner, with `Waiting for the agent` for screen readers and under reduced motion.
 
 ## Architecture
 
@@ -101,6 +102,7 @@ type HistoryItem =
   | { type: 'command'; line: string; prompt: string } // The echo of a submitted line.
   | { type: 'message'; text: string }               // A chat reply.
   | { type: 'error'; text: string }                 // A failed chat request.
+  | { type: 'link'; text: string; label: string; href: string } // Lead-in text, then `label` as a link. Only https hrefs validate.
   | { type: 'clientInfo'; info: UserInfo; prompt: string } // The typed client info sequence.
   | { type: 'list'; items: { term: string; detail: string }[] }; // Two aligned columns, used by help and whoami.
 ```
@@ -113,7 +115,7 @@ Renderers are registered in a mapped type, so each one receives its own item sha
 
 ```ts
 type Renderers = {
-  [K in HistoryItemType]: React.FC<{ item: Extract<HistoryItem, { type: K }>; isRestored: boolean }>;
+  [K in HistoryItemType]: React.FC<{ item: Extract<HistoryItem, { type: K }>; progress: RevealProgress }>;
 };
 
 export const renderers: Renderers = {
@@ -123,6 +125,7 @@ export const renderers: Renderers = {
   error: ErrorLine,
   clientInfo: ClientInfo,
   list: List,
+  link: LinkLine,
 };
 ```
 
@@ -137,11 +140,11 @@ type Effect =
   | { type: 'clear' }
   | { type: 'newConversation' } // A new session id, so the agent starts without memory.
   | { type: 'setName'; name: string }
-  | { type: 'ask'; questionId: QuestionId }
+  | { type: 'ask'; questionId: QuestionId; subject?: string } // subject: what the question is about, such as a message to resend.
   | { type: 'chat'; message: string };
 ```
 
-Small builders keep call sites short: `printText(text)`, `print(item)`, `echo(line, prompt)`, `ask(id)`, `chat(message)`, `newConversation()`.
+Small builders keep call sites short: `printText(text)`, `print(item)`, `echo(line, prompt)`, `ask(id, subject?)`, `chat(message)`, `newConversation()`.
 A command that needs richer output prints a different item type.
 It never formats structure into text.
 
@@ -175,7 +178,8 @@ interface Question {
   id: QuestionId;
   text: string; // Shown as the input prompt while waiting.
   label: string; // The input's accessible name while waiting, since the visible prompt is aria-hidden.
-  onAnswer(answer: string, state: TerminalState): Effect[];
+  answerKeys?: readonly string[]; // Keys that answer at once, without Enter.
+  onAnswer(answer: string, state: TerminalState, subject?: string): Effect[];
 }
 ```
 
@@ -185,11 +189,12 @@ A pending question is state, not a promise:
 ```ts
 type Mode =
   | { type: 'command' }
-  | { type: 'awaiting'; questionId: QuestionId; then: Effect[] };
+  | { type: 'awaiting'; questionId: QuestionId; subject?: string; then: Effect[] };
 ```
 
 `then` holds the effects that came after the `ask`, so the startup continues to the guidance line after the answer, and a reload mid-question asks again and still continues.
 The answer is echoed as a `command` item with the question text as its prompt, so the screen reads `User unknown, please identify: connor`.
+With `answerKeys`, `InputForm` answers on one keypress with the upper-cased key, other single keys do not type, Enter does nothing, and a held line waits until the question is gone.
 
 ### Name and prompt
 
@@ -215,6 +220,7 @@ const ROUTES: readonly Route[] = [answerPendingQuestion, ignoreBlankLine, runExa
 ```
 
 `route(line, mode, state)` prepends the echo, using `currentPrompt(mode, state.name)`, and returns the effects of the first route that claims the line.
+Effects that print end with one blank line, unless they end in a chat, an ask, or a blank line already.
 `sendToChat` always claims it, so the chain never falls through, and a test asserts that it is last.
 
 1. `answerPendingQuestion`: when awaiting, returns `onAnswer`, then `mode.then`.
@@ -232,7 +238,7 @@ The interpreter is pure TypeScript and talks to the outside only through ports:
 interface Ports {
   history: { append(item: HistoryItem): void; clear(): void };
   session: { setName(name: string): void; setMode(mode: Mode): void; newConversation(): void };
-  chat: { send(message: string): Promise<ChatReply[] | null> };
+  chat: { send(message: string): Promise<ChatResult> };
 }
 
 function createInterpreter(ports: Ports): { apply(effects: Effect[]): Promise<void> };
@@ -245,7 +251,7 @@ type EffectHandlers = {
   [K in Effect['type']]: (
     effect: Extract<Effect, { type: K }>,
     context: { ports: Ports; rest: Effect[] },
-  ) => 'continue' | 'stop' | Promise<'continue'>;
+  ) => 'continue' | 'stop' | Promise<Effect[]>;
 };
 ```
 
@@ -254,9 +260,11 @@ type EffectHandlers = {
 | `print` | `history.append(item)` |
 | `clear` | `history.clear()` |
 | `setName` | `session.setName(name)` |
-| `ask` | `session.setMode({ type: 'awaiting', questionId, then: rest })`, then `'stop'` |
-| `chat` | `await chat.send`, then append `message` items, or an `error` item on `null` |
+| `ask` | `session.setMode({ type: 'awaiting', questionId, subject, then: rest })`, then `'stop'` |
+| `chat` | `await chat.send`, then resolve to `chatResultEffects(result, message)` |
 
+`apply` runs effects as a queue, and an async handler's follow-up effects go to its front, so they run before the rest.
+An `ask` among the follow-ups still parks everything after it.
 A handler that returns `'continue'` synchronously keeps the walk synchronous.
 Effects before the first chat apply in the same tick, which the startup relies on.
 
@@ -274,6 +282,8 @@ function startupEffects(state: TerminalState): Effect[] {
   return [
     newConversation(),
     ...BANNER_LINES.map(printText),
+    print(PORTFOLIO_LINK),
+    printText(''),
     ...(state.clientInfo
       ? [print({ type: 'clientInfo', info: state.clientInfo, prompt: promptFor(state.name) })]
       : []),
@@ -294,16 +304,72 @@ The seeding effect in `app/page.tsx` goes away.
 ## Input gating
 
 ```ts
-type InputState = 'starting' | 'busy' | 'animating' | 'awaiting' | 'idle';
+type InputState = 'starting' | 'busy' | 'revealing' | 'awaiting' | 'idle';
 ```
 
-`getInputState({ hasStarted, busy, isAnimating, mode })` is a pure selector that checks in that order.
+`getInputState({ hasStarted, busy, isRevealing, mode })` is a pure selector that checks in that order.
 It is a selector and not a state machine, because every input to it already has a single owner.
 The input accepts lines only for `awaiting` and `idle`, and `ReplLoading` shows for `busy`.
 In the other states the input stays mounted and focused, but its row is faded out with opacity, since `display` or `visibility` would drop focus.
 Typing buffers, like type-ahead in `cmd`.
 Enter in those states keeps the line and submits it once the input accepts lines again.
 The input has `aria-disabled` while it does not accept lines, and the drawn caret is not shown while the row is faded.
+
+## Reveal
+
+`HistoryContext` keeps `revealedCount`, the index of the first item not fully shown, next to `items` and a `generation`.
+On load it is the stored length, so restored history is instant; `clear` resets it to 0 and bumps the generation.
+`useReveal()` moves the cursor past items with no steps and returns `{ cursor, isRevealing, revealAll }`, so an append hides the prompt in the same render.
+Reduced motion is handled there, once.
+`History` renders the items before the cursor in full, the item at the cursor with live progress, and nothing after it.
+`markRevealed(generation, count)` only moves the cursor forward within the same generation, so a row finishing late after `cls` cannot move the new cursor.
+
+Pacing is data, in `REVEAL_STEPS` in `history/registry.ts`, a mapped type like the renderers, so a missing entry fails `tsc`:
+
+```ts
+type RevealStep = { type: 'hold'; ms: number } | { type: 'stream'; length: number; msPerChar: number };
+```
+
+- `text`, `link`, `error`: `hold(60)`. `list`: `hold(60)` per row.
+- `command`: `hold(150)` when the line is non-empty; an empty Enter has no steps, so the prompt does not blink.
+- `message`: one stream at 4 ms per character over the parsed reply.
+- `clientInfo`: `clientinfo` at 15 ms per character, `hold(150)`, the loading line, then each value, at 4 ms per character.
+
+The pure `revealProgressAt(steps, elapsedMs)` returns `{ step, chars, isDone }`.
+`useRevealProgress` (in its own file) runs a 16 ms interval for the current row only and reads `Date.now()`, so the rate holds when the browser clamps timers.
+Renderers get `progress`, and fully shown items get `REVEALED`; renderers own no timers.
+Streamed text renders through `StreamedText`: an sr-only full copy and an aria-hidden slice.
+`useSkipReveal` calls `revealAll()` on any key or click while revealing, except modifier shortcuts and clicks on links, and never prevents the default.
+
+## Structured replies
+
+History keeps the raw reply text; it is parsed when it renders.
+The pure `parseReply(text)` returns paragraphs and lists, checked line by line so a list can follow its lead-in line.
+List lines start with `- ` or `* `.
+Spans are text, bold (`**x**`), and links: `[label](https://...)`, bare `https://` URLs with trailing punctuation left outside, and emails as `mailto:`.
+Only https links are made, and any other scheme stays literal text.
+Each span carries its offset in the stream.
+`Message` builds the whole structure up front, so links and bold never reflow, and keeps unreached blocks sr-only.
+
+## Chat failures and retry
+
+`useChat` never rejects and resolves to a `ChatResult`: `{ ok: true; replies }` or `{ ok: false; failure }`.
+`toChatFailure` maps a `TimeoutError` to `timeout`, a `TypeError` (network or CORS) to `network`, an `HttpError` (`lib/api/HttpError.ts`) with status 429 to `quota`, and anything else, including an invalid reply, to `server`.
+`chatResultEffects` prints each reply as a `message`, then a blank line.
+A failure prints its lines from `CHAT_FAILURES`, then asks `RETRY_CHAT` with the message as its subject:
+
+| Failure | Lines |
+|---|---|
+| `timeout` | `The agent did not respond in 30 seconds.` |
+| `network` | `Could not reach the agent. It may be offline. Try again in a moment.` |
+| `quota` | `Connor's free tier agent is refusing to work any more for the moment.`, then a link to LinkedIn |
+| `server` | `CHAT_ERROR_MESSAGE` |
+
+A 429 can be the per-minute limit, so `quota` offers a retry too.
+For it to reach the browser, n8n must answer 429 with the same CORS headers as a success.
+The retry question shows `Retry? (Y/N)` and answers on one key: Y echoes `Retry? (Y/N) Y` and resends the subject, N returns to the prompt.
+N prints a blank line first, like the end of a reply.
+A reload mid-question asks again, since the subject is stored in the mode.
 
 ## Persistence
 
@@ -367,18 +433,17 @@ terminal/
   startup.ts       startupEffects
   index.ts         re-exports, pure modules only
   SessionContext.tsx
-  AnimationContext.tsx
   commands/        help.ts cls.ts whoami.ts index.ts, one file per command
-  questions/       identify.ts registry.ts index.ts
+  questions/       identify.ts retryChat.ts registry.ts index.ts
   history/
     schemas.ts     one schema per item type, and the union
-    types.ts constants.ts
-    registry.ts    the renderers map
-    renderers/     Text Command Message ErrorLine ClientInfo List, and Columns, which List and ClientInfo share
-    History.tsx HistoryContext.tsx
+    types.ts constants.ts utils.ts  utils holds revealProgressAt and parseReply
+    registry.ts    the renderers map and REVEAL_STEPS
+    renderers/     Text Command Message ErrorLine LinkLine ClientInfo List, plus Columns and StreamedText
+    History.tsx HistoryContext.tsx useReveal.ts useRevealProgress.ts
   repl/
     Repl.tsx InputForm.tsx ReplLoading.tsx
-    useInterpreter.ts useStartup.ts
+    useInterpreter.ts useStartup.ts useSkipReveal.ts
     EventBusContext.tsx constants.ts types.ts
 ```
 
@@ -393,11 +458,11 @@ A new output type takes three files, and `list` was added this way.
 1. `history/schemas.ts`: `ListItemSchema = z.object({ type: z.literal('list'), items: z.array(ListRowSchema) })`, with `ListRowSchema = z.object({ term: z.string(), detail: z.string() })`, added to the union.
 2. `history/renderers/List.tsx`: the component.
    It renders `Columns`, a `<dl>` grid with `grid-cols-[max-content_minmax(0,1fr)]` and a two-character column gap, so terms take the widest term's width and the details line up after it, as in DOS.
-   It renders at once, with no animation.
-3. `history/registry.ts`: `list: List`. Until this line exists, `tsc` fails.
+   It lays out every row up front and fades each in at its reveal step.
+3. `history/registry.ts`: `list: List`, and its pacing in `REVEAL_STEPS`. Until both exist, `tsc` fails.
 
 `printList(items)` in `utils.ts` builds the effect, so `help.run` returns `[printList(commands.map(...))]`.
-The startup client info uses the same `Columns`, with instant labels and typed values, so it looks the same as `whoami`.
+The startup client info uses the same `Columns`, with streamed values, so it looks the same as `whoami`.
 A table or an image is the same three steps.
 
 ## Testing
@@ -407,15 +472,17 @@ A few tests for the real risks:
 - `router.test.ts`: one table through `route`. Awaiting sends the line to the question and appends `then`. A test-only command matches case-insensitively. A command word followed by more text goes to the chat. A blank line is only echoed.
 - `identify.test.ts`: a name sets it, a blank or all-stripped answer stays unknown, and the cap never splits an emoji.
 - `registry.test.ts`: a duplicate name throws.
-- `interpreter.test.ts`, with fake ports: effects apply in order, an `ask` parks the rest in `then` and stops, and a failed chat appends an `error` item.
+- `interpreter.test.ts`, with fake ports: effects apply in order, an `ask` parks the rest in `then` and stops, a timeout prints its line and parks `RETRY_CHAT` with the message, and a quota failure prints its two items and asks too.
+- `history/__tests__/utils.test.ts`: one `parseReply` case and one `revealProgressAt` case.
+- `lib/hooks/__tests__/utils.test.ts`: `toChatFailure` for a timeout, a network error, a 429, and a 500.
 - `routes.test.ts`: `sendToChat` is the last route.
 - `startup.test.ts`: no name includes the ask, a saved name leaves it out, and missing client info skips that step.
 - `history/__tests__/schemas.test.ts`: an invalid stored item is dropped and valid ones survive.
 - One Repl integration test file: a first visit asks and then prints the guidance, restored history skips the startup, a reload mid-question asks again, the input is named by the question while awaiting and `Command or question` after, typing during a chat keeps focus and the buffered text, Enter during a chat submits the buffered line once the reply lands, and restored client info shows in full without holding back the prompt.
 - `ReplInput.test.tsx`: Up recalls the last command and Down clears it, Down keeps a typed draft and Esc clears it, an answer is not recalled, and an inactive input is hidden but keeps focus and buffered text.
-- `history/__tests__/ClientInfo.test.tsx`: under reduced motion, a new sequence shows in full at once and nothing counts as animating.
 
 Update the existing tests the change touches, and delete ones that only test the old string items.
+Reveal timing, skipping, and renderers have no tests; they are checked by hand.
 
 ## Builder's calls
 
