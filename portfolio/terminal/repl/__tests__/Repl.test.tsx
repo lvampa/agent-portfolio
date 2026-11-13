@@ -1,7 +1,6 @@
 import '@testing-library/jest-dom';
 
 import { chatClient } from '@lib/api';
-import { AnimationProvider } from '@terminal/AnimationContext';
 import {
   BANNER_LINES,
   COMMAND_INPUT_LABEL,
@@ -64,9 +63,7 @@ function renderRepl() {
     <EventBusProvider>
       <HistoryProvider>
         <SessionProvider>
-          <AnimationProvider>
-            <Repl clientInfo={null} isClientInfoLoading={false} visitor={VISITOR} />
-          </AnimationProvider>
+          <Repl clientInfo={null} isClientInfoLoading={false} visitor={VISITOR} />
         </SessionProvider>
       </HistoryProvider>
     </EventBusProvider>,
@@ -212,8 +209,10 @@ describe('Repl', () => {
     await screen.findByRole('log');
 
     expect(screen.getByLabelText(COMMAND_INPUT_LABEL)).toBeVisible();
-    // An animating line starts with only its screen-reader copy filled in.
-    expect(screen.getByText('127.0.0.1')).not.toHaveClass('sr-only');
+    // A streamed line has a screen-reader copy and a visible copy; the visible one must be full.
+    expect(screen.getAllByText('127.0.0.1').some((el) => !el.classList.contains('sr-only'))).toBe(
+      true,
+    );
   });
 
   test('NEXT_PUBLIC_NO_HISTORY clears both stores and replays the startup in development', async () => {

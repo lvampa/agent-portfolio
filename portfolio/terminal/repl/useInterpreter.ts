@@ -22,8 +22,7 @@ export function useInterpreter(visitor: ChatVisitor) {
         history: { append, clear },
         session: { setName, setMode, newConversation },
         chat: {
-          send: async (message) =>
-            (await sendMessage({ chatInput: message, sessionId, name, client: visitor })) ?? null,
+          send: (message) => sendMessage({ chatInput: message, sessionId, name, client: visitor }),
         },
       }),
     [append, clear, setName, setMode, newConversation, sendMessage, sessionId, name, visitor],

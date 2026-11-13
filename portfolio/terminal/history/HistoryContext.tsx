@@ -14,16 +14,26 @@ import React, {
 import { HistoryItemSchema } from './schemas';
 import type { HistoryItem } from './types';
 
-interface HistoryContextValue {
+interface HistoryState {
   items: HistoryItem[];
-  /** Items before this index came from storage, so they were already seen on an earlier visit. */
-  restoredCount: number;
+  /** The index of the first item not fully shown. Restored items start shown. */
+  revealedCount: number;
+  /** Bumped by clear, so rows after a clear never reuse the rows before it. */
+  generation: number;
+}
+
+interface HistoryContextValue extends HistoryState {
   hasLoaded: boolean;
   append: (item: HistoryItem) => void;
   clear: () => void;
+  /** Ignores calls from an earlier generation or behind the cursor, so a row finishing late after a clear cannot move the new cursor. */
+  markRevealed: (generation: number, count: number) => void;
+  revealAll: () => void;
 }
 
 const HistoryContext = createContext<HistoryContextValue | null>(null);
+
+const EMPTY_STATE: HistoryState = { items: [], revealedCount: 0, generation: 0 };
 
 function loadHistory(): HistoryItem[] {
   if (!isHistoryDisabled()) return historyStore.load(HistoryItemSchema);
@@ -32,33 +42,42 @@ function loadHistory(): HistoryItem[] {
 }
 
 export function HistoryProvider({ children }: { children: React.ReactNode }) {
-  const [items, setItems] = useState<HistoryItem[]>([]);
-  const [restoredCount, setRestoredCount] = useState(0);
+  const [state, setState] = useState<HistoryState>(EMPTY_STATE);
   const [hasLoaded, setHasLoaded] = useState(false);
 
   useEffect(() => {
     const stored = loadHistory();
     startTransition(() => {
-      setItems(stored);
-      setRestoredCount(stored.length);
+      setState((previous) => ({ ...previous, items: stored, revealedCount: stored.length }));
       setHasLoaded(true);
     });
   }, []);
 
   const append = useCallback((item: HistoryItem) => {
-    setItems((previous) => [...previous, item]);
+    setState((previous) => ({ ...previous, items: [...previous.items, item] }));
     historyStore.append(item);
   }, []);
 
   const clear = useCallback(() => {
-    setItems([]);
-    setRestoredCount(0);
+    setState((previous) => ({ items: [], revealedCount: 0, generation: previous.generation + 1 }));
     historyStore.clear();
   }, []);
 
+  const markRevealed = useCallback((generation: number, count: number) => {
+    setState((previous) =>
+      previous.generation === generation && count > previous.revealedCount
+        ? { ...previous, revealedCount: count }
+        : previous,
+    );
+  }, []);
+
+  const revealAll = useCallback(() => {
+    setState((previous) => ({ ...previous, revealedCount: previous.items.length }));
+  }, []);
+
   const value = useMemo(
-    () => ({ items, restoredCount, hasLoaded, append, clear }),
-    [items, restoredCount, hasLoaded, append, clear],
+    () => ({ ...state, hasLoaded, append, clear, markRevealed, revealAll }),
+    [state, hasLoaded, append, clear, markRevealed, revealAll],
   );
 
   return <HistoryContext.Provider value={value}>{children}</HistoryContext.Provider>;

@@ -1,98 +1,48 @@
 import { CommandPrompt } from '@components/ui/command-prompt';
-import { TypingAnimation } from '@components/ui/shadcn-io/terminal';
-import { usePrefersReducedMotion } from '@lib/hooks/usePrefersReducedMotion';
-import { useAnimation } from '@terminal/AnimationContext';
 import { infoTerm } from '@terminal/utils';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 
+import { hasReachedStep, shownChars } from '../utils';
 import { Columns } from './Columns';
-import {
-  CLIENT_INFO_COMMAND,
-  CLIENT_INFO_LINES_DELAY_MS,
-  CLIENT_INFO_LOADING_DELAY_MS,
-  CLIENT_INFO_LOADING_LINE,
-  INFO_TYPING_MS_PER_CHAR,
-  TYPING_MS_PER_CHAR,
-} from './constants';
+import { CLIENT_INFO_COMMAND, CLIENT_INFO_LOADING_LINE, CLIENT_INFO_STEPS } from './constants';
+import { StreamedText } from './StreamedText';
 import type { RendererProps } from './types';
 
-interface LineProps {
-  text: string;
-  isRestored: boolean;
-  delay?: number;
-  duration: number;
-}
-
-// A restored line never counts as animating, so it does not hold back the prompt.
-function Line({ text, isRestored, delay, duration }: LineProps) {
-  const { startAnimation, endAnimation } = useAnimation();
-
-  if (isRestored) return <span>{text}</span>;
-
-  return (
-    <TypingAnimation
-      delay={delay}
-      duration={duration}
-      onStart={startAnimation}
-      onComplete={endAnimation}
-    >
-      {text}
-    </TypingAnimation>
-  );
-}
-
-// Laid out from the start, so the label column has its final width and the values never slide.
-function Label({ text, isRestored, delay }: { text: string; isRestored: boolean; delay: number }) {
-  const prefersReducedMotion = usePrefersReducedMotion();
-  const isInstant = isRestored || prefersReducedMotion;
-  const [hasAppeared, setHasAppeared] = useState(false);
-
-  useEffect(() => {
-    if (isInstant) return;
-    const timeout = setTimeout(() => setHasAppeared(true), delay);
-    return () => clearTimeout(timeout);
-  }, [delay, isInstant]);
-
-  return <span className={isInstant || hasAppeared ? undefined : 'opacity-0'}>{text}</span>;
-}
-
-export const ClientInfo: React.FC<RendererProps<'clientInfo'>> = ({ item, isRestored }) => {
+export const ClientInfo: React.FC<RendererProps<'clientInfo'>> = ({ item, progress }) => {
   if (!item.info.length) return null;
 
   return (
     <div>
       <CommandPrompt prompt={item.prompt}>
-        <Line text={CLIENT_INFO_COMMAND} isRestored={isRestored} duration={TYPING_MS_PER_CHAR} />
+        <span>
+          <StreamedText
+            text={CLIENT_INFO_COMMAND}
+            chars={shownChars(progress, CLIENT_INFO_STEPS.COMMAND, CLIENT_INFO_COMMAND.length)}
+          />
+        </span>
       </CommandPrompt>
       <div>
-        <Line
+        <StreamedText
           text={CLIENT_INFO_LOADING_LINE}
-          isRestored={isRestored}
-          delay={CLIENT_INFO_LOADING_DELAY_MS}
-          duration={TYPING_MS_PER_CHAR}
+          chars={shownChars(progress, CLIENT_INFO_STEPS.LOADING, CLIENT_INFO_LOADING_LINE.length)}
         />
       </div>
       {/* The same columns as whoami, so both show client info the same way. */}
       <Columns>
-        {item.info.map(({ label, value }) => (
-          <React.Fragment key={label}>
-            <dt>
-              <Label
-                text={infoTerm(label)}
-                isRestored={isRestored}
-                delay={CLIENT_INFO_LINES_DELAY_MS}
-              />
-            </dt>
-            <dd>
-              <Line
-                text={value}
-                isRestored={isRestored}
-                delay={CLIENT_INFO_LINES_DELAY_MS}
-                duration={INFO_TYPING_MS_PER_CHAR}
-              />
-            </dd>
-          </React.Fragment>
-        ))}
+        {item.info.map(({ label, value }, index) => {
+          const step = CLIENT_INFO_STEPS.FIRST_ROW + index;
+          return (
+            <React.Fragment key={label}>
+              {/* Laid out from the start, so the label column has its final width and values never slide. */}
+              <dt className={hasReachedStep(progress, step) ? undefined : 'opacity-0'}>
+                {infoTerm(label)}
+              </dt>
+              <dd>
+                <StreamedText text={value} chars={shownChars(progress, step, value.length)} />
+              </dd>
+            </React.Fragment>
+          );
+        })}
       </Columns>
     </div>
   );

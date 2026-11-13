@@ -1,5 +1,6 @@
 import './globals.css';
 
+import { Link } from '@components/ui/link';
 import { HistoryProvider } from '@terminal/history/HistoryContext';
 import { EventBusProvider } from '@terminal/repl/EventBusContext';
 import { SessionProvider } from '@terminal/SessionContext';
@@ -66,9 +67,9 @@ export default function RootLayout({
               Connor&apos;s AI Agent answers questions about Connor Abdelnoor, a software engineer
               who builds enterprise software from user interfaces to infrastructure. It runs in a
               90s command prompt and needs JavaScript. Without it, see the static portfolio at{' '}
-              <a href={STATIC_PORTFOLIO_URL} className="underline">
+              <Link href={STATIC_PORTFOLIO_URL} target="_self">
                 connorabdelnoor.github.io
-              </a>
+              </Link>
               .
             </p>
             <p className="mt-4">Example questions:</p>

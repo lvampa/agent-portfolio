@@ -36,7 +36,10 @@ export interface Question {
   text: string;
   /** The input's accessible name while waiting, since the visible prompt is aria-hidden. */
   label: string;
-  onAnswer(answer: string, state: TerminalState): Effect[];
+  /** Keys that answer at once, without Enter. Other single keys do not type. */
+  answerKeys?: readonly string[];
+  /** `subject` is what the question is about, such as the message a retry resends. */
+  onAnswer(answer: string, state: TerminalState, subject?: string): Effect[];
 }
 
 /** One link in the routing chain. Returns null to pass the line to the next link. */
@@ -49,7 +52,7 @@ export type EffectOutcome = 'continue' | 'stop';
 
 export interface EffectContext {
   ports: Ports;
-  /** The effects after this one, which an ask parks in the awaiting mode. */
+  /** The effects after this one, including follow-ups, which an ask parks in the awaiting mode. */
   rest: Effect[];
 }
 
@@ -57,15 +60,15 @@ export type EffectHandlers = {
   [K in EffectType]: (
     effect: EffectOf<K>,
     context: EffectContext,
-  ) => EffectOutcome | Promise<'continue'>;
+  ) => EffectOutcome | Promise<Effect[]>;
 };
 
-export type InputState = 'starting' | 'busy' | 'animating' | 'awaiting' | 'idle';
+export type InputState = 'starting' | 'busy' | 'revealing' | 'awaiting' | 'idle';
 
 export interface InputStateInput {
   /** Everything loaded and the startup ran or was skipped. */
   hasStarted: boolean;
   busy: boolean;
-  isAnimating: boolean;
+  isRevealing: boolean;
   mode: Mode;
 }

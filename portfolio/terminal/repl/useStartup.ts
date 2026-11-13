@@ -5,7 +5,7 @@ import { startTransition, useLayoutEffect, useRef, useState } from 'react';
 
 /**
  * Runs the startup once everything has loaded, unless stored history is being restored.
- * The items append in a layout effect, before paint, and their animations report from mount.
+ * The items append in a layout effect, before paint, and the reveal cursor is derived from them in the same render.
  * `hasStarted` is set in a transition, because the lint rule bans a synchronous setState in an effect.
  * Deferring it can only keep the prompt hidden longer, never show it early.
  */
@@ -28,7 +28,7 @@ export function useStartup({
 
     if (items.length === 0) void apply(startupEffects(state));
     // The items above append synchronously. Deferring the flag can only keep the prompt hidden
-    // longer, by which time the new items already count as animating.
+    // longer, by which time the new items already count as revealing.
     startTransition(() => setHasStarted(true));
   }, [isReady, items.length, state, apply]);
 

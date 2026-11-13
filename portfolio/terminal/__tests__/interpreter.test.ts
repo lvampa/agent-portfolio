@@ -1,10 +1,11 @@
-import { CHAT_ERROR_MESSAGE, QUESTION_IDS } from '../constants';
+import type { ChatResult } from '@lib/hooks/types';
+
+import { CHAT_FAILURES, QUESTION_IDS } from '../constants';
 import { createInterpreter } from '../interpreter';
 import type { Ports } from '../ports';
-import type { ChatReply } from '../types';
 import { ask, chat, clearScreen, printText, setName } from '../utils';
 
-function fakePorts(reply: ChatReply[] | null = []) {
+function fakePorts(reply: ChatResult = { ok: true, replies: [] }) {
   const calls: string[] = [];
   const ports: Ports = {
     history: {
@@ -48,10 +49,30 @@ describe('createInterpreter', () => {
     expect(ports.chat.send).not.toHaveBeenCalled();
   });
 
-  test('a failed chat appends an error item', async () => {
-    const { ports } = fakePorts(null);
+  test('a timeout prints its line and parks a retry of the message, before the rest', async () => {
+    const { ports } = fakePorts({ ok: false, failure: 'timeout' });
+    const rest = [printText('after')];
+    await createInterpreter(ports).apply([chat('hi'), ...rest]);
+
+    expect(ports.history.append).toHaveBeenCalledTimes(1);
+    expect(ports.history.append).toHaveBeenCalledWith(CHAT_FAILURES.timeout.lines[0]);
+    expect(ports.session.setMode).toHaveBeenLastCalledWith({
+      type: 'awaiting',
+      questionId: QUESTION_IDS.RETRY_CHAT,
+      subject: 'hi',
+      then: rest,
+    });
+  });
+
+  test('a quota failure prints its error line and LinkedIn link, then asks to retry', async () => {
+    const { ports } = fakePorts({ ok: false, failure: 'quota' });
     await createInterpreter(ports).apply([chat('hi')]);
 
-    expect(ports.history.append).toHaveBeenCalledWith({ type: 'error', text: CHAT_ERROR_MESSAGE });
+    const appended = (ports.history.append as jest.Mock).mock.calls.map(([item]) => item);
+    expect(appended.map((item) => item.type)).toEqual(['error', 'link']);
+    expect(appended[1].href).toBe('https://www.linkedin.com/in/connorabdelnoor/');
+    expect(ports.session.setMode).toHaveBeenLastCalledWith(
+      expect.objectContaining({ questionId: QUESTION_IDS.RETRY_CHAT, subject: 'hi' }),
+    );
   });
 });

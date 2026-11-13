@@ -31,6 +31,15 @@ export const ClientInfoItemSchema = z.object({
   prompt: z.string(),
 });
 
+// Only the label is the link, so `text` is the plain lead-in before it.
+export const LinkItemSchema = z.object({
+  type: z.literal('link'),
+  text: z.string(),
+  label: z.string(),
+  // Stored history can be edited, so only https links render.
+  href: z.url({ protocol: /^https$/ }),
+});
+
 export const ListRowSchema = z.object({
   term: z.string(),
   detail: z.string(),
@@ -49,4 +58,5 @@ export const HistoryItemSchema = z.discriminatedUnion('type', [
   ErrorItemSchema,
   ClientInfoItemSchema,
   ListItemSchema,
+  LinkItemSchema,
 ]);

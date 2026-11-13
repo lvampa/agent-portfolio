@@ -11,9 +11,11 @@ interface InputFormProps {
   isAnswering: boolean;
   prompt: string;
   label: string;
+  /** Set by a Y/N question. One of these keys answers at once, other single keys do not type, and Enter does nothing. */
+  answerKeys?: readonly string[];
 }
 
-export function InputForm({ isActive, isAnswering, prompt, label }: InputFormProps) {
+export function InputForm({ isActive, isAnswering, prompt, label, answerKeys }: InputFormProps) {
   const eventBus = useEventBus();
   const [value, setValue] = useState('');
   const [lastCommand, setLastCommand] = useState<string | null>(null);
@@ -60,11 +62,45 @@ export function InputForm({ isActive, isAnswering, prompt, label }: InputFormPro
     submit();
   });
 
+  // A held line is not an answer to a Y/N question, so it waits until the question is gone.
   useEffect(() => {
-    if (isActive && hasPendingSubmit) submitPending();
-  }, [isActive, hasPendingSubmit]);
+    if (isActive && hasPendingSubmit && !answerKeys) submitPending();
+  }, [isActive, hasPendingSubmit, answerKeys]);
+
+  // Tells the auto-repeats of a held answer key apart from new typing, once the question is gone.
+  const answeredKeyRef = useRef<string | null>(null);
+
+  /** Answers with `key` when it is one of the question's keys and the form is active. */
+  function answerWith(key: string) {
+    const answerKey = key.toLowerCase();
+    if (!isActive || !answerKeys?.includes(answerKey)) return;
+    answeredKeyRef.current = answerKey;
+    eventBus.emit(EVENTS.SUBMIT, answerKey.toUpperCase());
+  }
+
+  function handleAnswerKey(e: React.KeyboardEvent<HTMLInputElement>) {
+    const isCharacter = e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey;
+    if (!isCharacter) return;
+    e.preventDefault();
+    answerWith(e.key);
+  }
+
+  // Android keyboards report keydown as 'Unidentified', so the answer is read from the inserted character.
+  // The value is left alone, so the controlled input keeps a draft typed during the chat.
+  function handleAnswerChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const inserted = (e.nativeEvent as InputEvent).data;
+    if (inserted?.length === 1) answerWith(inserted);
+  }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.repeat && e.key.toLowerCase() === answeredKeyRef.current) {
+      e.preventDefault();
+      return;
+    }
+    if (answerKeys) {
+      handleAnswerKey(e);
+      return;
+    }
     if (e.key === 'ArrowUp' && lastCommand !== null) {
       e.preventDefault();
       replaceValue(lastCommand);
@@ -80,6 +116,7 @@ export function InputForm({ isActive, isAnswering, prompt, label }: InputFormPro
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (answerKeys) return;
     // Like cmd, Enter while busy keeps the line and submits it once the terminal is ready again.
     if (isActive) submit();
     else setHasPendingSubmit(true);
@@ -103,10 +140,15 @@ export function InputForm({ isActive, isAnswering, prompt, label }: InputFormPro
             ref={inputElementRef}
             value={value}
             onChange={(e) => {
+              if (answerKeys) {
+                handleAnswerChange(e);
+                return;
+              }
               setValue(e.target.value);
               syncCaret();
             }}
             onKeyDown={handleKeyDown}
+            onKeyUp={() => (answeredKeyRef.current = null)}
             onSelect={syncCaret}
             onScroll={syncCaret}
             onFocus={() => setIsFocused(true)}
