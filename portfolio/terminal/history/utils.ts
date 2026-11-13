@@ -1,4 +1,4 @@
-import { REVEALED } from './constants';
+import { INLINE_TOKEN, LIST_LINE, REVEALED, TRAILING_PUNCTUATION } from './constants';
 import type {
   BlockSource,
   HistoryItem,
@@ -61,13 +61,6 @@ export function firstUnrevealed(
   while (index < items.length && stepsFor(items[index]).length === 0) index++;
   return index;
 }
-
-const LIST_LINE = /^\s*[-*] /;
-
-// Markdown links, bold, bare URLs, and emails. Only https links, so no other scheme becomes clickable.
-const INLINE_TOKEN =
-  /\[([^\]\n]+)\]\((https:\/\/[^\s)]+)\)|\*\*([^*\n]+?)\*\*|(https:\/\/[^\s<>]+)|([\w.+-]+@[\w-]+(?:\.[\w-]+)+)/g;
-const TRAILING_PUNCTUATION = /[.,;:!?)\]'"]+$/;
 
 function inlineSpans(text: string): UnplacedSpan[] {
   const spans: UnplacedSpan[] = [];
@@ -132,7 +125,7 @@ export function parseReply(text: string): ReplyBlock[] {
   let offset = 0;
   const withOffsets = (spans: UnplacedSpan[]): ReplySpan[] =>
     spans.map((span) => {
-      const placed = { ...span, offset } as ReplySpan;
+      const placed: ReplySpan = { ...span, offset };
       offset += span.text.length;
       return placed;
     });

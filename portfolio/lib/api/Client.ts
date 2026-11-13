@@ -1,13 +1,6 @@
 import { REQUEST_TIMEOUT_MS } from './constants';
+import { HttpError } from './HttpError';
 import { type ClientInterface } from './types';
-
-/** Carries the status, so callers can tell a rate limit from a server failure. */
-export class HttpError extends Error {
-  constructor(readonly status: number) {
-    super(`Request failed with status ${status}`);
-    this.name = 'HttpError';
-  }
-}
 
 export class Client implements ClientInterface {
   constructor(private readonly baseURL: string) {}

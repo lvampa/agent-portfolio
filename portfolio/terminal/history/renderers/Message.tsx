@@ -15,19 +15,23 @@ function Span({ span, progress }: { span: ReplySpan; progress: RevealProgress })
   const text = (
     <StreamedText text={span.text} chars={shownChars(progress, 0, span.text.length, span.offset)} />
   );
-  if (span.type === 'bold') {
-    return <strong className="bg-terminal text-background font-normal">{text}</strong>;
+  switch (span.type) {
+    case 'text':
+      return text;
+    case 'bold':
+      return <strong className="bg-terminal text-background font-normal">{text}</strong>;
+    case 'link': {
+      // A mail link opens the mail app, so there is no terminal session to keep in a new tab.
+      const target = span.href.startsWith('mailto:') ? '_self' : undefined;
+      return (
+        <Link href={span.href} target={target}>
+          {text}
+        </Link>
+      );
+    }
+    default:
+      return span satisfies never;
   }
-  if (span.type === 'link') {
-    // A mail link opens the mail app, so there is no terminal session to keep in a new tab.
-    const target = span.href.startsWith('mailto:') ? '_self' : undefined;
-    return (
-      <Link href={span.href} target={target}>
-        {text}
-      </Link>
-    );
-  }
-  return text;
 }
 
 function Spans({ spans, progress }: { spans: ReplySpan[]; progress: RevealProgress }) {

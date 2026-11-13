@@ -1,4 +1,3 @@
-import type { ChatResponse } from '@lib/hooks/types';
 import type { UserInfo } from '@lib/utils/types';
 import type { z } from 'zod';
 
@@ -11,7 +10,6 @@ export type EffectOf<K extends EffectType> = Extract<Effect, { type: K }>;
 export type Mode = z.infer<typeof ModeSchema>;
 export type QuestionId = z.infer<typeof QuestionIdSchema>;
 export type Session = z.infer<typeof SessionSchema>;
-export type ChatReply = ChatResponse[number];
 
 export interface TerminalState {
   name: string | null;

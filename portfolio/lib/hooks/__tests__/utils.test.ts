@@ -1,4 +1,4 @@
-import { HttpError } from '@lib/api/Client';
+import { HttpError } from '@lib/api/HttpError';
 import { toChatFailure } from '@lib/hooks/utils';
 
 describe('toChatFailure', () => {

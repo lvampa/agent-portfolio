@@ -39,3 +39,11 @@ export interface BlockSource {
   type: ReplyBlock['type'];
   lines: string[];
 }
+
+export interface HistoryState {
+  items: HistoryItem[];
+  /** The index of the first item not fully shown. Restored items start shown. */
+  revealedCount: number;
+  /** Bumped by clear, so rows after a clear never reuse the rows before it. */
+  generation: number;
+}

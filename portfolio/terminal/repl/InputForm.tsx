@@ -88,7 +88,7 @@ export function InputForm({ isActive, isAnswering, prompt, label, answerKeys }: 
   // Android keyboards report keydown as 'Unidentified', so the answer is read from the inserted character.
   // The value is left alone, so the controlled input keeps a draft typed during the chat.
   function handleAnswerChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const inserted = (e.nativeEvent as InputEvent).data;
+    const inserted = e.nativeEvent instanceof InputEvent ? e.nativeEvent.data : null;
     if (inserted?.length === 1) answerWith(inserted);
   }
 

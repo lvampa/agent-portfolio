@@ -1,8 +1,8 @@
-import { HttpError } from '@lib/api/Client';
+// Imported by file, not from @lib/api, so this stays free of the clients and their env check.
+import { TOO_MANY_REQUESTS } from '@lib/api/constants';
+import { HttpError } from '@lib/api/HttpError';
 
 import type { ChatFailure } from './types';
-
-const TOO_MANY_REQUESTS = 429;
 
 /** fetch rejects with a TypeError for a network or CORS failure, and AbortSignal.timeout with a TimeoutError. */
 export function toChatFailure(caught: unknown): ChatFailure {

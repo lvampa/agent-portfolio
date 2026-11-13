@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 
-const MODIFIER_KEYS = new Set(['Shift', 'Control', 'Alt', 'Meta', 'CapsLock']);
+import { MODIFIER_KEYS } from './constants';
 
 /**
  * Any key or click shows the rest of the output at once.

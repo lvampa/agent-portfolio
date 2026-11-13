@@ -3,7 +3,8 @@ import React, { createElement, useMemo } from 'react';
 import { useHistory } from './HistoryContext';
 import { renderers, revealStepsFor } from './registry';
 import type { HistoryItem, HistoryItemOf, HistoryItemType, RevealProgress } from './types';
-import { useReveal, useRevealProgress } from './useReveal';
+import { useReveal } from './useReveal';
+import { useRevealProgress } from './useRevealProgress';
 
 function Renderer<K extends HistoryItemType>({
   item,
@@ -32,7 +33,7 @@ function HistoryLine({
 
 export function History() {
   const { items, generation, hasLoaded } = useHistory();
-  const { revealedCount } = useReveal();
+  const { cursor } = useReveal();
 
   // Mounting the log after load keeps restored items from being announced as new.
   if (!hasLoaded) return null;
@@ -40,10 +41,10 @@ export function History() {
   // Items past the cursor are not rendered yet, so each one is announced as it appears.
   return (
     <div role="log">
-      {items.slice(0, revealedCount + 1).map((item, index) => (
+      {items.slice(0, cursor + 1).map((item, index) => (
         // History only appends or clears, and clear bumps the generation, so this key stays stable.
         <div key={`${generation}-${index}`}>
-          <HistoryLine item={item} index={index} isCurrent={index === revealedCount} />
+          <HistoryLine item={item} index={index} isCurrent={index === cursor} />
         </div>
       ))}
     </div>

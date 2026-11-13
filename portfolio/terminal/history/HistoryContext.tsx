@@ -11,16 +11,9 @@ import React, {
   useState,
 } from 'react';
 
+import { EMPTY_STATE } from './constants';
 import { HistoryItemSchema } from './schemas';
-import type { HistoryItem } from './types';
-
-interface HistoryState {
-  items: HistoryItem[];
-  /** The index of the first item not fully shown. Restored items start shown. */
-  revealedCount: number;
-  /** Bumped by clear, so rows after a clear never reuse the rows before it. */
-  generation: number;
-}
+import type { HistoryItem, HistoryState } from './types';
 
 interface HistoryContextValue extends HistoryState {
   hasLoaded: boolean;
@@ -32,8 +25,6 @@ interface HistoryContextValue extends HistoryState {
 }
 
 const HistoryContext = createContext<HistoryContextValue | null>(null);
-
-const EMPTY_STATE: HistoryState = { items: [], revealedCount: 0, generation: 0 };
 
 function loadHistory(): HistoryItem[] {
   if (!isHistoryDisabled()) return historyStore.load(HistoryItemSchema);
