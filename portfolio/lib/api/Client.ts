@@ -1,8 +1,8 @@
 import { REQUEST_TIMEOUT_MS } from './constants';
 import { HttpError } from './HttpError';
-import { type ClientInterface } from './types';
 
-export class Client implements ClientInterface {
+/** Resolves to the parsed JSON body, which callers validate. Rejects on a network error, a timeout, or a non-2xx status. */
+export class Client {
   constructor(private readonly baseURL: string) {}
 
   async get(path: string): Promise<unknown> {
