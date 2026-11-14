@@ -45,5 +45,4 @@ export interface UseClientInfo {
   /** Request and parsed UA (use buildUserInfoForUi for UI). */
   userInfo: ClientInfo;
   isLoading: boolean;
-  error: Error | null;
 }

@@ -39,6 +39,5 @@ describe('useClientInfo', () => {
 
     expect(result.current.isLoading).toBe(false);
     expect(result.current.userInfo.parsedUA).toEqual(PARSED_UA);
-    expect(result.current.error?.message).toBe('no /info');
   });
 });
