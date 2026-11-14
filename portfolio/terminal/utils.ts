@@ -82,7 +82,7 @@ export function setName(name: string): Effect {
 }
 
 export function ask(questionId: QuestionId, subject?: string): Effect {
-  return subject === undefined ? { type: 'ask', questionId } : { type: 'ask', questionId, subject };
+  return { type: 'ask', questionId, subject };
 }
 
 export function chat(message: string): Effect {
