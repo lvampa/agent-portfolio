@@ -2,8 +2,6 @@ import type { ChatVisitor, ClientInfo, ClientInfoRequest } from '@lib/hooks/type
 
 import type { ParsedUA, UserInfo } from './types';
 
-export type { ParsedUA, UserInfo, UserInfoItem } from './types';
-
 /**
  * Parse the current browser user agent. Returns null when run outside the browser (e.g. SSR).
  * The parser loads on demand, so it stays out of the first bundle.
