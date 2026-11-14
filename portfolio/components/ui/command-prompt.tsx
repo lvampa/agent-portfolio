@@ -1,7 +1,7 @@
 import { cn } from '@lib/utils/cn';
 import type * as React from 'react';
 
-export interface CommandPromptProps extends React.HTMLAttributes<HTMLDivElement> {
+interface CommandPromptProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
   prompt: string;
 }

@@ -3,7 +3,7 @@ import { findCommand } from './registry';
 import type { Route } from './types';
 import { chat } from './utils';
 
-export const answerPendingQuestion: Route = {
+const answerPendingQuestion: Route = {
   name: 'answerPendingQuestion',
   handle: (line, mode, state) => {
     if (mode.type !== 'awaiting') return null;
@@ -11,13 +11,13 @@ export const answerPendingQuestion: Route = {
   },
 };
 
-export const ignoreBlankLine: Route = {
+const ignoreBlankLine: Route = {
   name: 'ignoreBlankLine',
   handle: (line) => (line.trim() ? null : []),
 };
 
 // Only the whole line counts, so a sentence that starts with a command word goes to the chat.
-export const runExactCommand: Route = {
+const runExactCommand: Route = {
   name: 'runExactCommand',
   handle: (line, _mode, state) => findCommand(state.commands, line.trim())?.run(state) ?? null,
 };

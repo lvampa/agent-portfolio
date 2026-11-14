@@ -25,7 +25,7 @@ export const UNCONFIRMED_IDENTITY_LINE = 'Unconfirmed identity';
 
 export const MAX_NAME_LENGTH = 20;
 
-export const CHAT_ERROR_MESSAGE = 'The agent did not respond. Try again in a moment.';
+const CHAT_ERROR_MESSAGE = 'The agent did not respond. Try again in a moment.';
 
 // Every failure offers a retry. Even a 429 may be the per-minute limit rather than the daily one.
 export const CHAT_FAILURES: Record<ChatFailure, HistoryItem[]> = {
