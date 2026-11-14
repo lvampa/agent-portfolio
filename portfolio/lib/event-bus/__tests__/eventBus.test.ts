@@ -1,5 +1,4 @@
 import { createEventBus } from '../eventBus';
-import type { CallbackFn } from '../types';
 
 describe('createEventBus', () => {
   let bus: ReturnType<typeof createEventBus<Record<string, unknown>>>;
@@ -21,10 +20,11 @@ describe('createEventBus', () => {
   });
 
   test('a handler removed during an emit still runs for that emit', () => {
-    const second: CallbackFn = jest.fn();
-    const first: CallbackFn = jest.fn(() => bus.off('submit', second));
+    const second = jest.fn();
+    let unregisterSecond = () => {};
+    const first = jest.fn(() => unregisterSecond());
     bus.on('submit', first);
-    bus.on('submit', second);
+    unregisterSecond = bus.on('submit', second);
 
     bus.emit('submit', {});
 

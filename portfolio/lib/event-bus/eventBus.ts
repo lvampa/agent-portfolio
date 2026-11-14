@@ -10,14 +10,9 @@ export function createEventBus<TMap extends Record<string, unknown>>(): EventBus
     const eventHandlers = handlers[eventName] ?? new Set();
     eventHandlers.add(callback);
     handlers[eventName] = eventHandlers;
-    return () => off(eventName, callback);
-  }
-
-  function off<K extends string & keyof TMap>(
-    eventName: K,
-    callback: (payload: TMap[K]) => void,
-  ): void {
-    handlers[eventName]?.delete(callback);
+    return () => {
+      eventHandlers.delete(callback);
+    };
   }
 
   function emit<K extends string & keyof TMap>(eventName: K, payload: TMap[K]): void {
@@ -25,5 +20,5 @@ export function createEventBus<TMap extends Record<string, unknown>>(): EventBus
     [...(handlers[eventName] ?? [])].forEach((handler) => handler(payload));
   }
 
-  return { on, off, emit };
+  return { on, emit };
 }
