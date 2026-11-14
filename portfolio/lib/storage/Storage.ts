@@ -11,18 +11,12 @@ export class Storage {
   load<T>(schema: ZodType<T>): T[] {
     if (typeof window === 'undefined') return [];
     this.removeLegacyKeys();
-    try {
-      const raw = localStorage.getItem(this.key);
-      if (!raw) return [];
-      const parsed: unknown = JSON.parse(raw);
-      if (!Array.isArray(parsed)) return [];
-      return parsed.slice(-MAX_STORED_ITEMS).flatMap((item: unknown) => {
+    return this.readRaw()
+      .slice(-MAX_STORED_ITEMS)
+      .flatMap((item) => {
         const result = schema.safeParse(item);
         return result.success ? [result.data] : [];
       });
-    } catch {
-      return [];
-    }
   }
 
   loadValue<T>(schema: ZodType<T>): T | null {
