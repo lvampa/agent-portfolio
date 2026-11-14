@@ -269,7 +269,7 @@ A handler that returns `'continue'` synchronously keeps the walk synchronous.
 Effects before the first chat apply in the same tick, which the startup relies on.
 
 `useInterpreter()` is the adapter.
-It builds the ports from `HistoryContext`, `SessionContext`, and `useChat`, memoizes the interpreter, and returns `{ apply, busy }`, with `busy` true for the whole apply of any list that contains a chat, so the input returns in the same render as the reply.
+It builds the ports from `HistoryContext`, `SessionContext`, and `sendChat`, memoizes the interpreter, and returns `{ apply, busy }`, with `busy` true for the whole apply of any list that contains a chat, so the input returns in the same render as the reply.
 `createInterpreter` is tested with fake ports, with no rendering.
 
 `Repl` registers its submit handler once, as a `useEffectEvent`, so it always reads the current mode, state, and input state.
@@ -353,7 +353,7 @@ Each span carries its offset in the stream.
 
 ## Chat failures and retry
 
-`useChat` never rejects and resolves to a `ChatResult`: `{ ok: true; replies }` or `{ ok: false; failure }`.
+`sendChat` never rejects and resolves to a `ChatResult`: `{ ok: true; replies }` or `{ ok: false; failure }`.
 `toChatFailure` maps a `TimeoutError` to `timeout`, a `TypeError` (network or CORS) to `network`, an `HttpError` (`lib/api/HttpError.ts`) with status 429 to `quota`, and anything else, including an invalid reply, to `server`.
 `chatResultEffects` prints each reply as a `message`, then a blank line.
 A failure prints its lines from `CHAT_FAILURES`, then asks `RETRY_CHAT` with the message as its subject:

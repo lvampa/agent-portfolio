@@ -34,7 +34,7 @@ Without `DEV_INFO_URL`, dev runs without client info.
 
 ## How it talks to n8n
 
-`lib/hooks/useChat.ts` sends `POST <NEXT_PUBLIC_CHAT_WEBHOOK_URL>/webhooks` with:
+`lib/hooks/sendChat.ts` sends `POST <NEXT_PUBLIC_CHAT_WEBHOOK_URL>/webhooks` with:
 
 ```json
 {
