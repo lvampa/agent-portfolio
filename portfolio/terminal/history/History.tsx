@@ -3,7 +3,6 @@ import React, { createElement, useMemo } from 'react';
 import { useHistory } from './HistoryContext';
 import { renderers, revealStepsFor } from './registry';
 import type { HistoryItem, HistoryItemOf, HistoryItemType, RevealProgress } from './types';
-import { useReveal } from './useReveal';
 import { useRevealProgress } from './useRevealProgress';
 
 function Renderer<K extends HistoryItemType>({
@@ -31,9 +30,9 @@ function HistoryLine({
   return <Renderer item={item} progress={progress} />;
 }
 
-export function History() {
+/** `cursor` is the item being revealed, from useReveal, which Repl owns because it also gates the prompt. */
+export function History({ cursor }: { cursor: number }) {
   const { items, generation, hasLoaded } = useHistory();
-  const { cursor } = useReveal();
 
   // Mounting the log after load keeps restored items from being announced as new.
   if (!hasLoaded) return null;

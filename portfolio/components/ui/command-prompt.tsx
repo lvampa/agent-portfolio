@@ -1,15 +1,14 @@
 import { cn } from '@lib/utils/cn';
-import * as React from 'react';
+import type * as React from 'react';
 
-export interface CommandPromptProps extends React.HTMLAttributes<HTMLDivElement> {
+interface CommandPromptProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
-  prompt?: string;
+  prompt: string;
 }
 
-export const CommandPrompt = React.forwardRef<HTMLDivElement, CommandPromptProps>(
-  ({ className, children, prompt = 'C:\\Users\\unknown>', ...props }, ref) => (
+export function CommandPrompt({ className, children, prompt, ...props }: CommandPromptProps) {
+  return (
     <div
-      ref={ref}
       className={cn('flex flex-wrap gap-x-[1ch]', className)}
       data-slot="command-prompt"
       {...props}
@@ -19,6 +18,5 @@ export const CommandPrompt = React.forwardRef<HTMLDivElement, CommandPromptProps
       </span>
       {children}
     </div>
-  ),
-);
-CommandPrompt.displayName = 'CommandPrompt';
+  );
+}

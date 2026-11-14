@@ -2,29 +2,29 @@ import { UserInfoSchema } from '@lib/utils/schemas';
 import { z } from 'zod';
 
 // Empty text is a blank line.
-export const TextItemSchema = z.object({
+const TextItemSchema = z.object({
   type: z.literal('text'),
   text: z.string(),
 });
 
 // The prompt at the time the line was typed, so a later rename does not rewrite old lines.
-export const CommandItemSchema = z.object({
+const CommandItemSchema = z.object({
   type: z.literal('command'),
   line: z.string(),
   prompt: z.string(),
 });
 
-export const MessageItemSchema = z.object({
+const MessageItemSchema = z.object({
   type: z.literal('message'),
   text: z.string(),
 });
 
-export const ErrorItemSchema = z.object({
+const ErrorItemSchema = z.object({
   type: z.literal('error'),
   text: z.string(),
 });
 
-export const ClientInfoItemSchema = z.object({
+const ClientInfoItemSchema = z.object({
   type: z.literal('clientInfo'),
   info: UserInfoSchema,
   // Same as a command item: the prompt `clientinfo` was typed after.
@@ -32,7 +32,7 @@ export const ClientInfoItemSchema = z.object({
 });
 
 // Only the label is the link, so `text` is the plain lead-in before it.
-export const LinkItemSchema = z.object({
+const LinkItemSchema = z.object({
   type: z.literal('link'),
   text: z.string(),
   label: z.string(),
@@ -46,7 +46,7 @@ export const ListRowSchema = z.object({
 });
 
 // Two aligned columns, like DOS output.
-export const ListItemSchema = z.object({
+const ListItemSchema = z.object({
   type: z.literal('list'),
   items: z.array(ListRowSchema),
 });

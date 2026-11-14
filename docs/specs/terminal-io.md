@@ -269,7 +269,7 @@ A handler that returns `'continue'` synchronously keeps the walk synchronous.
 Effects before the first chat apply in the same tick, which the startup relies on.
 
 `useInterpreter()` is the adapter.
-It builds the ports from `HistoryContext`, `SessionContext`, and `useChat`, memoizes the interpreter, and returns `{ apply, busy }`, with `busy` true for the whole apply of any list that contains a chat, so the input returns in the same render as the reply.
+It builds the ports from `HistoryContext`, `SessionContext`, and `sendChat`, memoizes the interpreter, and returns `{ apply, busy }`, with `busy` true for the whole apply of any list that contains a chat, so the input returns in the same render as the reply.
 `createInterpreter` is tested with fake ports, with no rendering.
 
 `Repl` registers its submit handler once, as a `useEffectEvent`, so it always reads the current mode, state, and input state.
@@ -320,6 +320,7 @@ The input has `aria-disabled` while it does not accept lines, and the drawn care
 `HistoryContext` keeps `revealedCount`, the index of the first item not fully shown, next to `items` and a `generation`.
 On load it is the stored length, so restored history is instant; `clear` resets it to 0 and bumps the generation.
 `useReveal()` moves the cursor past items with no steps and returns `{ cursor, isRevealing, revealAll }`, so an append hides the prompt in the same render.
+`Repl` calls it once and passes `cursor` to `History`.
 Reduced motion is handled there, once.
 `History` renders the items before the cursor in full, the item at the cursor with live progress, and nothing after it.
 `markRevealed(generation, count)` only moves the cursor forward within the same generation, so a row finishing late after `cls` cannot move the new cursor.
@@ -353,7 +354,7 @@ Each span carries its offset in the stream.
 
 ## Chat failures and retry
 
-`useChat` never rejects and resolves to a `ChatResult`: `{ ok: true; replies }` or `{ ok: false; failure }`.
+`sendChat` never rejects and resolves to a `ChatResult`: `{ ok: true; replies }` or `{ ok: false; failure }`.
 `toChatFailure` maps a `TimeoutError` to `timeout`, a `TypeError` (network or CORS) to `network`, an `HttpError` (`lib/api/HttpError.ts`) with status 429 to `quota`, and anything else, including an invalid reply, to `server`.
 `chatResultEffects` prints each reply as a `message`, then a blank line.
 A failure prints its lines from `CHAT_FAILURES`, then asks `RETRY_CHAT` with the message as its subject:
@@ -431,7 +432,6 @@ terminal/
   ports.ts         the Ports interface
   interpreter.ts   createInterpreter and the effect handlers
   startup.ts       startupEffects
-  index.ts         re-exports, pure modules only
   SessionContext.tsx
   commands/        help.ts cls.ts whoami.ts index.ts, one file per command
   questions/       identify.ts retryChat.ts registry.ts index.ts

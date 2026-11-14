@@ -41,16 +41,8 @@ export type ChatFailure = 'timeout' | 'network' | 'quota' | 'server';
 
 export type ChatResult = { ok: true; replies: ChatResponse } | { ok: false; failure: ChatFailure };
 
-export interface UseChat {
-  /** Never rejects. A failed or invalid reply resolves to the kind of failure. */
-  sendMessage: (request: ChatRequest) => Promise<ChatResult>;
-  isLoading: boolean;
-  error: Error | null;
-}
-
 export interface UseClientInfo {
   /** Request and parsed UA (use buildUserInfoForUi for UI). */
   userInfo: ClientInfo;
   isLoading: boolean;
-  error: Error | null;
 }
