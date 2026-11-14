@@ -55,7 +55,7 @@ describe('createInterpreter', () => {
     await createInterpreter(ports).apply([chat('hi'), ...rest]);
 
     expect(ports.history.append).toHaveBeenCalledTimes(1);
-    expect(ports.history.append).toHaveBeenCalledWith(CHAT_FAILURES.timeout.lines[0]);
+    expect(ports.history.append).toHaveBeenCalledWith(CHAT_FAILURES.timeout[0]);
     expect(ports.session.setMode).toHaveBeenLastCalledWith({
       type: 'awaiting',
       questionId: QUESTION_IDS.RETRY_CHAT,

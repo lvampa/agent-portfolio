@@ -89,7 +89,7 @@ export function chat(message: string): Effect {
   return { type: 'chat', message };
 }
 
-/** A reply prints each message then a blank line. A failure prints its lines, then may offer to resend the message. */
+/** A reply prints each message then a blank line. A failure prints its lines, then offers to resend the message. */
 export function chatResultEffects(result: ChatResult, message: string): Effect[] {
   if (result.ok) {
     return [
@@ -97,8 +97,7 @@ export function chatResultEffects(result: ChatResult, message: string): Effect[]
       printText(''),
     ];
   }
-  const { lines, canRetry } = CHAT_FAILURES[result.failure];
-  return [...lines.map(print), ...(canRetry ? [ask(QUESTION_IDS.RETRY_CHAT, message)] : [])];
+  return [...CHAT_FAILURES[result.failure].map(print), ask(QUESTION_IDS.RETRY_CHAT, message)];
 }
 
 function isBlankLine(effect: Effect): boolean {

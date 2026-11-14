@@ -27,39 +27,27 @@ export const MAX_NAME_LENGTH = 20;
 
 export const CHAT_ERROR_MESSAGE = 'The agent did not respond. Try again in a moment.';
 
-export const CHAT_FAILURES: Record<ChatFailure, { lines: HistoryItem[]; canRetry: boolean }> = {
-  timeout: {
-    lines: [
-      { type: 'error', text: `The agent did not respond in ${REQUEST_TIMEOUT_MS / 1000} seconds.` },
-    ],
-    canRetry: true,
-  },
-  network: {
-    lines: [
-      {
-        type: 'error',
-        text: 'Could not reach the agent. It may be offline. Try again in a moment.',
-      },
-    ],
-    canRetry: true,
-  },
-  // A 429 may be the per-minute limit rather than the daily one, so it still offers a retry.
-  quota: {
-    lines: [
-      {
-        type: 'error',
-        text: "Connor's free tier agent is refusing to work any more for the moment.",
-      },
-      {
-        type: 'link',
-        text: 'Try again later or just message Connor on LinkedIn @ ',
-        label: LINKEDIN_URL,
-        href: LINKEDIN_URL,
-      },
-    ],
-    canRetry: true,
-  },
-  server: { lines: [{ type: 'error', text: CHAT_ERROR_MESSAGE }], canRetry: true },
+// Every failure offers a retry. Even a 429 may be the per-minute limit rather than the daily one.
+export const CHAT_FAILURES: Record<ChatFailure, HistoryItem[]> = {
+  timeout: [
+    { type: 'error', text: `The agent did not respond in ${REQUEST_TIMEOUT_MS / 1000} seconds.` },
+  ],
+  network: [
+    { type: 'error', text: 'Could not reach the agent. It may be offline. Try again in a moment.' },
+  ],
+  quota: [
+    {
+      type: 'error',
+      text: "Connor's free tier agent is refusing to work any more for the moment.",
+    },
+    {
+      type: 'link',
+      text: 'Try again later or just message Connor on LinkedIn @ ',
+      label: LINKEDIN_URL,
+      href: LINKEDIN_URL,
+    },
+  ],
+  server: [{ type: 'error', text: CHAT_ERROR_MESSAGE }],
 };
 
 export const QUESTION_IDS = {
