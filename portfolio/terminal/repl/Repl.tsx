@@ -30,7 +30,7 @@ interface ReplProps {
 /** Routes each submitted line to a pending question, a command, or the chat. */
 export default function Repl({ clientInfo, isClientInfoLoading, visitor }: ReplProps) {
   const eventBus = useEventBus();
-  const { isRevealing, revealAll } = useReveal();
+  const { cursor, isRevealing, revealAll } = useReveal();
   const { hasLoaded: hasHistoryLoaded } = useHistory();
   const { name, mode, sessionId, hasLoaded: hasSessionLoaded } = useSession();
   const { apply, busy } = useInterpreter(visitor);
@@ -63,7 +63,7 @@ export default function Repl({ clientInfo, isClientInfoLoading, visitor }: ReplP
 
   return (
     <div>
-      <History />
+      <History cursor={cursor} />
       <ReplLoading isVisible={inputState === 'busy'} />
       <InputForm
         isActive={acceptsInput(inputState)}
