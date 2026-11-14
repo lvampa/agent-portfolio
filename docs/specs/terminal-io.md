@@ -431,7 +431,6 @@ terminal/
   ports.ts         the Ports interface
   interpreter.ts   createInterpreter and the effect handlers
   startup.ts       startupEffects
-  index.ts         re-exports, pure modules only
   SessionContext.tsx
   commands/        help.ts cls.ts whoami.ts index.ts, one file per command
   questions/       identify.ts retryChat.ts registry.ts index.ts
