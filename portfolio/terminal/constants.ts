@@ -19,7 +19,6 @@ export const PORTFOLIO_LINK: HistoryItemOf<'link'> = {
 
 export const GUIDANCE_LINE = 'Ask about the author, or type help for other commands.';
 
-export const HELP_FOOTER = '↑↓ history · Ctrl+C cancel · Ctrl+L clear';
 export const INTERRUPT_MARK = '^C';
 
 export const UNKNOWN_NAME = 'unknown';

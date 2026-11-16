@@ -49,7 +49,6 @@ On a first visit the screen shows, top to bottom:
 The registry ships with these commands:
 
 - `help`, `h` prints a `list` with one row per command, built from `state.commands`: the names, such as `help, h`, then the description.
-  A footer line lists the hotkeys.
 - `cls`, `clear` scrolls the output out of view so the prompt sits at the top, like bash `clear`.
   Nothing is deleted, scrolling up shows it, and the agent conversation carries on.
   The cleared position is not saved, so a reload shows the full history.

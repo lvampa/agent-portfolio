@@ -1,7 +1,6 @@
 import { COMMANDS, findCommand } from '../registry';
 import { route } from '../router';
 import type { TerminalState } from '../types';
-import { HELP_FOOTER } from '../constants';
 import { startupEffects } from '../startup';
 import {
   clearHistory,
@@ -32,7 +31,7 @@ describe('commands', () => {
     const [effect, ...rest] = run('help');
     const rows = effect.type === 'print' && effect.item.type === 'list' ? effect.item.items : [];
 
-    expect(rest).toEqual([printText(HELP_FOOTER)]);
+    expect(rest).toEqual([]);
     expect(rows).toHaveLength(COMMANDS.length);
     expect(rows).toContainEqual({ term: 'help, h', detail: 'List the commands.' });
   });
