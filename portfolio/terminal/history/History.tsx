@@ -1,4 +1,4 @@
-import React, { createElement, useMemo } from 'react';
+import React, { createElement, useEffect, useMemo } from 'react';
 
 import { useHistory } from './HistoryContext';
 import { renderers, revealStepsFor } from './registry';
@@ -24,9 +24,15 @@ function HistoryLine({
   index: number;
   isCurrent: boolean;
 }) {
-  const { generation, markRevealed } = useHistory();
+  const { generation, markRevealed, reportRevealing } = useHistory();
   const steps = useMemo(() => (isCurrent ? revealStepsFor(item) : null), [isCurrent, item]);
   const progress = useRevealProgress(steps, () => markRevealed(generation, index + 1));
+
+  // Written after each tick, so Ctrl+C can cut a reply at the characters shown.
+  useEffect(() => {
+    if (isCurrent) reportRevealing({ index, progress });
+  }, [isCurrent, index, progress, reportRevealing]);
+
   return <Renderer item={item} progress={progress} />;
 }
 

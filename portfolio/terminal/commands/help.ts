@@ -1,5 +1,6 @@
+import { HELP_FOOTER } from '../constants';
 import type { Command } from '../types';
-import { printList } from '../utils';
+import { printList, printText } from '../utils';
 
 export const help: Command = {
   names: ['help', 'h'],
@@ -11,5 +12,6 @@ export const help: Command = {
         detail: command.description,
       })),
     ),
+    printText(HELP_FOOTER),
   ],
 };

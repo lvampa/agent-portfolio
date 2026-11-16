@@ -24,6 +24,7 @@ interface SessionContextValue {
   setName: (name: string) => void;
   setMode: (mode: Mode) => void;
   newConversation: () => void;
+  reset: () => void;
 }
 
 const SessionContext = createContext<SessionContextValue | null>(null);
@@ -68,6 +69,10 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     setSession((previous) => ({ ...previous, sessionId: randomUuid() }));
   }, []);
 
+  const reset = useCallback(() => {
+    setSession(normalizeSession(null));
+  }, []);
+
   const value = useMemo(
     () => ({
       name: session.name,
@@ -77,8 +82,9 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       setName,
       setMode,
       newConversation,
+      reset,
     }),
-    [session, hasLoaded, setName, setMode, newConversation],
+    [session, hasLoaded, setName, setMode, newConversation, reset],
   );
 
   return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;

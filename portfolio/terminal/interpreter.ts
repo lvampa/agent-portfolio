@@ -10,6 +10,23 @@ const effectHandlers: EffectHandlers = {
   },
   clear: (_effect, { ports }) => {
     ports.history.clear();
+    ports.screen.reset();
+    return 'continue';
+  },
+  scrollClear: (_effect, { ports }) => {
+    ports.screen.scrollClear();
+    return 'continue';
+  },
+  resetSession: (_effect, { ports }) => {
+    ports.session.reset();
+    return 'continue';
+  },
+  cancelChat: (_effect, { ports }) => {
+    ports.chat.cancel();
+    return 'continue';
+  },
+  stopReveal: (_effect, { ports }) => {
+    ports.reveal.stop();
     return 'continue';
   },
   newConversation: (_effect, { ports }) => {

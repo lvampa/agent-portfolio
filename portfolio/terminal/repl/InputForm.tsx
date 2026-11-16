@@ -4,21 +4,38 @@ import { EVENTS } from '@terminal/repl/constants';
 import { useEventBus } from '@terminal/repl/EventBusContext';
 import React, { useEffect, useEffectEvent, useRef, useState } from 'react';
 
+import type { Recall } from './types';
+import { useControlKeys } from './useControlKeys';
+import { navigate } from './utils';
+
 interface InputFormProps {
   /** False while lines type or a chat is in flight. The input stays mounted and focused, so typing buffers. */
   isActive: boolean;
-  /** An answer to a question is not recalled with the up arrow. */
   isAnswering: boolean;
+  /** What Up and Down walk through, oldest first. */
+  commandLines: readonly string[];
   prompt: string;
   label: string;
   /** Set by a Y/N question. One of these keys answers at once, other single keys do not type, and Enter does nothing. */
   answerKeys?: readonly string[];
+  /** Ctrl+C, with what is typed. The input and any held Enter are cleared too. */
+  onInterrupt: (line: string) => void;
+  onClear: () => void;
 }
 
-export function InputForm({ isActive, isAnswering, prompt, label, answerKeys }: InputFormProps) {
+export function InputForm({
+  isActive,
+  isAnswering,
+  commandLines,
+  prompt,
+  label,
+  answerKeys,
+  onInterrupt,
+  onClear,
+}: InputFormProps) {
   const eventBus = useEventBus();
   const [value, setValue] = useState('');
-  const [lastCommand, setLastCommand] = useState<string | null>(null);
+  const [recall, setRecall] = useState<Recall | null>(null);
   const [hasPendingSubmit, setHasPendingSubmit] = useState(false);
   const inputElementRef = useRef<HTMLInputElement>(null);
   const [isFocused, setIsFocused] = useState(false);
@@ -51,7 +68,7 @@ export function InputForm({ isActive, isAnswering, prompt, label, answerKeys }: 
   }
 
   function submit() {
-    if (!isAnswering && value.trim()) setLastCommand(value);
+    setRecall(null);
     replaceValue('');
     eventBus.emit(EVENTS.SUBMIT, value);
   }
@@ -101,18 +118,27 @@ export function InputForm({ isActive, isAnswering, prompt, label, answerKeys }: 
       handleAnswerKey(e);
       return;
     }
-    if (e.key === 'ArrowUp' && lastCommand !== null) {
+    if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
       e.preventDefault();
-      replaceValue(lastCommand);
-    } else if (e.key === 'ArrowDown' && value === lastCommand) {
-      // Only a recalled command goes away, so a typed draft is never lost.
-      e.preventDefault();
-      replaceValue('');
+      const step = navigate(commandLines, recall, e.key === 'ArrowUp' ? 'up' : 'down', value);
+      setRecall(step.recall);
+      replaceValue(step.value);
     } else if (e.key === 'Escape') {
       e.preventDefault();
+      setRecall(null);
       replaceValue('');
     }
   }
+
+  useControlKeys({
+    onInterrupt: () => {
+      onInterrupt(value);
+      setHasPendingSubmit(false);
+      setRecall(null);
+      replaceValue('');
+    },
+    onClear,
+  });
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -144,6 +170,7 @@ export function InputForm({ isActive, isAnswering, prompt, label, answerKeys }: 
                 handleAnswerChange(e);
                 return;
               }
+              setRecall(null);
               setValue(e.target.value);
               syncCaret();
             }}

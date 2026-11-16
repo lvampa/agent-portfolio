@@ -8,12 +8,14 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
 import { EMPTY_STATE } from './constants';
 import { HistoryItemSchema } from './schemas';
-import type { HistoryItem, HistoryState } from './types';
+import type { HistoryItem, HistoryState, RevealingRow } from './types';
+import { cutRevealingMessage } from './utils';
 
 interface HistoryContextValue extends HistoryState {
   hasLoaded: boolean;
@@ -22,6 +24,10 @@ interface HistoryContextValue extends HistoryState {
   /** Ignores calls from an earlier generation or behind the cursor, so a row finishing late after a clear cannot move the new cursor. */
   markRevealed: (generation: number, count: number) => void;
   revealAll: () => void;
+  /** Records where the row being revealed has got. Kept in a ref, so each tick does not re-render the context. */
+  reportRevealing: (row: RevealingRow) => void;
+  /** Cuts the reply being streamed where it is, saves it that way, and shows everything else at once. */
+  stopReveal: () => void;
 }
 
 const HistoryContext = createContext<HistoryContextValue | null>(null);
@@ -35,6 +41,7 @@ function loadHistory(): HistoryItem[] {
 export function HistoryProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<HistoryState>(EMPTY_STATE);
   const [hasLoaded, setHasLoaded] = useState(false);
+  const revealingRowRef = useRef<RevealingRow | null>(null);
 
   useEffect(() => {
     const stored = loadHistory();
@@ -66,9 +73,31 @@ export function HistoryProvider({ children }: { children: React.ReactNode }) {
     setState((previous) => ({ ...previous, revealedCount: previous.items.length }));
   }, []);
 
+  const reportRevealing = useCallback((row: RevealingRow) => {
+    revealingRowRef.current = row;
+  }, []);
+
+  const stopReveal = useCallback(() => {
+    const cutItems = cutRevealingMessage(state.items, revealingRowRef.current);
+    if (cutItems !== state.items) historyStore.save(cutItems);
+    setState((previous) => {
+      const items = cutRevealingMessage(previous.items, revealingRowRef.current);
+      return { ...previous, items, revealedCount: items.length };
+    });
+  }, [state.items]);
+
   const value = useMemo(
-    () => ({ ...state, hasLoaded, append, clear, markRevealed, revealAll }),
-    [state, hasLoaded, append, clear, markRevealed, revealAll],
+    () => ({
+      ...state,
+      hasLoaded,
+      append,
+      clear,
+      markRevealed,
+      revealAll,
+      reportRevealing,
+      stopReveal,
+    }),
+    [state, hasLoaded, append, clear, markRevealed, revealAll, reportRevealing, stopReveal],
   );
 
   return <HistoryContext.Provider value={value}>{children}</HistoryContext.Provider>;

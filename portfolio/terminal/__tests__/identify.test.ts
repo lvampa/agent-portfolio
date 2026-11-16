@@ -8,6 +8,7 @@ const state: TerminalState = {
   sessionId: 'session-1',
   clientInfo: null,
   commands: [],
+  commandHistory: [],
 };
 
 describe('identify', () => {

@@ -40,6 +40,12 @@ export interface BlockSource {
   lines: string[];
 }
 
+/** The row being revealed and how far it has got, for Ctrl+C to cut it there. */
+export interface RevealingRow {
+  index: number;
+  progress: RevealProgress;
+}
+
 export interface HistoryState {
   items: HistoryItem[];
   /** The index of the first item not fully shown. Restored items start shown. */

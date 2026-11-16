@@ -1,4 +1,11 @@
-import { hold, parseReply, replyLength, revealProgressAt } from '@terminal/history/utils';
+import type { HistoryItem } from '@terminal/history/types';
+import {
+  cutRevealingMessage,
+  hold,
+  parseReply,
+  replyLength,
+  revealProgressAt,
+} from '@terminal/history/utils';
 
 describe('parseReply', () => {
   test('splits paragraphs and lists, and finds bold, links, and emails at contiguous offsets', () => {
@@ -49,5 +56,32 @@ describe('revealProgressAt', () => {
     expect(revealProgressAt(steps, 30)).toEqual({ step: 0, chars: 0, isDone: false });
     expect(revealProgressAt(steps, 81)).toEqual({ step: 1, chars: 5, isDone: false });
     expect(revealProgressAt(steps, 100)).toMatchObject({ step: 2, isDone: true });
+  });
+});
+
+describe('cutRevealingMessage', () => {
+  const items: HistoryItem[] = [
+    { type: 'text', text: 'before' },
+    { type: 'message', text: 'A long reply' },
+  ];
+
+  test('marks the streaming reply as cut at the characters shown', () => {
+    const cut = cutRevealingMessage(items, {
+      index: 1,
+      progress: { step: 0, chars: 4, isDone: false },
+    });
+
+    expect(cut[1]).toEqual({ type: 'message', text: 'A long reply', cutAt: 4 });
+    expect(items[1]).not.toHaveProperty('cutAt');
+  });
+
+  test('leaves rows that are not streaming a reply as they are', () => {
+    const progress = { step: 0, chars: 4, isDone: false };
+
+    expect(cutRevealingMessage(items, { index: 0, progress })).toBe(items);
+    expect(cutRevealingMessage(items, null)).toBe(items);
+    expect(cutRevealingMessage(items, { index: 1, progress: { ...progress, isDone: true } })).toBe(
+      items,
+    );
   });
 });

@@ -1,13 +1,24 @@
 import { COMMANDS, findCommand } from '../registry';
 import { route } from '../router';
 import type { TerminalState } from '../types';
-import { clearScreen, echo, newConversation, printList, promptFor } from '../utils';
+import { HELP_FOOTER } from '../constants';
+import { startupEffects } from '../startup';
+import {
+  clearHistory,
+  echo,
+  printList,
+  printText,
+  promptFor,
+  resetSession,
+  scrollClear,
+} from '../utils';
 
 const state: TerminalState = {
   name: null,
   sessionId: 'session-1',
   clientInfo: null,
   commands: COMMANDS,
+  commandHistory: [],
 };
 
 function run(name: string, overrides: Partial<TerminalState> = {}) {
@@ -21,16 +32,34 @@ describe('commands', () => {
     const [effect, ...rest] = run('help');
     const rows = effect.type === 'print' && effect.item.type === 'list' ? effect.item.items : [];
 
-    expect(rest).toEqual([]);
+    expect(rest).toEqual([printText(HELP_FOOTER)]);
     expect(rows).toHaveLength(COMMANDS.length);
     expect(rows).toContainEqual({ term: 'help, h', detail: 'List the commands.' });
   });
 
-  test.each(['cls', 'CLEAR'])('%s clears the screen and starts a new conversation', (line) => {
+  test.each(['cls', 'CLEAR'])('%s only scrolls, so history and the conversation stay', (line) => {
     expect(route(line, { type: 'command' }, state)).toEqual([
       echo(line, promptFor(null)),
-      clearScreen(),
-      newConversation(),
+      scrollClear(),
+    ]);
+  });
+
+  test('reset wipes the output and the session, then replays the startup for a visitor with no name', () => {
+    const named = { ...state, name: 'connor' };
+
+    expect(run('reset', { name: 'connor' })).toEqual([
+      clearHistory(),
+      resetSession(),
+      ...startupEffects({ ...named, name: null }),
+    ]);
+  });
+
+  test('history numbers the typed commands, oldest first', () => {
+    expect(run('history', { commandHistory: ['help', 'whoami'] })).toEqual([
+      printList([
+        { term: '1', detail: 'help' },
+        { term: '2', detail: 'whoami' },
+      ]),
     ]);
   });
 

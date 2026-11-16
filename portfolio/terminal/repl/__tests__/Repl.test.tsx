@@ -47,6 +47,12 @@ const VISITOR = {
 };
 const SESSION_ID = '00000000-0000-4000-8000-000000000000';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+// The scroll container is not laid out in jsdom, so the screen port finds no elements and does nothing.
+const SCROLL = {
+  scrollRef: { current: null },
+  contentRef: { current: null },
+  scrollToBottom: jest.fn(),
+} as unknown as React.ComponentProps<typeof Repl>['scroll'];
 const IDENTIFY_PROMPT = 'User unknown, please identify:';
 const EARLIER_LINE = 'an earlier line';
 
@@ -60,7 +66,7 @@ function renderRepl() {
     <EventBusProvider>
       <HistoryProvider>
         <SessionProvider>
-          <Repl clientInfo={null} isClientInfoLoading={false} visitor={VISITOR} />
+          <Repl clientInfo={null} isClientInfoLoading={false} visitor={VISITOR} scroll={SCROLL} />
         </SessionProvider>
       </HistoryProvider>
     </EventBusProvider>,
@@ -131,6 +137,7 @@ describe('Repl', () => {
     expect(mockedPost).toHaveBeenLastCalledWith(
       'webhooks',
       expect.objectContaining({ chatInput: 'second' }),
+      expect.any(AbortSignal),
     );
   });
 
@@ -148,15 +155,19 @@ describe('Repl', () => {
     await user.type(await screen.findByLabelText(COMMAND_INPUT_LABEL), 'hi{enter}');
 
     // toEqual on the whole body, so any extra field fails the test.
-    expect(mockedPost).toHaveBeenCalledWith('webhooks', {
-      chatInput: 'hi',
-      sessionId: SESSION_ID,
-      name: 'tester',
-      client: VISITOR,
-    });
+    expect(mockedPost).toHaveBeenCalledWith(
+      'webhooks',
+      {
+        chatInput: 'hi',
+        sessionId: SESSION_ID,
+        name: 'tester',
+        client: VISITOR,
+      },
+      expect.any(AbortSignal),
+    );
   });
 
-  test('cls starts a new conversation with a new session id', async () => {
+  test('cls keeps the conversation, so the session id stays', async () => {
     mockedPost.mockResolvedValue([{ output: 'reply' }]);
     mockedLoadSession.mockReturnValue({
       name: 'tester',
@@ -172,9 +183,29 @@ describe('Repl', () => {
     await user.type(input, 'hi{enter}');
 
     await waitFor(() => expect(mockedPost).toHaveBeenCalled());
-    const { sessionId } = mockedPost.mock.calls[0][1];
-    expect(sessionId).toMatch(UUID);
-    expect(sessionId).not.toBe(SESSION_ID);
+    expect(mockedPost.mock.calls[0][1].sessionId).toBe(SESSION_ID);
+  });
+
+  test('reset wipes the saved history and replays the startup with a new session id', async () => {
+    mockedLoadSession.mockReturnValue({
+      name: 'tester',
+      mode: { type: 'command' },
+      sessionId: SESSION_ID,
+    });
+    mockedLoadHistory.mockReturnValue([{ type: 'text', text: EARLIER_LINE }]);
+    renderRepl();
+    const user = userEvent.setup();
+    const input = await screen.findByLabelText(COMMAND_INPUT_LABEL);
+
+    await user.type(input, 'reset{enter}');
+
+    expect(await screen.findByText(IDENTIFY_PROMPT)).toBeInTheDocument();
+    expect(mockedClearHistory).toHaveBeenCalled();
+    expect(screen.queryByText(EARLIER_LINE)).not.toBeInTheDocument();
+    const savedSession = (sessionStore.save as jest.Mock).mock.calls.at(-1)?.[0];
+    expect(savedSession.name).toBeNull();
+    expect(savedSession.sessionId).toMatch(UUID);
+    expect(savedSession.sessionId).not.toBe(SESSION_ID);
   });
 
   test('restored history skips the startup and is inside the log when it mounts', async () => {

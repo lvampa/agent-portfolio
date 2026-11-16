@@ -3,7 +3,7 @@ import type { ChatResult } from '@lib/hooks/types';
 import { CHAT_FAILURES, QUESTION_IDS } from '../constants';
 import { createInterpreter } from '../interpreter';
 import type { Ports } from '../ports';
-import { ask, chat, clearScreen, printText, setName } from '../utils';
+import { ask, chat, clearHistory, printText, resetSession, scrollClear, setName } from '../utils';
 
 function fakePorts(reply: ChatResult = { ok: true, replies: [] }) {
   const calls: string[] = [];
@@ -16,8 +16,14 @@ function fakePorts(reply: ChatResult = { ok: true, replies: [] }) {
       setName: jest.fn((name) => calls.push(`setName ${name}`)),
       setMode: jest.fn((mode) => calls.push(`setMode ${mode.type}`)),
       newConversation: jest.fn(() => calls.push('newConversation')),
+      reset: jest.fn(() => calls.push('reset')),
     },
-    chat: { send: jest.fn(async () => reply) },
+    chat: { send: jest.fn(async () => reply), cancel: jest.fn() },
+    screen: {
+      scrollClear: jest.fn(() => calls.push('scrollClear')),
+      reset: jest.fn(() => calls.push('screen reset')),
+    },
+    reveal: { stop: jest.fn() },
   };
   return { ports, calls };
 }
@@ -25,14 +31,32 @@ function fakePorts(reply: ChatResult = { ok: true, replies: [] }) {
 describe('createInterpreter', () => {
   test('applies effects in order, starting in command mode', async () => {
     const { ports, calls } = fakePorts();
-    await createInterpreter(ports).apply([printText('a'), clearScreen(), setName('connor')]);
+    await createInterpreter(ports).apply([printText('a'), clearHistory(), setName('connor')]);
 
     expect(calls).toEqual([
       'setMode command',
       `append ${JSON.stringify({ type: 'text', text: 'a' })}`,
       'clear',
+      'screen reset',
       'setName connor',
     ]);
+  });
+
+  test('a reset wipes the history, the session, and the scroll space, in that order', async () => {
+    const { ports, calls } = fakePorts();
+    await createInterpreter(ports).apply([clearHistory(), resetSession(), scrollClear()]);
+
+    expect(calls).toEqual(['setMode command', 'clear', 'screen reset', 'reset', 'scrollClear']);
+  });
+
+  test('a cancelled chat prints nothing and offers no retry', async () => {
+    const { ports } = fakePorts({ ok: false, failure: 'cancelled' });
+    const rest = [printText('after')];
+    await createInterpreter(ports).apply([chat('hi'), ...rest]);
+
+    expect(ports.history.append).toHaveBeenCalledTimes(1);
+    expect(ports.history.append).toHaveBeenCalledWith({ type: 'text', text: 'after' });
+    expect(ports.session.setMode).toHaveBeenCalledTimes(1);
   });
 
   test('an ask parks the rest in then and stops', async () => {

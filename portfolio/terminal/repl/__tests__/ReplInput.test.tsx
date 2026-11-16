@@ -12,7 +12,18 @@ const PROMPT = 'C:\\Users\\unknown>';
 const LABEL = 'Command or question';
 
 function renderInput(props: Partial<React.ComponentProps<typeof InputForm>> = {}) {
-  render(<InputForm isActive isAnswering={false} prompt={PROMPT} label={LABEL} {...props} />);
+  render(
+    <InputForm
+      isActive
+      isAnswering={false}
+      commandLines={[]}
+      prompt={PROMPT}
+      label={LABEL}
+      onInterrupt={jest.fn()}
+      onClear={jest.fn()}
+      {...props}
+    />,
+  );
   return screen.getByLabelText(LABEL);
 }
 
@@ -67,33 +78,25 @@ describe('ReplInput', () => {
       expect(input).toHaveValue('');
     });
 
-    test('When the user presses up, Then the last command comes back, and down clears it', async () => {
-      const input = renderInput();
+    test('When the user presses up, Then older commands come back, and down returns to the draft', async () => {
+      const input = renderInput({ commandLines: ['help', 'whoami'] });
       const user = userEvent.setup();
 
-      await user.type(input, 'help{enter}{ArrowUp}');
+      await user.type(input, 'draft{ArrowUp}');
+      expect(input).toHaveValue('whoami');
+
+      await user.type(input, '{ArrowUp}');
       expect(input).toHaveValue('help');
 
-      await user.type(input, '{ArrowDown}');
-      expect(input).toHaveValue('');
+      await user.type(input, '{ArrowDown}{ArrowDown}');
+      expect(input).toHaveValue('draft');
     });
 
-    test('When the user has typed a draft, Then down keeps it and Esc clears it', async () => {
+    test('When the user presses Esc, Then the line clears', async () => {
       const input = renderInput();
       const user = userEvent.setup();
 
-      await user.type(input, 'help{enter}draft{ArrowDown}');
-      expect(input).toHaveValue('draft');
-
-      await user.type(input, '{Escape}');
-      expect(input).toHaveValue('');
-    });
-
-    test('When the user answers a question, Then up does not recall the answer', async () => {
-      const input = renderInput({ isAnswering: true });
-      const user = userEvent.setup();
-
-      await user.type(input, 'connor{enter}{ArrowUp}');
+      await user.type(input, 'draft{Escape}');
       expect(input).toHaveValue('');
     });
   });

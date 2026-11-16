@@ -3,6 +3,7 @@ import type { UserInfo } from '@lib/utils/types';
 import { History } from '@terminal/history/History';
 import { useHistory } from '@terminal/history/HistoryContext';
 import { useReveal } from '@terminal/history/useReveal';
+import { interrupt } from '@terminal/interrupt';
 import { QUESTIONS } from '@terminal/questions';
 import { COMMANDS } from '@terminal/registry';
 import { EVENTS } from '@terminal/repl/constants';
@@ -11,13 +12,16 @@ import { currentInputLabel, currentPrompt, route } from '@terminal/router';
 import { useSession } from '@terminal/SessionContext';
 import type { TerminalState } from '@terminal/types';
 import { acceptsInput, getInputState } from '@terminal/utils';
-import { useEffect, useEffectEvent, useMemo } from 'react';
+import { useEffect, useEffectEvent, useMemo, useRef } from 'react';
+import type { StickToBottomInstance } from 'use-stick-to-bottom';
 
 import { InputForm } from './InputForm';
 import ReplLoading from './ReplLoading';
 import { useInterpreter } from './useInterpreter';
+import { useScreen } from './useScreen';
 import { useSkipReveal } from './useSkipReveal';
 import { useStartup } from './useStartup';
+import { commandHistory } from './utils';
 
 interface ReplProps {
   /** Null when client info failed to load; the startup then skips that step. */
@@ -25,19 +29,29 @@ interface ReplProps {
   isClientInfoLoading: boolean;
   /** Sent with each chat. Its fields are null when client info failed to load. */
   visitor: ChatVisitor;
+  /** The page's stick-to-bottom container, which the screen port scrolls. */
+  scroll: Pick<StickToBottomInstance, 'scrollRef' | 'contentRef' | 'scrollToBottom'>;
 }
 
 /** Routes each submitted line to a pending question, a command, or the chat. */
-export default function Repl({ clientInfo, isClientInfoLoading, visitor }: ReplProps) {
+export default function Repl({ clientInfo, isClientInfoLoading, visitor, scroll }: ReplProps) {
   const eventBus = useEventBus();
   const { cursor, isRevealing, revealAll } = useReveal();
-  const { hasLoaded: hasHistoryLoaded } = useHistory();
+  const { items, hasLoaded: hasHistoryLoaded } = useHistory();
   const { name, mode, sessionId, hasLoaded: hasSessionLoaded } = useSession();
-  const { apply, busy } = useInterpreter(visitor);
+  const promptRef = useRef<HTMLDivElement>(null);
+  const screen = useScreen(scroll, promptRef);
+  const { apply, busy } = useInterpreter(visitor, screen);
 
   const state: TerminalState = useMemo(
-    () => ({ name, sessionId, clientInfo, commands: COMMANDS }),
-    [name, sessionId, clientInfo],
+    () => ({
+      name,
+      sessionId,
+      clientInfo,
+      commands: COMMANDS,
+      commandHistory: commandHistory(items),
+    }),
+    [name, sessionId, clientInfo, items],
   );
 
   const hasStarted = useStartup({
@@ -56,6 +70,11 @@ export default function Repl({ clientInfo, isClientInfoLoading, visitor }: ReplP
     void apply(route(line, mode, state));
   });
 
+  function handleInterrupt(line: string) {
+    const prompt = currentPrompt(mode, name);
+    void apply(interrupt(inputState, { line, prompt, mode }));
+  }
+
   useEffect(() => {
     const unregister = eventBus.on(EVENTS.SUBMIT, (line) => handleSubmit(line));
     return () => unregister();
@@ -65,13 +84,18 @@ export default function Repl({ clientInfo, isClientInfoLoading, visitor }: ReplP
     <div>
       <History cursor={cursor} />
       <ReplLoading isVisible={inputState === 'busy'} />
-      <InputForm
-        isActive={acceptsInput(inputState)}
-        isAnswering={mode.type === 'awaiting'}
-        prompt={currentPrompt(mode, name)}
-        label={currentInputLabel(mode)}
-        answerKeys={mode.type === 'awaiting' ? QUESTIONS[mode.questionId].answerKeys : undefined}
-      />
+      <div ref={promptRef}>
+        <InputForm
+          isActive={acceptsInput(inputState)}
+          isAnswering={mode.type === 'awaiting'}
+          commandLines={state.commandHistory}
+          prompt={currentPrompt(mode, name)}
+          label={currentInputLabel(mode)}
+          answerKeys={mode.type === 'awaiting' ? QUESTIONS[mode.questionId].answerKeys : undefined}
+          onInterrupt={handleInterrupt}
+          onClear={screen.scrollClear}
+        />
+      </div>
     </div>
   );
 }

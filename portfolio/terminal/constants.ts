@@ -19,6 +19,9 @@ export const PORTFOLIO_LINK: HistoryItemOf<'link'> = {
 
 export const GUIDANCE_LINE = 'Ask about the author, or type help for other commands.';
 
+export const HELP_FOOTER = '↑↓ history · Ctrl+C cancel · Ctrl+L clear';
+export const INTERRUPT_MARK = '^C';
+
 export const UNKNOWN_NAME = 'unknown';
 export const COMMAND_INPUT_LABEL = 'Command or question';
 export const UNCONFIRMED_IDENTITY_LINE = 'Unconfirmed identity';
@@ -27,8 +30,8 @@ export const MAX_NAME_LENGTH = 20;
 
 const CHAT_ERROR_MESSAGE = 'The agent did not respond. Try again in a moment.';
 
-// Every failure offers a retry. Even a 429 may be the per-minute limit rather than the daily one.
-export const CHAT_FAILURES: Record<ChatFailure, HistoryItem[]> = {
+// Every failure but a cancel offers a retry. Even a 429 may be the per-minute limit rather than the daily one.
+export const CHAT_FAILURES: Record<Exclude<ChatFailure, 'cancelled'>, HistoryItem[]> = {
   timeout: [
     { type: 'error', text: `The agent did not respond in ${REQUEST_TIMEOUT_MS / 1000} seconds.` },
   ],
@@ -53,6 +56,7 @@ export const CHAT_FAILURES: Record<ChatFailure, HistoryItem[]> = {
 export const QUESTION_IDS = {
   IDENTIFY: 'identify',
   RETRY_CHAT: 'retryChat',
+  ASK_EXAMPLE: 'askExample',
 } as const;
 
 export const COMMAND_MODE: Mode = { type: 'command' };

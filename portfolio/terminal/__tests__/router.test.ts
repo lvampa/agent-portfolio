@@ -16,6 +16,7 @@ const state: TerminalState = {
   sessionId: 'session-1',
   clientInfo: null,
   commands: createRegistry([ping]),
+  commandHistory: [],
 };
 const commandMode: Mode = { type: 'command' };
 const awaitingIdentify: Mode = {

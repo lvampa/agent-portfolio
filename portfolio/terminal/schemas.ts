@@ -10,6 +10,10 @@ export const QuestionIdSchema = z.enum(QUESTION_IDS);
 export const EffectSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('print'), item: HistoryItemSchema }),
   z.object({ type: z.literal('clear') }),
+  z.object({ type: z.literal('scrollClear') }),
+  z.object({ type: z.literal('resetSession') }),
+  z.object({ type: z.literal('cancelChat') }),
+  z.object({ type: z.literal('stopReveal') }),
   z.object({ type: z.literal('newConversation') }),
   z.object({ type: z.literal('setName'), name: z.string() }),
   z.object({
