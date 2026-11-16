@@ -46,12 +46,16 @@ On a first visit the screen shows, top to bottom:
 4. A blank line, the guidance line `Ask about the author, or type help for other commands.`, and another blank line before the input prompt.
 5. From then on, a line that is exactly a command name runs that command, and anything else goes to the chat.
 
-The registry ships with three commands:
+The registry ships with these commands:
 
 - `help`, `h` prints a `list` with one row per command, built from `state.commands`: the names, such as `help, h`, then the description.
-- `cls`, `clear` clears the screen and the saved history, and starts a new conversation with a new session id.
-  A reload right after `cls` finds the history empty, so the startup replays, without the question when a name is saved.
-  Anything typed after `cls` is saved, so a later reload restores it instead.
+- `cls`, `clear` scrolls the output out of view so the prompt sits at the top, like bash `clear`.
+  Nothing is deleted, scrolling up shows it, and the agent conversation carries on.
+  The cleared position is not saved, so a reload shows the full history.
+- `contact` prints the GitHub, LinkedIn, and static portfolio links.
+- `examples` prints the example questions numbered, then asks `Ask which? (1-3, N to skip)`; 1-3 sends that question to the chat.
+- `history` lists the commands typed so far, oldest first.
+- `reset` wipes the saved history and session, starts a new conversation, and replays the startup as on a first visit.
 - `whoami` prints a `list`: a `name:` row with the name (or `unknown`), a `session:` row with the session id, so a visitor can quote it, then a row per client info item when it loaded.
   Its terms end in a colon, like `systeminfo`, and so do the startup's info labels, through `infoTerm(label)`.
   The colon is in the term data, so `List` stays generic, and `help`'s terms have none.
@@ -62,12 +66,15 @@ On a reload, stored history renders as before and the startup does not replay.
 Restored items render at once, so the prompt shows right away.
 New output reveals one item at a time (see Reveal), and any key or click shows the rest at once.
 Under `prefers-reduced-motion: reduce`, new output shows at once and nothing waits on it.
-Up recalls the last submitted command into the input, like `cmd`.
-Down clears it again, but only while the input still holds the recalled command, so a typed draft is never lost.
+Up and Down step through past commands, read from the command items in the saved history.
+Down past the newest entry brings back the draft that was being typed.
+Answers to questions and lines ended with Ctrl+C are never recalled.
 Esc clears the line.
-Only the last command is kept, in memory for the visit, and an answer to a question is never recalled.
+Ctrl+L does what `clear` does.
+Ctrl+C prints `^C` and depends on the input state: it cancels a pending chat request, stops a reply mid-reveal and keeps it cut off after a reload, dismisses an open question, or ends the current line without sending it.
+With text selected, Ctrl+C is left to the browser so copying still works.
 The page's `<main>` is the only scroll container, at `100dvh`, and `useStickToBottom` from `use-stick-to-bottom` keeps it at the bottom whenever the content resizes, including while a reply streams.
-Any scroll up stops following, and scrolling back to the bottom resumes it; content shrinking, as after `cls` or when the keyboard closes, does not stop it.
+Any scroll up stops following, and scrolling back to the bottom resumes it; content shrinking, as after `reset` or when the keyboard closes, does not stop it.
 The viewport sets `interactive-widget=resizes-content`, so on Android the keyboard shrinks `100dvh` and the prompt stays above it.
 While the agent is working, `ReplLoading` shows a `|/-\` spinner, with `Waiting for the agent` for screen readers and under reduced motion.
 

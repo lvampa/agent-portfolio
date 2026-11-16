@@ -5,9 +5,9 @@ import type { ChatRequest, ChatResult } from './types';
 import { toChatFailure } from './utils';
 
 /** Never rejects. A failed or invalid reply resolves to the kind of failure. */
-export async function sendChat(request: ChatRequest): Promise<ChatResult> {
+export async function sendChat(request: ChatRequest, cancel?: AbortSignal): Promise<ChatResult> {
   try {
-    const body = await chatClient.post('webhooks', request);
+    const body = await chatClient.post('webhooks', request, cancel);
     const parsed = ChatResponseSchema.safeParse(body);
     return parsed.success ? { ok: true, replies: parsed.data } : { ok: false, failure: 'server' };
   } catch (caught) {

@@ -19,14 +19,26 @@ export default function Home() {
   const visitor = useMemo(() => buildChatVisitor(userInfo), [userInfo]);
 
   // Instant, like a real terminal; the default spring animation would lag behind streamed text.
-  const { scrollRef, contentRef } = useStickToBottom({ initial: 'instant', resize: 'instant' });
+  const { scrollRef, contentRef, scrollToBottom } = useStickToBottom({
+    initial: 'instant',
+    resize: 'instant',
+  });
+  const scroll = useMemo(
+    () => ({ scrollRef, contentRef, scrollToBottom }),
+    [scrollRef, contentRef, scrollToBottom],
+  );
 
   return (
     // main is the only scroller, so its scrollbar sits at the window edge as the page's did.
     <main ref={scrollRef} className="h-dvh w-full overflow-auto">
       <div ref={contentRef} className="flex justify-center">
         <Terminal>
-          <Repl clientInfo={clientInfo} isClientInfoLoading={isLoading} visitor={visitor} />
+          <Repl
+            clientInfo={clientInfo}
+            isClientInfoLoading={isLoading}
+            visitor={visitor}
+            scroll={scroll}
+          />
         </Terminal>
       </div>
     </main>

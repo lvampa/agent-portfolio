@@ -12,11 +12,15 @@ const CommandItemSchema = z.object({
   type: z.literal('command'),
   line: z.string(),
   prompt: z.string(),
+  // Optional, so history saved before Ctrl+C existed still validates.
+  interrupted: z.literal(true).optional(),
 });
 
 const MessageItemSchema = z.object({
   type: z.literal('message'),
   text: z.string(),
+  // Set when Ctrl+C stopped the reveal. Counts characters of the reply's stream, not of `text`, which holds markup.
+  cutAt: z.number().int().nonnegative().optional(),
 });
 
 const ErrorItemSchema = z.object({

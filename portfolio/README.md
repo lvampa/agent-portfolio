@@ -55,7 +55,7 @@ Without `DEV_INFO_URL`, dev runs without client info.
 ```
 
 `sessionId` keys the agent's memory.
-It is a new UUID on `cls` and whenever the startup replays, and `whoami` shows it.
+It is a new UUID on `reset` and whenever the startup replays, and `whoami` shows it.
 `client` comes from the client info and the UA parse, with nulls when they did not load.
 `referer` is `document.referrer` (`Direct` when empty), not the Worker's header, which only sees the page itself.
 The IP, latitude, and longitude are never sent.

@@ -37,7 +37,8 @@ export interface ChatRequest {
   client: ChatVisitor;
 }
 
-export type ChatFailure = 'timeout' | 'network' | 'quota' | 'server';
+/** `cancelled` is the visitor's own doing, so it prints nothing and offers no retry. */
+export type ChatFailure = 'timeout' | 'network' | 'quota' | 'server' | 'cancelled';
 
 export type ChatResult = { ok: true; replies: ChatResponse } | { ok: false; failure: ChatFailure };
 

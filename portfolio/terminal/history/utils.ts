@@ -4,6 +4,7 @@ import type {
   HistoryItem,
   ReplyBlock,
   ReplySpan,
+  RevealingRow,
   RevealProgress,
   RevealStep,
   UnplacedSpan,
@@ -143,4 +144,20 @@ export function replyLength(blocks: ReplyBlock[]): number {
   );
   const last = spans.at(-1);
   return last ? last.offset + last.text.length : 0;
+}
+
+/** A message stream frozen at `chars`, the way a cut reply is drawn. */
+export function cutProgress(chars: number): RevealProgress {
+  return { step: 0, chars, isDone: false };
+}
+
+/** Marks the reply being streamed as cut where it is. Any other row is left as it is, so it simply shows in full. */
+export function cutRevealingMessage(
+  items: HistoryItem[],
+  revealing: RevealingRow | null,
+): HistoryItem[] {
+  if (!revealing || revealing.progress.isDone || revealing.progress.step !== 0) return items;
+  const item = items[revealing.index];
+  if (item?.type !== 'message') return items;
+  return items.with(revealing.index, { ...item, cutAt: revealing.progress.chars });
 }

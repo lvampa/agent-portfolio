@@ -4,6 +4,7 @@ import { toChatFailure } from '@lib/hooks/utils';
 describe('toChatFailure', () => {
   test.each([
     [new DOMException('timed out', 'TimeoutError'), 'timeout'],
+    [new DOMException('aborted', 'AbortError'), 'cancelled'],
     [new TypeError('Failed to fetch'), 'network'],
     [new HttpError(429), 'quota'],
     [new HttpError(500), 'server'],

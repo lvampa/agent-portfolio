@@ -40,7 +40,11 @@ export const REVEAL_STEPS: RevealStepsRegistry = {
   // An empty Enter has no steps, so the prompt does not blink.
   command: (item) => (item.line ? [hold(ECHO_PAUSE_MS)] : []),
   list: (item) => item.items.map(() => hold(LINE_REVEAL_MS)),
-  message: (item) => [stream(replyLength(parseReply(item.text)), STREAM_MS_PER_CHAR)],
+  // A cut reply was stopped by Ctrl+C, so it shows as it was left.
+  message: (item) =>
+    item.cutAt === undefined
+      ? [stream(replyLength(parseReply(item.text)), STREAM_MS_PER_CHAR)]
+      : [],
   clientInfo: (item) =>
     item.info.length
       ? [

@@ -1,4 +1,5 @@
 import type { Question, QuestionId } from '../types';
+import { askExample } from './askExample';
 import { identify } from './identify';
 import { retryChat } from './retryChat';
 
@@ -6,4 +7,5 @@ import { retryChat } from './retryChat';
 export const QUESTIONS: Record<QuestionId, Question> = {
   identify,
   retryChat,
+  askExample,
 };

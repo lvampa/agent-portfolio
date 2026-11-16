@@ -13,10 +13,12 @@ export type Session = z.infer<typeof SessionSchema>;
 
 export interface TerminalState {
   name: string | null;
-  /** Keys the agent's memory. A new one starts on cls and when the startup replays. */
+  /** Keys the agent's memory. A new one starts on reset and when the startup replays. */
   sessionId: string;
   /** From buildUserInfoForUi, or null when client info failed to load. */
   clientInfo: UserInfo | null;
+  /** Past command lines, oldest first, from commandHistory. */
+  commandHistory: readonly string[];
   // Passed in so help can list the registry without importing it, which would be a cycle.
   commands: readonly Command[];
 }
@@ -70,3 +72,13 @@ export interface InputStateInput {
   isRevealing: boolean;
   mode: Mode;
 }
+
+export interface InterruptContext {
+  /** What is typed in the input. */
+  line: string;
+  /** The prompt the input shows. */
+  prompt: string;
+  mode: Mode;
+}
+
+export type InterruptStrategies = Record<InputState, (context: InterruptContext) => Effect[]>;

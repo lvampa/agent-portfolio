@@ -11,6 +11,7 @@ function effectsFor(overrides: Partial<TerminalState>) {
     sessionId: 'session-1',
     clientInfo,
     commands: [],
+    commandHistory: [],
     ...overrides,
   });
 }

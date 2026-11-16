@@ -69,8 +69,29 @@ export function echo(line: string, prompt: string): Effect {
   return print({ type: 'command', line, prompt });
 }
 
-export function clearScreen(): Effect {
+export function echoInterrupted(line: string, prompt: string): Effect {
+  return print({ type: 'command', line, prompt, interrupted: true });
+}
+
+/** Wipes the saved output. It does not touch the session. */
+export function clearHistory(): Effect {
   return { type: 'clear' };
+}
+
+export function scrollClear(): Effect {
+  return { type: 'scrollClear' };
+}
+
+export function resetSession(): Effect {
+  return { type: 'resetSession' };
+}
+
+export function cancelChat(): Effect {
+  return { type: 'cancelChat' };
+}
+
+export function stopReveal(): Effect {
+  return { type: 'stopReveal' };
 }
 
 export function newConversation(): Effect {
@@ -89,7 +110,7 @@ export function chat(message: string): Effect {
   return { type: 'chat', message };
 }
 
-/** A reply prints each message then a blank line. A failure prints its lines, then offers to resend the message. */
+/** A reply prints each message then a blank line. A failure prints its lines, then offers to resend the message. A cancel prints nothing. */
 export function chatResultEffects(result: ChatResult, message: string): Effect[] {
   if (result.ok) {
     return [
@@ -97,6 +118,7 @@ export function chatResultEffects(result: ChatResult, message: string): Effect[]
       printText(''),
     ];
   }
+  if (result.failure === 'cancelled') return [];
   return [...CHAT_FAILURES[result.failure].map(print), ask(QUESTION_IDS.RETRY_CHAT, message)];
 }
 

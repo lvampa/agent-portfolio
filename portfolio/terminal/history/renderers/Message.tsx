@@ -2,7 +2,7 @@ import { Link } from '@components/ui/link';
 import React, { useMemo } from 'react';
 
 import type { ReplyBlock, ReplySpan, RevealProgress } from '../types';
-import { parseReply, shownChars } from '../utils';
+import { cutProgress, parseReply, shownChars } from '../utils';
 import { StreamedText } from './StreamedText';
 import type { RendererProps } from './types';
 
@@ -69,7 +69,8 @@ function Block({ block, progress }: { block: ReplyBlock; progress: RevealProgres
 }
 
 /** The whole structure is built up front, so links and bold never reflow as the text streams in. */
-export const Message: React.FC<RendererProps<'message'>> = ({ item, progress }) => {
+export const Message: React.FC<RendererProps<'message'>> = ({ item, progress: liveProgress }) => {
+  const progress = item.cutAt === undefined ? liveProgress : cutProgress(item.cutAt);
   const blocks = useMemo(() => parseReply(item.text), [item.text]);
 
   return (

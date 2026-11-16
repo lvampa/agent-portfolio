@@ -1,4 +1,4 @@
-import { cls, help, whoami } from './commands';
+import { cls, contact, examples, help, history, reset, whoami } from './commands';
 import type { Command } from './types';
 
 /** Lowercases every name and throws on a duplicate, so a clash fails at module load. */
@@ -19,4 +19,4 @@ export function findCommand(commands: readonly Command[], name: string): Command
   return commands.find((command) => command.names.includes(lowerName));
 }
 
-export const COMMANDS = createRegistry([help, cls, whoami]);
+export const COMMANDS = createRegistry([help, cls, whoami, contact, examples, history, reset]);
