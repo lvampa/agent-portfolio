@@ -61,7 +61,7 @@ resource "aws_ssm_parameter" "langsmith_api_key" {
   value_wo_version = 1
 }
 
-# About 3 KB, which fits a standard parameter.
+# About 3 KB against the 4 KB standard-tier limit. A longer prompt needs the Advanced tier, which costs money.
 resource "aws_ssm_parameter" "agent_system_prompt" {
   name             = "/${var.project_name}/agent-service/system-prompt"
   type             = "SecureString"
@@ -149,7 +149,8 @@ resource "aws_ecs_task_definition" "n8n" {
     host_path = "/opt/n8n-data"
   }
 
-  # Only this subdirectory, so the agent cannot reach n8n's database in the same volume.
+  # Only this subdirectory, so the agent cannot reach n8n's database. The isolation is one-way:
+  # n8n's volume contains agent/, so n8n can still see the agent's files.
   volume {
     name      = "agent-data"
     host_path = "/opt/n8n-data/agent"
@@ -235,8 +236,10 @@ resource "aws_ecs_task_definition" "n8n" {
       name  = "agent-service"
       image = var.agent_service_image
       # Not essential, so a crash or OOM kill restarts only this container and the editor stays up.
-      essential     = false
-      restartPolicy = { enabled = true }
+      essential = false
+      # ECS only restarts a container that ran for restartAttemptPeriod seconds, and 60 is the minimum.
+      # A crash during the first minute is not restarted.
+      restartPolicy = { enabled = true, restartAttemptPeriod = 60 }
       memory        = 384
       secrets = [
         { name = "GOOGLE_API_KEY", valueFrom = aws_ssm_parameter.gemini_api_key.name },

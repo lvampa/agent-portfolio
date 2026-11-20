@@ -73,7 +73,7 @@ The client-info Worker predates tofu. It was deleted by hand and recreated by to
 | `n8n_timezone` | Timezone for n8n (default `"America/New_York"`) |
 | `gemini_api_key`, `pinecone_api_key`, `langsmith_api_key` | Keys for the agent service. Write-only SSM parameters (required, sensitive) |
 | `agent_system_prompt` | System prompt for the agent service, with a `{context}` placeholder (required, sensitive) |
-| `agent_service_image` | Agent image pinned by tag, e.g. `ghcr.io/<owner>/agent-service:<git sha>`. No default; must be from `ghcr.io` and not `:latest` (required) |
+| `agent_service_image` | Agent image pinned by tag, e.g. `ghcr.io/<owner>/agent-service:<git sha>`. No default; must end in a 40-character git SHA tag (required) |
 
 ### State bucket
 

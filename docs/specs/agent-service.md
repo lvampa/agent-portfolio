@@ -170,7 +170,10 @@ A fourth container in the existing `n8n` ECS task in `infra/modules/ecs`:
 - `essential = false` with an ECS container restart policy, so a crash or OOM kill restarts only this container.
   The rest of the task, including the n8n editor, stays up.
   Chat answers 502 while it restarts.
-  n8n does not `dependsOn` it, so a bad image or missing secret never blocks n8n from starting.
+  n8n does not `dependsOn` it, so a missing secret or a crash at runtime never blocks n8n from starting.
+  Pull failures are not isolated.
+  Bridge-mode `links` make the agent image a start dependency, so a failed pull stops the whole task, n8n included.
+  A private package or a bad tag causes that, so the image is pulled by hand before the apply (see Rollout).
 - Mounts only `/opt/n8n-data/agent`, as its own host-path volume, not the whole data volume, which also holds n8n's database.
   The directory must be writable by uid 1000, which `user_data.sh` uses for the volume root.
 - Secrets from new SSM parameters: Gemini key, Pinecone key, LangSmith key, and system prompt.
@@ -182,7 +185,7 @@ A fourth container in the existing `n8n` ECS task in `infra/modules/ecs`:
 - A container health check against `/health`.
 - The image is pinned by tag in the `agent_service_image` variable, which has no default and is set in the gitignored tfvars.
   The tag is the git SHA that CI publishes, so there is no value to commit before the first publish.
-  A validation rejects anything outside `ghcr.io` and any `:latest` tag.
+  A validation requires `ghcr.io/<owner>/agent-service:<40-character git SHA>`, so `:latest` and untagged images are rejected.
 - The system prompt reaches its write-only SSM value through the gitignored tfvars, like the other secrets.
 
 ## Image
@@ -222,11 +225,12 @@ Download the current workflow first, as a rollback copy.
 1. Build and test locally against the local n8n.
    Check a few turns in LangSmith.
 2. Merge, so CI publishes the image.
-   Make the GHCR package public once.
 3. Connor does these before the first apply:
    - SSH in and run `sudo install -d -o 1000 -g 1000 /opt/n8n-data/agent`, because `user_data.sh` is not changed.
-   - Make the GHCR package public after the first publish.
+   - Make the GHCR package public once, after the first publish.
    - Set `agent_service_image` to the published tag, and the four secrets (`gemini_api_key`, `pinecone_api_key`, `langsmith_api_key`, `agent_system_prompt`) in the gitignored tfvars.
+   - Run `docker pull <exact image>` on the instance while logged out of ghcr.
+     If it fails, do not apply, because a failed pull would stop the whole task.
    - Run `docker stats --no-stream` on the instance to confirm 384 MiB fits next to n8n.
    Then he applies.
 4. Edit the prod workflow.
@@ -241,7 +245,6 @@ The container can stay running unused.
 - Local compose mounts the gitignored prompt file and sets `SYSTEM_PROMPT_FILE`, the fallback used when `SYSTEM_PROMPT` is empty.
 - The arm64 image builds on the native `ubuntu-24.04-arm` runner, not QEMU.
 - A Gemini 429 is detected by `ModelRateLimitError` for chat calls, and by a `ClientError` with code 429 in the exception's cause chain for embedding calls.
-
 - The prod container takes `GOOGLE_API_KEY` from the `gemini_api_key` variable, and the other keys keep their own names.
 - Each secret has its own SSM SecureString under `/<project>/agent-service/`, all with `value_wo_version = 1`.
 - The container's health check is the same Python one-liner as the Dockerfile `HEALTHCHECK`.

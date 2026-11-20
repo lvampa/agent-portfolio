@@ -51,12 +51,12 @@ variable "agent_system_prompt" {
 }
 
 variable "agent_service_image" {
-  description = "Agent service image, pinned by tag, e.g. ghcr.io/owner/agent-service:<git sha>"
+  description = "Agent service image, pinned by tag, e.g. ghcr.io/owner/agent-service:<40-character git sha>"
   type        = string
 
   validation {
-    condition     = startswith(var.agent_service_image, "ghcr.io/") && !endswith(var.agent_service_image, ":latest")
-    error_message = "The agent service image must come from ghcr.io and be pinned to a tag, not :latest."
+    condition     = can(regex("^ghcr\\.io/[a-z0-9._/-]+/agent-service:[0-9a-f]{40}$", var.agent_service_image))
+    error_message = "The agent service image must be ghcr.io/<owner>/agent-service:<40-character git SHA>."
   }
 }
 
