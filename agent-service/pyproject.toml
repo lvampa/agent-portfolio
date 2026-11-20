@@ -2,7 +2,7 @@
 name = "agent-service"
 version = "0.1.0"
 description = "FastAPI and LangGraph agent service for the portfolio chat"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 dependencies = [
     "fastapi>=0.165.0",
     "langchain-google-genai>=4.5.2",
