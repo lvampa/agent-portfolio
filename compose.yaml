@@ -1,3 +1,6 @@
+# Keeps the project name the stack had when it lived in n8n-local/, so existing volumes are reused.
+name: n8n-local
+
 services:
   postgres:
     image: postgres:15-alpine
@@ -39,11 +42,11 @@ services:
     restart: unless-stopped
 
   agent-service:
-    build: ../agent-service
+    build: ./agent-service
     environment:
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY:?set in n8n-local/.env}
-      - PINECONE_API_KEY=${PINECONE_API_KEY:?set in n8n-local/.env}
-      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY:?set in n8n-local/.env}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:?set in .env}
+      - PINECONE_API_KEY=${PINECONE_API_KEY:?set in .env}
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY:?set in .env}
       - SYSTEM_PROMPT_FILE=/app/system-prompt.local.md
       - LANGSMITH_TRACING=true
       - LANGSMITH_PROJECT=portfolio-agent-local
@@ -61,9 +64,9 @@ services:
         "/app/src",
       ]
     volumes:
-      - ../agent-service/src:/app/src
+      - ./agent-service/src:/app/src
       - type: bind
-        source: ../agent-service/system-prompt.local.md
+        source: ./agent-service/system-prompt.local.md
         target: /app/system-prompt.local.md
         read_only: true
         bind:

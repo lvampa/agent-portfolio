@@ -4,15 +4,17 @@ This repository contains three related projects:
 
 - `portfolio`: Next.js frontend for the portfolio/agent experience.
 - `infra`: OpenTofu code for self hosting n8n on AWS behind Cloudflare.
-- `n8n-local`: Docker Compose setup for running n8n + Postgres locally.
+- `agent-service`: Python FastAPI and LangGraph chat agent that n8n calls.
 
 ## Repository Layout
 
 ```text
 .
-├── portfolio/    # Next.js app
-├── infra/        # OpenTofu modules for AWS and Cloudflare resources
-└── n8n-local/    # Local n8n development stack (Docker Compose)
+├── portfolio/      # Next.js app
+├── infra/          # OpenTofu modules for AWS and Cloudflare resources
+├── agent-service/  # Python chat agent (FastAPI + LangGraph)
+├── compose.yaml    # Local stack: n8n, Postgres, agent service
+└── n8n-local/      # Workflow exports and training data (local only)
 ```
 
 ## Prerequisites
@@ -90,13 +92,14 @@ tofu apply
 
 ---
 
-## `n8n-local` (Local n8n Stack)
+## Local stack
 
-`n8n-local` runs n8n with a Postgres backing database via Docker Compose.
+`compose.yaml` at the repo root runs n8n with a Postgres database, and the agent service, via Docker Compose.
+If you have the old layout, move `n8n-local/.env` to `.env` at the root.
 
 ### Environment variables
 
-Create or update `n8n-local/.env` with:
+Create or update `.env` at the repo root with:
 
 - `DB_USER`
 - `DB_PASSWORD`
@@ -106,11 +109,15 @@ Create or update `n8n-local/.env` with:
 - `N8N_PROTOCOL`
 - `N8N_CORS_ORIGIN`
 - `NODE_ENV`
+- `GOOGLE_API_KEY`
+- `PINECONE_API_KEY`
+- `LANGSMITH_API_KEY`
+
+The agent service also reads its system prompt from the gitignored `agent-service/system-prompt.local.md`.
 
 ### Start the stack
 
 ```bash
-cd n8n-local
 docker compose up -d
 ```
 
@@ -133,6 +140,6 @@ See [`docs/deploy.md`](docs/deploy.md) for how it works, how to redeploy, and ho
 
 ## Recommended Workflow
 
-1. Run `n8n-local` when building or testing workflows locally.
+1. Run the local stack (`docker compose up -d`) when building or testing workflows locally.
 2. Develop UI/API behavior in `portfolio`.
 3. Deploy/update cloud resources from `infra` when promoting changes to AWS.

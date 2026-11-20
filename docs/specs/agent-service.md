@@ -152,11 +152,11 @@ If a month goes over, traces past the limit are the cost, not chat.
 
 ### Local
 
-A third service in `n8n-local/docker-compose.yml`:
+A third service in `compose.yaml` at the repo root:
 
-- Builds from `../agent-service`.
+- Builds from `./agent-service`.
 - Bind-mounts the source and runs `uvicorn --reload`.
-- Reads `GOOGLE_API_KEY`, `PINECONE_API_KEY`, and `LANGSMITH_API_KEY` from the existing gitignored `n8n-local/.env`.
+- Reads `GOOGLE_API_KEY`, `PINECONE_API_KEY`, and `LANGSMITH_API_KEY` from the gitignored `.env` at the repo root.
 - n8n calls `http://agent-service:8000/chat`.
 - No published port, unless publishing 8000 helps when curling from the host.
 
