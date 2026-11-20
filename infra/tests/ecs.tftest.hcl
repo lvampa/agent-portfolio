@@ -7,14 +7,19 @@ mock_provider "aws" {
 }
 
 variables {
-  project_name       = "test"
-  aws_region         = "us-east-2"
-  n8n_encryption_key = "test-encryption-key"
-  tunnel_token       = "test-tunnel-token"
-  n8n_timezone       = "America/New_York"
-  api_hostname       = "api.example.com"
-  admin_hostname     = "admin.example.com"
-  home_ip_cidr       = "203.0.113.7/32"
+  project_name        = "test"
+  aws_region          = "us-east-2"
+  n8n_encryption_key  = "test-encryption-key"
+  tunnel_token        = "test-tunnel-token"
+  gemini_api_key      = "test-gemini-key"
+  pinecone_api_key    = "test-pinecone-key"
+  langsmith_api_key   = "test-langsmith-key"
+  agent_system_prompt = "test-system-prompt"
+  agent_service_image = "ghcr.io/example/agent-service:0123456789abcdef0123456789abcdef01234567"
+  n8n_timezone        = "America/New_York"
+  api_hostname        = "api.example.com"
+  admin_hostname      = "admin.example.com"
+  home_ip_cidr        = "203.0.113.7/32"
 }
 
 run "plans" {
@@ -51,6 +56,34 @@ run "plans" {
   }
 
   assert {
+    condition     = one([for c in jsondecode(aws_ecs_task_definition.n8n.container_definitions) : c if c.name == "agent-service"]).essential == false
+    error_message = "A crash in the agent service must not take down the n8n task."
+  }
+
+  assert {
+    condition     = one([for c in jsondecode(aws_ecs_task_definition.n8n.container_definitions) : c if c.name == "agent-service"]).restartPolicy.enabled
+    error_message = "The agent service must restart on its own, since it is not essential."
+  }
+
+  assert {
+    condition     = !contains([for d in try(one([for c in jsondecode(aws_ecs_task_definition.n8n.container_definitions) : c if c.name == "n8n"]).dependsOn, []) : d.containerName], "agent-service")
+    error_message = "n8n must not depend on the agent service starting."
+  }
+
+  assert {
+    condition     = contains(one([for c in jsondecode(aws_ecs_task_definition.n8n.container_definitions) : c if c.name == "n8n"]).links, "agent-service:agent-service")
+    error_message = "n8n must link to the agent service to reach it by name."
+  }
+
+  assert {
+    condition = alltrue([
+      for secret in ["test-gemini-key", "test-pinecone-key", "test-langsmith-key", "test-system-prompt"] :
+      !strcontains(aws_ecs_task_definition.n8n.container_definitions, secret)
+    ])
+    error_message = "The agent secret values must not appear anywhere in the task definition."
+  }
+
+  assert {
     condition     = aws_ecs_service.n8n.deployment_minimum_healthy_percent == 0 && aws_ecs_service.n8n.deployment_maximum_percent == 100
     error_message = "Two tasks would share the SQLite files, so the old task must stop first."
   }
@@ -64,4 +97,32 @@ run "plans" {
     condition     = can(regex("@home client_ip 203\\.0\\.113\\.7/32\\s+handle @home \\{\\s+reverse_proxy n8n:5678[\\s\\S]*handle \\{\\s+respond 403", { for e in one([for c in jsondecode(aws_ecs_task_definition.n8n.container_definitions) : c if c.name == "caddy"]).environment : e.name => e.value }["CADDYFILE"]))
     error_message = "The admin host must proxy to n8n only for the home IP and answer 403 otherwise."
   }
+}
+
+run "rejects_latest_image" {
+  command = plan
+
+  module {
+    source = "./modules/ecs"
+  }
+
+  variables {
+    agent_service_image = "ghcr.io/example/agent-service:latest"
+  }
+
+  expect_failures = [var.agent_service_image]
+}
+
+run "rejects_untagged_image" {
+  command = plan
+
+  module {
+    source = "./modules/ecs"
+  }
+
+  variables {
+    agent_service_image = "ghcr.io/example/agent-service"
+  }
+
+  expect_failures = [var.agent_service_image]
 }

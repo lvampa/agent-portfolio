@@ -125,7 +125,21 @@ That's acceptable.
 ## Model and errors
 
 The chat model gets at most 1 retry, so a 429 reaches the frontend well inside its 30 s timeout instead of burning it on backoff.
+`langchain-google-genai` counts attempts, not retries, so the code passes `max_retries=2` (`CHAT_MAX_ATTEMPTS`).
 n8n's HTTP Request node uses a 25 s timeout.
+
+Every upstream call is bounded, and a whole turn is capped below n8n's timeout:
+
+- Chat calls time out at 8 s.
+- Embedding requests time out at 5 s.
+  The installed library has no working option for this: `request_options` is never read, and a `timeout` in `client_args` is overridden by the SDK.
+  A small `TimedGoogleEmbeddings` subclass sets the timeout on each request by overriding the library's private `_build_config`.
+  A test checks it, and fails if a library update renames that method.
+- Pinecone queries have no timeout of their own, because `langchain-pinecone` does not pass one through.
+  They rely on the turn budget.
+  A hung query also leaves its worker thread running after the request has been answered.
+- The whole turn, including the wait for the per-session lock, has a 22 s budget, under n8n's 25 s.
+  Going over answers 502.
 
 ## System prompt
 
@@ -152,11 +166,11 @@ If a month goes over, traces past the limit are the cost, not chat.
 
 ### Local
 
-A third service in `n8n-local/docker-compose.yml`:
+A third service in `compose.yaml` at the repo root:
 
-- Builds from `../agent-service`.
+- Builds from `./agent-service`.
 - Bind-mounts the source and runs `uvicorn --reload`.
-- Reads `GOOGLE_API_KEY`, `PINECONE_API_KEY`, and `LANGSMITH_API_KEY` from the existing gitignored `n8n-local/.env`.
+- Reads `GOOGLE_API_KEY`, `PINECONE_API_KEY`, and `LANGSMITH_API_KEY` from the gitignored `.env` at the repo root.
 - n8n calls `http://agent-service:8000/chat`.
 - No published port, unless publishing 8000 helps when curling from the host.
 
@@ -170,7 +184,14 @@ A fourth container in the existing `n8n` ECS task in `infra/modules/ecs`:
 - `essential = false` with an ECS container restart policy, so a crash or OOM kill restarts only this container.
   The rest of the task, including the n8n editor, stays up.
   Chat answers 502 while it restarts.
-  n8n does not `dependsOn` it, so a bad image or missing secret never blocks n8n from starting.
+  This isolation covers runtime crashes only.
+  Task-level failures are not isolated: a failed image pull, or an unreadable or missing SSM secret, stops the whole task, n8n included.
+  ECS resolves every `secrets` entry before any container starts, and bridge-mode `links` make the agent image a start dependency.
+  A private package, a bad tag, or a missing parameter causes that, so the image is pulled by hand before every apply that changes the tag (see Rollout).
+  A container that crashes in its first 60 s is never restarted, because `restartAttemptPeriod` is 60 s, the minimum.
+  That includes configuration errors such as a missing key, a prompt without `{context}`, or an unwritable `/data`.
+  Those need a manual restart, so after every apply, check `docker ps -a` on the instance and the agent's log group.
+  n8n does not `dependsOn` the agent, which only keeps start order loose.
 - Mounts only `/opt/n8n-data/agent`, as its own host-path volume, not the whole data volume, which also holds n8n's database.
   The directory must be writable by uid 1000, which `user_data.sh` uses for the volume root.
 - Secrets from new SSM parameters: Gemini key, Pinecone key, LangSmith key, and system prompt.
@@ -180,7 +201,9 @@ A fourth container in the existing `n8n` ECS task in `infra/modules/ecs`:
   Before the first apply, measure n8n's real usage on the instance (`docker stats`).
   If 1536 is too tight, raise the task limit as far as the 2 GiB instance allows after the OS and the ECS agent.
 - A container health check against `/health`.
-- The image is pinned by tag in a committed tofu variable default, like `n8nio/n8n:2.45.3` is pinned in the module.
+- The image is pinned by tag in the `agent_service_image` variable, which has no default and is set in the gitignored tfvars.
+  The tag is the git SHA that CI publishes, so there is no value to commit before the first publish.
+  A validation requires `ghcr.io/<owner>/agent-service:<40-character git SHA>`, so `:latest` and untagged images are rejected.
 - The system prompt reaches its write-only SSM value through the gitignored tfvars, like the other secrets.
 
 ## Image
@@ -191,6 +214,8 @@ A fourth container in the existing `n8n` ECS task in `infra/modules/ecs`:
   The repo is already public, so this exposes nothing new.
   The system prompt is not in the image.
 - Deploying means bumping the tag variable and applying, which Connor runs.
+  Before every tag bump, not just the first, pull the exact tag on the instance while logged out of ghcr.
+  With the `links`, a failed pull stops the whole task.
 - `ci.yml` gets a job that lints and tests `agent-service`, so the `main` ruleset's `ci` check covers it.
 
 ## Code layout
@@ -220,19 +245,31 @@ Download the current workflow first, as a rollback copy.
 1. Build and test locally against the local n8n.
    Check a few turns in LangSmith.
 2. Merge, so CI publishes the image.
-   Make the GHCR package public once.
-3. Connor sets the SSM values, measures memory, bumps the image tag, and applies.
+3. Connor does these before the first apply:
+   - SSH in and run `sudo install -d -o 1000 -g 1000 /opt/n8n-data/agent`, because `user_data.sh` is not changed.
+   - Make the GHCR package public once, after the first publish.
+   - Set `agent_service_image` to the published tag, and the four secrets (`gemini_api_key`, `pinecone_api_key`, `langsmith_api_key`, `agent_system_prompt`) in the gitignored tfvars.
+   - Run `docker pull <exact image>` on the instance while logged out of ghcr.
+     If it fails, do not apply, because a failed pull would stop the whole task.
+   - Run `docker stats --no-stream` on the instance to confirm 384 MiB fits next to n8n.
+   Then he applies.
 4. Edit the prod workflow.
    Confirm a chat works end to end and shows up in LangSmith.
 
 Rollback: re-import the saved workflow.
 The container can stay running unused.
 
+## Decided while building
+
+- Python 3.14, with library versions pinned in `uv.lock`.
+- Local compose mounts the gitignored prompt file and sets `SYSTEM_PROMPT_FILE`, the fallback used when `SYSTEM_PROMPT` is empty.
+- The arm64 image builds on the native `ubuntu-24.04-arm` runner, not QEMU.
+- A Gemini 429 is detected by `ModelRateLimitError` for chat calls, and by a `ClientError` with code 429 in the exception's cause chain for embedding calls.
+- The prod container takes `GOOGLE_API_KEY` from the `gemini_api_key` variable, and the other keys keep their own names.
+- Each secret has its own SSM SecureString under `/<project>/agent-service/`, all with `value_wo_version = 1`.
+- The container's health check is the same Python one-liner as the Dockerfile `HEALTHCHECK`.
+- A test checks that none of the four secret values appear in the task definition.
+
 ## Left to the builder
 
-- Python version and library versions, pinned in `uv.lock`.
-  Likely `langgraph`, `langgraph-checkpoint-sqlite`, `langchain-google-genai`, `langchain-pinecone`, `fastapi`, and `uvicorn`.
-- How the gitignored local prompt file reaches `SYSTEM_PROMPT`.
 - Module layout inside `agent-service/`.
-- Whether the arm64 build uses a native arm runner or QEMU.
-- How to detect a Gemini 429 from the LangChain exception.
