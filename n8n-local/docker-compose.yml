@@ -41,9 +41,9 @@ services:
   agent-service:
     build: ../agent-service
     environment:
-      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
-      - PINECONE_API_KEY=${PINECONE_API_KEY}
-      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:?set in n8n-local/.env}
+      - PINECONE_API_KEY=${PINECONE_API_KEY:?set in n8n-local/.env}
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY:?set in n8n-local/.env}
       - SYSTEM_PROMPT_FILE=/app/system-prompt.local.md
       - LANGSMITH_TRACING=true
       - LANGSMITH_PROJECT=portfolio-agent-local

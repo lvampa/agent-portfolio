@@ -43,3 +43,9 @@ def test_missing_api_keys_fail_at_construction(monkeypatch: pytest.MonkeyPatch) 
 
 def test_api_keys_are_hidden_from_repr() -> None:
     assert "g-secret" not in repr(Settings(_env_file=None))
+
+
+def test_empty_api_key_fails_at_construction(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("GOOGLE_API_KEY", "")
+    with pytest.raises(ValidationError):
+        Settings(_env_file=None)
