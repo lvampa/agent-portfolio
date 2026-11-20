@@ -69,7 +69,7 @@ def make_default_graph_factory(settings: Settings) -> GraphFactory:
     return lambda saver: build_graph(model, search, prompt, saver)
 
 
-def ensure_writable_dir(path: Path) -> None:
+def ensure_parent_writable(path: Path) -> None:
     """A bad data volume should fail startup, not the first chat."""
     path.parent.mkdir(parents=True, exist_ok=True)
     if not os.access(path.parent, os.W_OK):
@@ -85,7 +85,7 @@ def create_app(graph_factory: GraphFactory | None = None) -> FastAPI:
         logging.basicConfig(level=logging.INFO)
         settings = Settings()
         checkpoint_path = Path(settings.checkpoint_path)
-        ensure_writable_dir(checkpoint_path)
+        ensure_parent_writable(checkpoint_path)
         factory = graph_factory or make_default_graph_factory(settings)
         async with AsyncSqliteSaver.from_conn_string(str(checkpoint_path)) as saver:
             await saver.setup()
