@@ -83,6 +83,7 @@ def create_app(graph_factory: GraphFactory | None = None) -> FastAPI:
         ensure_writable_dir(checkpoint_path)
         factory = graph_factory or make_default_graph_factory(settings)
         async with AsyncSqliteSaver.from_conn_string(str(checkpoint_path)) as saver:
+            await saver.setup()
             app.state.graph = factory(saver)
             yield
 
@@ -102,7 +103,7 @@ def create_app(graph_factory: GraphFactory | None = None) -> FastAPI:
     @app.post("/chat")
     async def chat(request: ChatRequest) -> ChatResponse:
         started = time.monotonic()
-        status = 200
+        status = 500
         try:
             # Concurrent posts on one session would race on the checkpoint.
             async with lock_for(request.sessionId):
@@ -116,9 +117,13 @@ def create_app(graph_factory: GraphFactory | None = None) -> FastAPI:
             reply = reply_from(state)
             if not reply:
                 raise ValueError("Model returned an empty reply")
+            status = 200
         except Exception as error:
             status = status_for(error)
-            logger.warning("chat upstream error type=%s", type(error).__name__)
+            if status == 429:
+                logger.warning("chat rate limited type=%s", type(error).__name__)
+            else:
+                logger.warning("chat upstream error", exc_info=True)
             raise HTTPException(status_code=status, detail="Upstream error") from error
         finally:
             duration_ms = round((time.monotonic() - started) * 1000)

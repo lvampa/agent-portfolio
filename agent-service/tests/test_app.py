@@ -1,4 +1,6 @@
 import asyncio
+import os
+import sqlite3
 from pathlib import Path
 from typing import Any
 
@@ -115,3 +117,30 @@ async def test_concurrent_same_session() -> None:
     last_call = harness.model.calls[-1][1]
     human_texts = [m.text for m in last_call if isinstance(m, HumanMessage)]
     assert sorted(human_texts) == ["q1", "q2"]
+
+
+async def test_startup_creates_the_checkpoint_schema(tmp_path: Path) -> None:
+    app = create_app(Harness(replies(), RecordingSearch([])).factory)
+    async with app.router.lifespan_context(app):
+        pass
+
+    with sqlite3.connect(tmp_path / "data" / "checkpoints.sqlite") as connection:
+        tables = {row[0] for row in connection.execute("SELECT name FROM sqlite_master")}
+    assert "checkpoints" in tables
+
+
+@pytest.mark.skipif(os.geteuid() == 0, reason="root ignores directory permissions")
+async def test_startup_fails_when_checkpoint_dir_is_not_writable(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    locked = tmp_path / "locked"
+    locked.mkdir()
+    monkeypatch.setenv("CHECKPOINT_PATH", str(locked / "checkpoints.sqlite"))
+    locked.chmod(0o500)
+    try:
+        app = create_app(Harness(replies(), RecordingSearch([])).factory)
+        with pytest.raises(RuntimeError):
+            async with app.router.lifespan_context(app):
+                pass
+    finally:
+        locked.chmod(0o700)
