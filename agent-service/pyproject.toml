@@ -2,9 +2,8 @@
 name = "agent-service"
 version = "0.1.0"
 description = "FastAPI and LangGraph agent service for the portfolio chat"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 dependencies = [
-    "aiosqlite>=0.22.1",
     "fastapi>=0.165.0",
     "langchain-google-genai>=4.5.2",
     "langchain-pinecone>=0.2.13",
@@ -21,6 +20,7 @@ build-backend = "uv_build"
 [dependency-groups]
 dev = [
     "httpx>=0.28.1",
+    "mypy>=2.4.1",
     "pytest>=9.2.0",
     "pytest-asyncio>=1.5.0",
     "ruff>=0.17.6",
@@ -38,3 +38,8 @@ select = ["E", "F", "I", "UP", "B"]
 
 [tool.uv]
 required-version = ">=0.10.4,<0.11"
+
+[tool.mypy]
+strict = true
+plugins = ["pydantic.mypy"]
+files = ["src", "tests"]
