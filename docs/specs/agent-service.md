@@ -180,7 +180,9 @@ A fourth container in the existing `n8n` ECS task in `infra/modules/ecs`:
   Before the first apply, measure n8n's real usage on the instance (`docker stats`).
   If 1536 is too tight, raise the task limit as far as the 2 GiB instance allows after the OS and the ECS agent.
 - A container health check against `/health`.
-- The image is pinned by tag in a committed tofu variable default, like `n8nio/n8n:2.45.3` is pinned in the module.
+- The image is pinned by tag in the `agent_service_image` variable, which has no default and is set in the gitignored tfvars.
+  The tag is the git SHA that CI publishes, so there is no value to commit before the first publish.
+  A validation rejects anything outside `ghcr.io` and any `:latest` tag.
 - The system prompt reaches its write-only SSM value through the gitignored tfvars, like the other secrets.
 
 ## Image
@@ -221,7 +223,12 @@ Download the current workflow first, as a rollback copy.
    Check a few turns in LangSmith.
 2. Merge, so CI publishes the image.
    Make the GHCR package public once.
-3. Connor sets the SSM values, measures memory, bumps the image tag, and applies.
+3. Connor does these before the first apply:
+   - SSH in and run `sudo install -d -o 1000 -g 1000 /opt/n8n-data/agent`, because `user_data.sh` is not changed.
+   - Make the GHCR package public after the first publish.
+   - Set `agent_service_image` to the published tag, and the four secrets (`gemini_api_key`, `pinecone_api_key`, `langsmith_api_key`, `agent_system_prompt`) in the gitignored tfvars.
+   - Run `docker stats --no-stream` on the instance to confirm 384 MiB fits next to n8n.
+   Then he applies.
 4. Edit the prod workflow.
    Confirm a chat works end to end and shows up in LangSmith.
 
@@ -234,6 +241,11 @@ The container can stay running unused.
 - Local compose mounts the gitignored prompt file and sets `SYSTEM_PROMPT_FILE`, the fallback used when `SYSTEM_PROMPT` is empty.
 - The arm64 image builds on the native `ubuntu-24.04-arm` runner, not QEMU.
 - A Gemini 429 is detected by `ModelRateLimitError` for chat calls, and by a `ClientError` with code 429 in the exception's cause chain for embedding calls.
+
+- The prod container takes `GOOGLE_API_KEY` from the `gemini_api_key` variable, and the other keys keep their own names.
+- Each secret has its own SSM SecureString under `/<project>/agent-service/`, all with `value_wo_version = 1`.
+- The container's health check is the same Python one-liner as the Dockerfile `HEALTHCHECK`.
+- A test checks that none of the four secret values appear in the task definition.
 
 ## Left to the builder
 

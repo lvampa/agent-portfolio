@@ -22,6 +22,44 @@ variable "tunnel_token" {
   ephemeral   = true
 }
 
+variable "gemini_api_key" {
+  description = "Gemini API key for the agent service"
+  type        = string
+  sensitive   = true
+  ephemeral   = true
+}
+
+variable "pinecone_api_key" {
+  description = "Pinecone API key for the agent service"
+  type        = string
+  sensitive   = true
+  ephemeral   = true
+}
+
+variable "langsmith_api_key" {
+  description = "LangSmith API key for the agent service"
+  type        = string
+  sensitive   = true
+  ephemeral   = true
+}
+
+variable "agent_system_prompt" {
+  description = "System prompt for the agent service, with a {context} placeholder"
+  type        = string
+  sensitive   = true
+  ephemeral   = true
+}
+
+variable "agent_service_image" {
+  description = "Agent service image, pinned by tag, e.g. ghcr.io/owner/agent-service:<git sha>"
+  type        = string
+
+  validation {
+    condition     = startswith(var.agent_service_image, "ghcr.io/") && !endswith(var.agent_service_image, ":latest")
+    error_message = "The agent service image must come from ghcr.io and be pinned to a tag, not :latest."
+  }
+}
+
 variable "n8n_timezone" {
   description = "n8n timezone"
   type        = string

@@ -7,14 +7,19 @@ mock_provider "aws" {
 }
 
 variables {
-  project_name       = "test"
-  aws_region         = "us-east-2"
-  n8n_encryption_key = "test-encryption-key"
-  tunnel_token       = "test-tunnel-token"
-  n8n_timezone       = "America/New_York"
-  api_hostname       = "api.example.com"
-  admin_hostname     = "admin.example.com"
-  home_ip_cidr       = "203.0.113.7/32"
+  project_name        = "test"
+  aws_region          = "us-east-2"
+  n8n_encryption_key  = "test-encryption-key"
+  tunnel_token        = "test-tunnel-token"
+  gemini_api_key      = "test-gemini-key"
+  pinecone_api_key    = "test-pinecone-key"
+  langsmith_api_key   = "test-langsmith-key"
+  agent_system_prompt = "test-system-prompt"
+  agent_service_image = "ghcr.io/example/agent-service:abc123"
+  n8n_timezone        = "America/New_York"
+  api_hostname        = "api.example.com"
+  admin_hostname      = "admin.example.com"
+  home_ip_cidr        = "203.0.113.7/32"
 }
 
 run "plans" {
@@ -48,6 +53,24 @@ run "plans" {
       for c in jsondecode(aws_ecs_task_definition.n8n.container_definitions) : length(try(c.portMappings, [])) == 0
     ])
     error_message = "No container may map a port, so nothing listens on the host."
+  }
+
+  assert {
+    condition     = one([for c in jsondecode(aws_ecs_task_definition.n8n.container_definitions) : c if c.name == "agent-service"]).essential == false
+    error_message = "A crash in the agent service must not take down the n8n task."
+  }
+
+  assert {
+    condition     = contains(one([for c in jsondecode(aws_ecs_task_definition.n8n.container_definitions) : c if c.name == "n8n"]).links, "agent-service:agent-service")
+    error_message = "n8n must link to the agent service to reach it by name."
+  }
+
+  assert {
+    condition = alltrue([
+      for secret in ["test-gemini-key", "test-pinecone-key", "test-langsmith-key", "test-system-prompt"] :
+      !strcontains(aws_ecs_task_definition.n8n.container_definitions, secret)
+    ])
+    error_message = "The agent secret values must not appear anywhere in the task definition."
   }
 
   assert {

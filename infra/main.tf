@@ -18,15 +18,20 @@ module "ec2" {
 
 # ECS cluster, task (cloudflared + Caddy + n8n), and service. No load balancer; Caddy in the task routes by host.
 module "ecs" {
-  source             = "./modules/ecs"
-  project_name       = var.project_name
-  aws_region         = var.region
-  n8n_encryption_key = var.n8n_encryption_key
-  tunnel_token       = data.cloudflare_zero_trust_tunnel_cloudflared_token.n8n.token
-  n8n_timezone       = var.n8n_timezone
-  api_hostname       = var.api_hostname
-  admin_hostname     = var.admin_hostname
-  home_ip_cidr       = var.home_ip_cidr
+  source              = "./modules/ecs"
+  project_name        = var.project_name
+  aws_region          = var.region
+  n8n_encryption_key  = var.n8n_encryption_key
+  tunnel_token        = data.cloudflare_zero_trust_tunnel_cloudflared_token.n8n.token
+  gemini_api_key      = var.gemini_api_key
+  pinecone_api_key    = var.pinecone_api_key
+  langsmith_api_key   = var.langsmith_api_key
+  agent_system_prompt = var.agent_system_prompt
+  agent_service_image = var.agent_service_image
+  n8n_timezone        = var.n8n_timezone
+  api_hostname        = var.api_hostname
+  admin_hostname      = var.admin_hostname
+  home_ip_cidr        = var.home_ip_cidr
 }
 
 # Pages project, apex and www DNS, the www redirect, and the client-info Worker at /info.

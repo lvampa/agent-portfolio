@@ -39,6 +39,36 @@ resource "aws_ssm_parameter" "tunnel_token" {
   value_wo_version = 1
 }
 
+# Write-only like the keys above. Bump value_wo_version to rotate any of these.
+resource "aws_ssm_parameter" "gemini_api_key" {
+  name             = "/${var.project_name}/agent-service/gemini-api-key"
+  type             = "SecureString"
+  value_wo         = var.gemini_api_key
+  value_wo_version = 1
+}
+
+resource "aws_ssm_parameter" "pinecone_api_key" {
+  name             = "/${var.project_name}/agent-service/pinecone-api-key"
+  type             = "SecureString"
+  value_wo         = var.pinecone_api_key
+  value_wo_version = 1
+}
+
+resource "aws_ssm_parameter" "langsmith_api_key" {
+  name             = "/${var.project_name}/agent-service/langsmith-api-key"
+  type             = "SecureString"
+  value_wo         = var.langsmith_api_key
+  value_wo_version = 1
+}
+
+# About 3 KB, which fits a standard parameter.
+resource "aws_ssm_parameter" "agent_system_prompt" {
+  name             = "/${var.project_name}/agent-service/system-prompt"
+  type             = "SecureString"
+  value_wo         = var.agent_system_prompt
+  value_wo_version = 1
+}
+
 resource "aws_iam_role_policy" "ecs_execution_read_secrets" {
   name = "read-task-secrets"
   role = aws_iam_role.ecs_execution.id
@@ -51,6 +81,10 @@ resource "aws_iam_role_policy" "ecs_execution_read_secrets" {
       Resource = [
         aws_ssm_parameter.n8n_encryption_key.arn,
         aws_ssm_parameter.tunnel_token.arn,
+        aws_ssm_parameter.gemini_api_key.arn,
+        aws_ssm_parameter.pinecone_api_key.arn,
+        aws_ssm_parameter.langsmith_api_key.arn,
+        aws_ssm_parameter.agent_system_prompt.arn,
       ]
     }]
   })
@@ -115,6 +149,12 @@ resource "aws_ecs_task_definition" "n8n" {
     host_path = "/opt/n8n-data"
   }
 
+  # Only this subdirectory, so the agent cannot reach n8n's database in the same volume.
+  volume {
+    name      = "agent-data"
+    host_path = "/opt/n8n-data/agent"
+  }
+
   container_definitions = jsonencode([
     {
       name        = "caddy"
@@ -161,6 +201,8 @@ resource "aws_ecs_task_definition" "n8n" {
       name      = "n8n"
       image     = "n8nio/n8n:2.45.3"
       essential = true
+      # No dependsOn, so a bad agent image or secret never blocks n8n from starting.
+      links = ["agent-service:agent-service"]
       secrets = [
         { name = "N8N_ENCRYPTION_KEY", valueFrom = aws_ssm_parameter.n8n_encryption_key.name }
       ]
@@ -188,6 +230,48 @@ resource "aws_ecs_task_definition" "n8n" {
           "awslogs-stream-prefix" = "n8n"
         }
       }
+    },
+    {
+      name  = "agent-service"
+      image = var.agent_service_image
+      # Not essential, so a crash or OOM kill restarts only this container and the editor stays up.
+      essential     = false
+      restartPolicy = { enabled = true }
+      memory        = 384
+      secrets = [
+        { name = "GOOGLE_API_KEY", valueFrom = aws_ssm_parameter.gemini_api_key.name },
+        { name = "PINECONE_API_KEY", valueFrom = aws_ssm_parameter.pinecone_api_key.name },
+        { name = "LANGSMITH_API_KEY", valueFrom = aws_ssm_parameter.langsmith_api_key.name },
+        { name = "SYSTEM_PROMPT", valueFrom = aws_ssm_parameter.agent_system_prompt.name }
+      ]
+      environment = [
+        { name = "CHECKPOINT_PATH", value = "/data/checkpoints.sqlite" },
+        { name = "LANGSMITH_TRACING", value = "true" },
+        { name = "LANGSMITH_PROJECT", value = "portfolio-agent-prod" }
+      ]
+      mountPoints = [
+        {
+          sourceVolume  = "agent-data"
+          containerPath = "/data"
+          readOnly      = false
+        }
+      ]
+      # Same one-liner as the Dockerfile HEALTHCHECK. The slim image has no curl.
+      healthCheck = {
+        command     = ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+        interval    = 30
+        timeout     = 5
+        retries     = 3
+        startPeriod = 15
+      }
+      logConfiguration = {
+        logDriver = "awslogs"
+        options = {
+          "awslogs-group"         = aws_cloudwatch_log_group.agent_service.name
+          "awslogs-region"        = var.aws_region
+          "awslogs-stream-prefix" = "agent-service"
+        }
+      }
     }
   ])
 }
@@ -202,12 +286,17 @@ resource "aws_cloudwatch_log_group" "caddy" {
   retention_in_days = 7
 }
 
+resource "aws_cloudwatch_log_group" "agent_service" {
+  name              = "/ecs/${var.project_name}-agent-service"
+  retention_in_days = 7
+}
+
 resource "aws_cloudwatch_log_group" "cloudflared" {
   name              = "/ecs/${var.project_name}-cloudflared"
   retention_in_days = 7
 }
 
-# ECS service: one task with cloudflared + Caddy + n8n. cloudflared dials out to Cloudflare and forwards to Caddy (no ALB).
+# ECS service: one task with cloudflared + Caddy + n8n + the agent service. cloudflared dials out to Cloudflare and forwards to Caddy (no ALB).
 # Bridge network mode needs no network_configuration (awsvpc-only).
 resource "aws_ecs_service" "n8n" {
   name            = "${var.project_name}-n8n"
