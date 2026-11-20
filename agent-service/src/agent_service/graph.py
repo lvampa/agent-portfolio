@@ -46,6 +46,10 @@ def build_graph(
     system_prompt: str,
     checkpointer: BaseCheckpointSaver,
 ) -> CompiledStateGraph:
+    """Invoke with the new HumanMessage and name. Each turn resets its own tool budget."""
+    if "{context}" not in system_prompt:
+        raise ValueError("system_prompt must contain {context}")
+
     async def search_tool(query: str) -> str:
         return format_context(await asyncio.to_thread(search, query))
 
@@ -59,7 +63,7 @@ def build_graph(
         *history, new_message = state["messages"]
         query = build_search_query(history, new_message.text)
         chunks = await asyncio.to_thread(search, query)
-        return {"context": format_context(chunks)}
+        return {"context": format_context(chunks), "tool_rounds": 0}
 
     async def agent(state: ChatState, config: RunnableConfig) -> dict:
         can_search = state["tool_rounds"] < MAX_TOOL_ROUNDS

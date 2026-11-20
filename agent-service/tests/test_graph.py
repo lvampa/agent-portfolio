@@ -1,5 +1,6 @@
 from collections.abc import Iterator
 
+import pytest
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langgraph.checkpoint.memory import InMemorySaver
@@ -46,7 +47,7 @@ def make_graph(model, search, prompt="CTX: {context}"):
 
 async def ask(graph, text: str, thread: str = "t"):
     state = await graph.ainvoke(
-        {"messages": [HumanMessage(text)], "name": None, "tool_rounds": 0},
+        {"messages": [HumanMessage(text)], "name": None},
         config={"configurable": {"thread_id": thread}},
     )
     return reply_from(state)
@@ -60,9 +61,11 @@ async def test_step_cap():
             yield AIMessage("answer", tool_calls=[tool_call(f"c{i}")])
 
     model = fake_model(script())
-    reply = await ask(make_graph(model, RecordingSearch(["a"])), "hi")
+    search = RecordingSearch(["a"])
+    reply = await ask(make_graph(model, search), "hi")
     assert [bound for bound, _ in model.calls] == [True, False]
     assert reply == "answer"
+    assert len(search.queries) == 2
 
 
 async def test_only_first_tool_call_runs():
@@ -122,3 +125,24 @@ async def test_second_turn_query_includes_previous_question():
     await ask(graph, "first")
     await ask(graph, "second")
     assert search.queries == ["first", "first\nsecond"]
+
+
+async def test_second_turn_can_search_after_first_used_tool():
+    script = iter(
+        [
+            AIMessage("", tool_calls=[tool_call("c1")]),
+            AIMessage("r1"),
+            AIMessage("", tool_calls=[tool_call("c2")]),
+            AIMessage("r2"),
+        ]
+    )
+    model = fake_model(script)
+    graph = make_graph(model, RecordingSearch(["a"]))
+    await ask(graph, "first")
+    await ask(graph, "second")
+    assert [bound for bound, _ in model.calls] == [True, False, True, False]
+
+
+def test_prompt_without_context_placeholder_is_rejected():
+    with pytest.raises(ValueError):
+        make_graph(fake_model(iter([])), RecordingSearch([]), "no placeholder")
