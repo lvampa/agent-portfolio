@@ -1,0 +1,22 @@
+from pathlib import Path
+
+from pydantic import SecretStr
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    google_api_key: SecretStr
+    pinecone_api_key: SecretStr
+    system_prompt: str = ""
+    system_prompt_file: str = ""
+    checkpoint_path: str = "/data/checkpoints.sqlite"
+
+    def prompt(self) -> str:
+        """Returns SYSTEM_PROMPT, or the contents of SYSTEM_PROMPT_FILE when it is empty."""
+        if self.system_prompt:
+            return self.system_prompt
+        if self.system_prompt_file:
+            return Path(self.system_prompt_file).read_text()
+        raise ValueError("Set SYSTEM_PROMPT or SYSTEM_PROMPT_FILE")
