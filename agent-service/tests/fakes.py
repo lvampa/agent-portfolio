@@ -5,10 +5,8 @@ from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
 from langchain_core.messages import AIMessage, BaseMessage
 from langchain_core.outputs import ChatResult
 from langchain_core.runnables import Runnable
-from langgraph.graph.state import CompiledStateGraph
 
 from agent_service.constants import TOOL_NAME
-from agent_service.types import ChatInput, ChatState
 
 
 class FakeChat(GenericFakeChatModel):
@@ -47,6 +45,3 @@ class RecordingSearch:
         if self.error:
             raise self.error
         return self.chunks
-
-
-Graph = CompiledStateGraph[ChatState, None, ChatInput, ChatState]

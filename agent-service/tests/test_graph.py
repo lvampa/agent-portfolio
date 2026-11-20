@@ -1,12 +1,13 @@
 from collections.abc import Iterator
 
 import pytest
-from fakes import Graph, RecordingSearch, fake_model, tool_call
+from fakes import RecordingSearch, fake_model, tool_call
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langgraph.checkpoint.memory import InMemorySaver
 
 from agent_service.graph import build_graph, reply_from
+from agent_service.types import Graph
 
 
 def make_graph(

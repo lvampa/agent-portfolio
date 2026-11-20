@@ -2,6 +2,7 @@ from typing import Annotated, TypedDict
 
 from langchain_core.messages import AnyMessage
 from langgraph.graph.message import add_messages
+from langgraph.graph.state import CompiledStateGraph
 from pydantic import BaseModel, Field
 
 
@@ -17,6 +18,9 @@ class ChatInput(TypedDict):
 
     messages: Annotated[list[AnyMessage], add_messages]
     name: str | None
+
+
+Graph = CompiledStateGraph[ChatState, None, ChatInput, ChatState]
 
 
 class ChatRequest(BaseModel):

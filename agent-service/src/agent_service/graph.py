@@ -8,7 +8,6 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import StructuredTool
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, START, StateGraph
-from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 
 from agent_service.constants import (
@@ -18,7 +17,7 @@ from agent_service.constants import (
     TURN_WINDOW,
 )
 from agent_service.retrieval import SearchFn, build_search_query, format_context
-from agent_service.types import ChatInput, ChatState
+from agent_service.types import ChatInput, ChatState, Graph
 
 
 def reply_from(state: Mapping[str, Any]) -> str:
@@ -47,7 +46,7 @@ def build_graph(
     search: SearchFn,
     system_prompt: str,
     checkpointer: BaseCheckpointSaver[Any],
-) -> CompiledStateGraph[ChatState, None, ChatInput, ChatState]:
+) -> Graph:
     """Invoke with the new HumanMessage and name. Each turn resets its own tool budget."""
     if "{context}" not in system_prompt:
         raise ValueError("system_prompt must contain {context}")
