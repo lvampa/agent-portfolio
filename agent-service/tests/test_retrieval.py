@@ -1,3 +1,4 @@
+from types import SimpleNamespace
 from typing import Any
 
 import pytest
@@ -70,8 +71,16 @@ def test_pinecone_store_is_built_on_first_search_not_at_startup(
     assert FakeStore.constructed == 1
 
 
-def test_embedding_requests_carry_a_timeout() -> None:
+def test_embedding_requests_carry_a_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    received: dict[str, Any] = {}
+
+    def fake_embed_content(**kwargs: Any) -> Any:
+        received.update(kwargs)
+        return SimpleNamespace(embeddings=[SimpleNamespace(values=[0.1])])
+
     embeddings = TimedGoogleEmbeddings(model="models/gemini-embedding-2", google_api_key="g")
-    config = embeddings._build_config()
-    assert config.http_options is not None
-    assert config.http_options.timeout == 5000
+    monkeypatch.setattr(embeddings.client.models, "embed_content", fake_embed_content)
+
+    embeddings.embed_query("x")
+
+    assert received["config"].http_options.timeout == 5000
