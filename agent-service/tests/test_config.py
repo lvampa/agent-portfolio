@@ -43,3 +43,10 @@ def test_missing_api_keys_fail_at_construction(monkeypatch: pytest.MonkeyPatch) 
 
 def test_api_keys_are_hidden_from_repr() -> None:
     assert "g-secret" not in repr(Settings(_env_file=None))
+
+
+def test_system_prompt_is_hidden_from_repr(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("SYSTEM_PROMPT", "private prompt text")
+    settings = Settings(_env_file=None)
+    assert "private prompt text" not in repr(settings)
+    assert settings.prompt() == "private prompt text"

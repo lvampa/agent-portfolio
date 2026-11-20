@@ -20,10 +20,12 @@ from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
 from agent_service.config import Settings
 from agent_service.constants import (
+    CHAT_MAX_ATTEMPTS,
     CHAT_MAX_OUTPUT_TOKENS,
-    CHAT_MAX_RETRIES,
     CHAT_MODEL,
     CHAT_TEMPERATURE,
+    CHAT_TIMEOUT_S,
+    TURN_BUDGET_S,
 )
 from agent_service.graph import build_graph, reply_from
 from agent_service.retrieval import make_pinecone_search
@@ -62,7 +64,8 @@ def make_default_graph_factory(settings: Settings) -> GraphFactory:
         api_key=settings.google_api_key,
         temperature=CHAT_TEMPERATURE,
         max_output_tokens=CHAT_MAX_OUTPUT_TOKENS,
-        max_retries=CHAT_MAX_RETRIES,
+        max_retries=CHAT_MAX_ATTEMPTS,
+        timeout=CHAT_TIMEOUT_S,
     )
     search = make_pinecone_search(settings)
     prompt = settings.prompt()
@@ -110,22 +113,26 @@ def create_app(graph_factory: GraphFactory | None = None) -> FastAPI:
         started = time.monotonic()
         status = 500
         try:
-            # Concurrent posts on one session would race on the checkpoint.
-            async with lock_for(request.sessionId):
-                state = await app.state.graph.ainvoke(
-                    {"messages": [HumanMessage(request.chatInput)], "name": request.name},
-                    config={
-                        "configurable": {"thread_id": request.sessionId},
-                        "metadata": {"sessionId": request.sessionId, "name": request.name},
-                    },
-                )
+            # The budget includes the session lock wait, so a queued turn cannot outlast n8n.
+            async with asyncio.timeout(TURN_BUDGET_S):
+                # Concurrent posts on one session would race on the checkpoint.
+                async with lock_for(request.sessionId):
+                    state = await app.state.graph.ainvoke(
+                        {"messages": [HumanMessage(request.chatInput)], "name": request.name},
+                        config={
+                            "configurable": {"thread_id": request.sessionId},
+                            "metadata": {"sessionId": request.sessionId, "name": request.name},
+                        },
+                    )
             reply = reply_from(state)
             if not reply:
                 raise ValueError("Model returned an empty reply")
             status = 200
         except Exception as error:
             status = status_for(error)
-            if status == 429:
+            if isinstance(error, TimeoutError):
+                logger.warning("chat turn exceeded %ss", TURN_BUDGET_S)
+            elif status == 429:
                 logger.warning("chat rate limited type=%s", type(error).__name__)
             else:
                 logger.warning("chat upstream error", exc_info=True)
