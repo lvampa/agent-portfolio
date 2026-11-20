@@ -12,7 +12,6 @@ name = "agent-service"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
-    { name = "aiosqlite" },
     { name = "fastapi" },
     { name = "langchain-google-genai" },
     { name = "langchain-pinecone" },
@@ -33,7 +32,6 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "aiosqlite", specifier = ">=0.22.1" },
     { name = "fastapi", specifier = ">=0.165.0" },
     { name = "langchain-google-genai", specifier = ">=4.5.2" },
     { name = "langchain-pinecone", specifier = ">=0.2.13" },

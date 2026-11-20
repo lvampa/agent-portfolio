@@ -4,7 +4,6 @@ version = "0.1.0"
 description = "FastAPI and LangGraph agent service for the portfolio chat"
 requires-python = ">=3.13"
 dependencies = [
-    "aiosqlite>=0.22.1",
     "fastapi>=0.165.0",
     "langchain-google-genai>=4.5.2",
     "langchain-pinecone>=0.2.13",
