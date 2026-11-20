@@ -49,3 +49,6 @@ Thumbs.db
 
 # Brainstorm companion mockups
 .superpowers/
+
+# Workflow exports, training data, and conversation logs with visitor names
+n8n-local/

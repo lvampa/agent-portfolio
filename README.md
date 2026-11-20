@@ -1,12 +1,10 @@
 # Agent Portfolio
 
-This repository contains four related projects:
+This repository contains three related projects:
 
 - `portfolio`: Next.js frontend for the portfolio/agent experience.
 - `infra`: OpenTofu code for self hosting n8n on AWS behind Cloudflare.
 - `agent-service`: Python FastAPI and LangGraph chat agent that n8n calls.
-- `compose.yaml`: Docker Compose setup for running n8n, Postgres, and the agent service locally.
-- `n8n-local`: Local workflow exports and training data (not committed).
 
 ## Repository Layout
 
@@ -16,7 +14,7 @@ This repository contains four related projects:
 ├── infra/          # OpenTofu modules for AWS and Cloudflare resources
 ├── agent-service/  # Python chat agent (FastAPI + LangGraph)
 ├── compose.yaml    # Local stack: n8n, Postgres, agent service
-└── n8n-local/      # Workflow exports and training data
+└── n8n-local/      # Workflow exports and training data (local only)
 ```
 
 ## Prerequisites
@@ -97,6 +95,7 @@ tofu apply
 ## Local stack
 
 `compose.yaml` at the repo root runs n8n with a Postgres database, and the agent service, via Docker Compose.
+If you have the old layout, move `n8n-local/.env` to `.env` at the root.
 
 ### Environment variables
 
