@@ -49,3 +49,10 @@ def test_empty_api_key_fails_at_construction(monkeypatch: pytest.MonkeyPatch) ->
     monkeypatch.setenv("GOOGLE_API_KEY", "")
     with pytest.raises(ValidationError):
         Settings(_env_file=None)
+
+
+def test_system_prompt_is_hidden_from_repr(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("SYSTEM_PROMPT", "private prompt text")
+    settings = Settings(_env_file=None)
+    assert "private prompt text" not in repr(settings)
+    assert settings.prompt() == "private prompt text"
