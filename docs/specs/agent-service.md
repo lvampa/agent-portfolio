@@ -170,10 +170,11 @@ A fourth container in the existing `n8n` ECS task in `infra/modules/ecs`:
 - `essential = false` with an ECS container restart policy, so a crash or OOM kill restarts only this container.
   The rest of the task, including the n8n editor, stays up.
   Chat answers 502 while it restarts.
-  n8n does not `dependsOn` it, so a missing secret or a crash at runtime never blocks n8n from starting.
-  Pull failures are not isolated.
-  Bridge-mode `links` make the agent image a start dependency, so a failed pull stops the whole task, n8n included.
-  A private package or a bad tag causes that, so the image is pulled by hand before the apply (see Rollout).
+  This isolation covers runtime crashes only.
+  Task-level failures are not isolated: a failed image pull, or an unreadable or missing SSM secret, stops the whole task, n8n included.
+  ECS resolves every `secrets` entry before any container starts, and bridge-mode `links` make the agent image a start dependency.
+  A private package, a bad tag, or a missing parameter causes that, so the image is pulled by hand before the apply (see Rollout).
+  n8n does not `dependsOn` the agent, which only keeps start order loose.
 - Mounts only `/opt/n8n-data/agent`, as its own host-path volume, not the whole data volume, which also holds n8n's database.
   The directory must be writable by uid 1000, which `user_data.sh` uses for the volume root.
 - Secrets from new SSM parameters: Gemini key, Pinecone key, LangSmith key, and system prompt.
