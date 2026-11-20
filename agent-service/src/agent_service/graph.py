@@ -1,3 +1,5 @@
+"""The LangGraph chat graph: retrieve context, call the model, and run at most one search tool."""
+
 import asyncio
 from collections.abc import Mapping
 from typing import Any
@@ -21,6 +23,7 @@ from agent_service.types import ChatInput, ChatState, Graph
 
 
 def reply_from(state: Mapping[str, Any]) -> str:
+    """Can return an empty string, which the API answers with a 502."""
     last_ai = next(m for m in reversed(state["messages"]) if isinstance(m, AIMessage))
     return last_ai.text
 
@@ -79,7 +82,10 @@ def build_graph(
 
     async def tools(state: ChatState, config: RunnableConfig) -> dict[str, Any]:
         requested = state["messages"][-1]
-        assert isinstance(requested, AIMessage)
+        if not isinstance(requested, AIMessage):
+            raise TypeError(
+                f"Expected an AIMessage with tool calls, got {type(requested).__name__}"
+            )
         # Only the first call runs, to hold the cap on embedding calls.
         first_call_only = requested.model_copy(update={"tool_calls": requested.tool_calls[:1]})
         result = await tool_node.ainvoke({"messages": [first_call_only]}, config)

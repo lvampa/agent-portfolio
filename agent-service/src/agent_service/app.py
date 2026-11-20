@@ -1,3 +1,5 @@
+"""The FastAPI app: HTTP routes, startup, and mapping upstream errors to status codes."""
+
 import asyncio
 import logging
 import os
@@ -49,10 +51,12 @@ def is_rate_limited(error: BaseException | None) -> bool:
 
 
 def status_for(error: BaseException) -> int:
+    """Gemini rate limits become 429 so n8n can pass them on; everything else is a 502."""
     return 429 if is_rate_limited(error) else 502
 
 
 def make_default_graph_factory(settings: Settings) -> GraphFactory:
+    """The real Gemini and Pinecone wiring, which tests replace with fakes."""
     model = ChatGoogleGenerativeAI(
         model=CHAT_MODEL,
         api_key=settings.google_api_key,
@@ -66,6 +70,7 @@ def make_default_graph_factory(settings: Settings) -> GraphFactory:
 
 
 def ensure_writable_dir(path: Path) -> None:
+    """A bad data volume should fail startup, not the first chat."""
     path.parent.mkdir(parents=True, exist_ok=True)
     if not os.access(path.parent, os.W_OK):
         raise RuntimeError(f"Checkpoint directory is not writable: {path.parent}")

@@ -1,3 +1,5 @@
+"""Graph state, graph input, and the HTTP request and response models."""
+
 from typing import Annotated, TypedDict
 
 from langchain_core.messages import AnyMessage

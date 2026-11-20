@@ -1,3 +1,5 @@
+"""Search query building, context formatting, and the Pinecone search adapter."""
+
 from collections.abc import Callable
 
 from langchain_core.messages import AnyMessage, HumanMessage
@@ -29,6 +31,7 @@ def format_context(chunks: list[str]) -> str:
 
 
 def make_pinecone_search(settings: Settings) -> SearchFn:
+    """Returns a blocking search, so the graph runs it in a thread. Gives chunk texts only."""
     embeddings = GoogleGenerativeAIEmbeddings(
         model=EMBEDDING_MODEL, google_api_key=settings.google_api_key.get_secret_value()
     )
