@@ -85,11 +85,41 @@ jobs:
       - name: Validate bootstrap
         run: tofu -chdir=bootstrap validate
 
+  agent-service:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: agent-service
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup uv
+        uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+        with:
+          working-directory: agent-service
+
+      - name: Install
+        run: uv sync --frozen
+
+      - name: Lint
+        run: uv run ruff check
+
+      - name: Format check
+        run: uv run ruff format --check
+
+      - name: Test
+        # pytest exits 5 when it collects no tests. Tolerate that until real tests land.
+        run: uv run pytest || [ $? -eq 5 ]
+
   # The only required check.
   ci:
     name: ci
     if: always()
-    needs: [frontend, infra]
+    needs: [frontend, infra, agent-service]
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
