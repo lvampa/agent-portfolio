@@ -232,7 +232,7 @@ The container can stay running unused.
 
 - Python version and library versions, pinned in `uv.lock`.
   Likely `langgraph`, `langgraph-checkpoint-sqlite`, `langchain-google-genai`, `langchain-pinecone`, `fastapi`, and `uvicorn`.
-- How the gitignored local prompt file reaches `SYSTEM_PROMPT`.
+- How the gitignored local prompt file reaches the service: local compose mounts it and sets `SYSTEM_PROMPT_FILE`, the fallback used when `SYSTEM_PROMPT` is empty.
 - Module layout inside `agent-service/`.
 - Whether the arm64 build uses a native arm runner or QEMU.
 - How to detect a Gemini 429 from the LangChain exception.

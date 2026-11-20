@@ -38,6 +38,33 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  agent-service:
+    build: ../agent-service
+    env_file: .env
+    environment:
+      - SYSTEM_PROMPT_FILE=/app/system-prompt.local.md
+      - LANGSMITH_TRACING=true
+      - LANGSMITH_PROJECT=portfolio-agent-local
+      - CHECKPOINT_PATH=/data/checkpoints.sqlite
+    command:
+      [
+        "uvicorn",
+        "agent_service.app:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+        "--reload",
+        "--reload-dir",
+        "/app/src",
+      ]
+    volumes:
+      - ../agent-service/src:/app/src
+      - ../agent-service/system-prompt.local.md:/app/system-prompt.local.md:ro
+      - agent_data:/data
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   n8n_data:
+  agent_data:
