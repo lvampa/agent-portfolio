@@ -2,9 +2,6 @@
 name = "agent-service"
 version = "0.1.0"
 description = "FastAPI and LangGraph agent service for the portfolio chat"
-authors = [
-    { name = "Connor Abdelnoor", email = "connor.abd@gmail.com" }
-]
 requires-python = ">=3.13"
 dependencies = [
     "aiosqlite>=0.22.1",
@@ -38,3 +35,6 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+
+[tool.uv]
+required-version = ">=0.10.4,<0.11"
