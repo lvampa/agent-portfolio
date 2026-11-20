@@ -1,7 +1,10 @@
+"""Graph state, graph input, and the HTTP request and response models."""
+
 from typing import Annotated, TypedDict
 
 from langchain_core.messages import AnyMessage
 from langgraph.graph.message import add_messages
+from langgraph.graph.state import CompiledStateGraph
 from pydantic import BaseModel, Field
 
 
@@ -15,8 +18,11 @@ class ChatState(TypedDict):
 class ChatInput(TypedDict):
     """What a caller passes in. The graph fills in the rest of ChatState."""
 
-    messages: list[AnyMessage]
+    messages: Annotated[list[AnyMessage], add_messages]
     name: str | None
+
+
+Graph = CompiledStateGraph[ChatState, None, ChatInput, ChatState]
 
 
 class ChatRequest(BaseModel):

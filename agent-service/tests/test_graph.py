@@ -1,53 +1,13 @@
-from collections.abc import Iterator, Sequence
-from typing import Any, cast
+from collections.abc import Iterator
 
 import pytest
+from fakes import RecordingSearch, fake_model, tool_call
 from langchain_core.language_models import BaseChatModel
-from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
-from langchain_core.outputs import ChatResult
-from langchain_core.runnables import Runnable
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
 from langgraph.checkpoint.memory import InMemorySaver
-from langgraph.graph.state import CompiledStateGraph
 
-from agent_service.constants import TOOL_NAME
 from agent_service.graph import build_graph, reply_from
-from agent_service.types import ChatInput, ChatState
-
-
-class FakeChat(GenericFakeChatModel):
-    """Records every model call as (tools_bound, messages)."""
-
-    calls: list[tuple[bool, list[BaseMessage]]] = []
-    tools_bound: bool = False
-
-    def bind_tools(self, tools: Sequence[Any], **kwargs: Any) -> Runnable[Any, Any]:
-        return self.model_copy(update={"tools_bound": True})
-
-    def _generate(self, messages: list[BaseMessage], *args: Any, **kwargs: Any) -> ChatResult:
-        self.calls.append((self.tools_bound, list(messages)))
-        return super()._generate(messages, *args, **kwargs)
-
-
-def tool_call(call_id: str) -> dict[str, Any]:
-    return {"name": TOOL_NAME, "args": {"query": "more"}, "id": call_id}
-
-
-def fake_model(script: Iterator[AIMessage]) -> FakeChat:
-    return FakeChat(messages=script, calls=[])
-
-
-class RecordingSearch:
-    def __init__(self, chunks: list[str]) -> None:
-        self.chunks = chunks
-        self.queries: list[str] = []
-
-    def __call__(self, query: str) -> list[str]:
-        self.queries.append(query)
-        return self.chunks
-
-
-Graph = CompiledStateGraph[ChatState, None, ChatInput, ChatState]
+from agent_service.types import Graph
 
 
 def make_graph(
@@ -61,7 +21,7 @@ async def ask(graph: Graph, text: str, thread: str = "t") -> str:
         {"messages": [HumanMessage(text)], "name": None},
         config={"configurable": {"thread_id": thread}},
     )
-    return reply_from(cast(ChatState, state))
+    return reply_from(state)
 
 
 async def test_step_cap() -> None:

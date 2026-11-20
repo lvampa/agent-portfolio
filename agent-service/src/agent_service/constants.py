@@ -1,3 +1,5 @@
+"""Model, retrieval, and prompt values that must match the n8n workflow they replace."""
+
 CHAT_MODEL = "models/gemini-3.5-flash-lite"
 CHAT_TEMPERATURE = 0.6
 CHAT_MAX_OUTPUT_TOKENS = 1024

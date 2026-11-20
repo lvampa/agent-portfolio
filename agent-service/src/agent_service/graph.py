@@ -1,4 +1,7 @@
+"""The LangGraph chat graph: retrieve context, call the model, and run at most one search tool."""
+
 import asyncio
+from collections.abc import Mapping
 from typing import Any
 
 from langchain_core.language_models import BaseChatModel
@@ -7,7 +10,6 @@ from langchain_core.runnables import RunnableConfig
 from langchain_core.tools import StructuredTool
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, START, StateGraph
-from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 
 from agent_service.constants import (
@@ -17,10 +19,11 @@ from agent_service.constants import (
     TURN_WINDOW,
 )
 from agent_service.retrieval import SearchFn, build_search_query, format_context
-from agent_service.types import ChatInput, ChatState
+from agent_service.types import ChatInput, ChatState, Graph
 
 
-def reply_from(state: ChatState) -> str:
+def reply_from(state: Mapping[str, Any]) -> str:
+    """Can return an empty string, which the API answers with a 502."""
     last_ai = next(m for m in reversed(state["messages"]) if isinstance(m, AIMessage))
     return last_ai.text
 
@@ -46,7 +49,7 @@ def build_graph(
     search: SearchFn,
     system_prompt: str,
     checkpointer: BaseCheckpointSaver[Any],
-) -> CompiledStateGraph[ChatState, None, ChatInput, ChatState]:
+) -> Graph:
     """Invoke with the new HumanMessage and name. Each turn resets its own tool budget."""
     if "{context}" not in system_prompt:
         raise ValueError("system_prompt must contain {context}")
@@ -79,7 +82,10 @@ def build_graph(
 
     async def tools(state: ChatState, config: RunnableConfig) -> dict[str, Any]:
         requested = state["messages"][-1]
-        assert isinstance(requested, AIMessage)
+        if not isinstance(requested, AIMessage):
+            raise TypeError(
+                f"Expected an AIMessage with tool calls, got {type(requested).__name__}"
+            )
         # Only the first call runs, to hold the cap on embedding calls.
         first_call_only = requested.model_copy(update={"tool_calls": requested.tool_calls[:1]})
         result = await tool_node.ainvoke({"messages": [first_call_only]}, config)
