@@ -15,7 +15,7 @@ class ChatState(TypedDict):
 class ChatInput(TypedDict):
     """What a caller passes in. The graph fills in the rest of ChatState."""
 
-    messages: list[AnyMessage]
+    messages: Annotated[list[AnyMessage], add_messages]
     name: str | None
 
 

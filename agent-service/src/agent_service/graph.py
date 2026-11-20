@@ -1,4 +1,5 @@
 import asyncio
+from collections.abc import Mapping
 from typing import Any
 
 from langchain_core.language_models import BaseChatModel
@@ -20,7 +21,7 @@ from agent_service.retrieval import SearchFn, build_search_query, format_context
 from agent_service.types import ChatInput, ChatState
 
 
-def reply_from(state: ChatState) -> str:
+def reply_from(state: Mapping[str, Any]) -> str:
     last_ai = next(m for m in reversed(state["messages"]) if isinstance(m, AIMessage))
     return last_ai.text
 
