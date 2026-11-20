@@ -112,8 +112,7 @@ jobs:
         run: uv run ruff format --check
 
       - name: Test
-        # pytest exits 5 when it collects no tests. Tolerate that until real tests land.
-        run: uv run pytest || [ $? -eq 5 ]
+        run: uv run pytest
 
   # The only required check.
   ci:
