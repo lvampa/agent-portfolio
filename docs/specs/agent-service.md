@@ -228,11 +228,13 @@ Download the current workflow first, as a rollback copy.
 Rollback: re-import the saved workflow.
 The container can stay running unused.
 
+## Decided while building
+
+- Python 3.14, with library versions pinned in `uv.lock`.
+- Local compose mounts the gitignored prompt file and sets `SYSTEM_PROMPT_FILE`, the fallback used when `SYSTEM_PROMPT` is empty.
+- The arm64 image builds on the native `ubuntu-24.04-arm` runner, not QEMU.
+- A Gemini 429 is detected by `ModelRateLimitError` for chat calls, and by a `ClientError` with code 429 in the exception's cause chain for embedding calls.
+
 ## Left to the builder
 
-- Python version and library versions, pinned in `uv.lock`.
-  Likely `langgraph`, `langgraph-checkpoint-sqlite`, `langchain-google-genai`, `langchain-pinecone`, `fastapi`, and `uvicorn`.
-- How the gitignored local prompt file reaches the service: local compose mounts it and sets `SYSTEM_PROMPT_FILE`, the fallback used when `SYSTEM_PROMPT` is empty.
 - Module layout inside `agent-service/`.
-- Whether the arm64 build uses a native arm runner or QEMU.
-- How to detect a Gemini 429 from the LangChain exception.

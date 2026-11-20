@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - agent-service/**
+      - .github/workflows/publish-agent-image.yml
 
 permissions:
   contents: read

@@ -40,8 +40,10 @@ services:
 
   agent-service:
     build: ../agent-service
-    env_file: .env
     environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY}
       - SYSTEM_PROMPT_FILE=/app/system-prompt.local.md
       - LANGSMITH_TRACING=true
       - LANGSMITH_PROJECT=portfolio-agent-local
@@ -60,7 +62,12 @@ services:
       ]
     volumes:
       - ../agent-service/src:/app/src
-      - ../agent-service/system-prompt.local.md:/app/system-prompt.local.md:ro
+      - type: bind
+        source: ../agent-service/system-prompt.local.md
+        target: /app/system-prompt.local.md
+        read_only: true
+        bind:
+          create_host_path: false
       - agent_data:/data
     restart: unless-stopped
 

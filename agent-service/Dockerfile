@@ -2,6 +2,8 @@ FROM ghcr.io/astral-sh/uv:0.10.12 AS uv
 
 FROM python:3.14.10-slim
 
+LABEL org.opencontainers.image.source="https://github.com/lvampa/Agent-Portfolio"
+
 COPY --from=uv /uv /uvx /bin/
 
 ENV UV_COMPILE_BYTECODE=1 \
@@ -14,13 +16,17 @@ WORKDIR /app
 
 # Dependencies first, so source changes do not reinstall them.
 COPY pyproject.toml uv.lock .python-version ./
-RUN uv sync --frozen --no-dev --no-install-project
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev --no-install-project
 
 COPY src ./src
-RUN uv sync --frozen --no-dev
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev
 
 # A named volume copies this ownership on first use, so uid 1000 can write checkpoints.
-RUN mkdir /data && chown 1000:1000 /data
+RUN useradd --uid 1000 --create-home app \
+    && mkdir /data \
+    && chown app:app /data
 
 USER 1000
 
