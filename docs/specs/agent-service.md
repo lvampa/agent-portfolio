@@ -125,7 +125,21 @@ That's acceptable.
 ## Model and errors
 
 The chat model gets at most 1 retry, so a 429 reaches the frontend well inside its 30 s timeout instead of burning it on backoff.
+`langchain-google-genai` counts attempts, not retries, so the code passes `max_retries=2` (`CHAT_MAX_ATTEMPTS`).
 n8n's HTTP Request node uses a 25 s timeout.
+
+Every upstream call is bounded, and a whole turn is capped below n8n's timeout:
+
+- Chat calls time out at 8 s.
+- Embedding requests time out at 5 s.
+  The installed library has no working option for this: `request_options` is never read, and a `timeout` in `client_args` is overridden by the SDK.
+  A small `TimedGoogleEmbeddings` subclass sets the timeout on each request by overriding the library's private `_build_config`.
+  A test checks it, and fails if a library update renames that method.
+- Pinecone queries have no timeout of their own, because `langchain-pinecone` does not pass one through.
+  They rely on the turn budget.
+  A hung query also leaves its worker thread running after the request has been answered.
+- The whole turn, including the wait for the per-session lock, has a 22 s budget, under n8n's 25 s.
+  Going over answers 502.
 
 ## System prompt
 
@@ -173,7 +187,10 @@ A fourth container in the existing `n8n` ECS task in `infra/modules/ecs`:
   This isolation covers runtime crashes only.
   Task-level failures are not isolated: a failed image pull, or an unreadable or missing SSM secret, stops the whole task, n8n included.
   ECS resolves every `secrets` entry before any container starts, and bridge-mode `links` make the agent image a start dependency.
-  A private package, a bad tag, or a missing parameter causes that, so the image is pulled by hand before the apply (see Rollout).
+  A private package, a bad tag, or a missing parameter causes that, so the image is pulled by hand before every apply that changes the tag (see Rollout).
+  A container that crashes in its first 60 s is never restarted, because `restartAttemptPeriod` is 60 s, the minimum.
+  That includes configuration errors such as a missing key, a prompt without `{context}`, or an unwritable `/data`.
+  Those need a manual restart, so after every apply, check `docker ps -a` on the instance and the agent's log group.
   n8n does not `dependsOn` the agent, which only keeps start order loose.
 - Mounts only `/opt/n8n-data/agent`, as its own host-path volume, not the whole data volume, which also holds n8n's database.
   The directory must be writable by uid 1000, which `user_data.sh` uses for the volume root.
@@ -197,6 +214,8 @@ A fourth container in the existing `n8n` ECS task in `infra/modules/ecs`:
   The repo is already public, so this exposes nothing new.
   The system prompt is not in the image.
 - Deploying means bumping the tag variable and applying, which Connor runs.
+  Before every tag bump, not just the first, pull the exact tag on the instance while logged out of ghcr.
+  With the `links`, a failed pull stops the whole task.
 - `ci.yml` gets a job that lints and tests `agent-service`, so the `main` ruleset's `ci` check covers it.
 
 ## Code layout

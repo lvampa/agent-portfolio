@@ -1,6 +1,7 @@
 import asyncio
 import os
 import sqlite3
+import time
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +14,7 @@ from langchain_google_genai._common import GoogleGenerativeAIError
 from langchain_google_genai.chat_models import GoogleRateLimitError
 from langgraph.checkpoint.base import BaseCheckpointSaver
 
+from agent_service import app as app_module
 from agent_service.app import create_app
 from agent_service.graph import build_graph
 from agent_service.types import Graph
@@ -22,6 +24,8 @@ SESSION = "7d4c2f3e-1b1a-4c55-9a3e-0a6f6f1d2c11"
 
 @pytest.fixture(autouse=True)
 def app_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)  # so a stray .env in the working directory is never read
+    monkeypatch.delenv("LANGSMITH_TRACING", raising=False)
     monkeypatch.setenv("GOOGLE_API_KEY", "g")
     monkeypatch.setenv("PINECONE_API_KEY", "p")
     monkeypatch.setenv("SYSTEM_PROMPT", "CTX: {context}")
@@ -144,3 +148,30 @@ async def test_startup_fails_when_checkpoint_dir_is_not_writable(
                 pass
     finally:
         locked.chmod(0o700)
+
+
+class SlowOnceSearch(RecordingSearch):
+    """Blocks on the first call only, like an upstream that hangs once."""
+
+    def __call__(self, query: str) -> list[str]:
+        first_call = not self.queries
+        self.queries.append(query)
+        if first_call:
+            time.sleep(0.5)
+        return self.chunks
+
+
+async def test_turn_over_budget_is_502_and_releases_the_session_lock(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(app_module, "TURN_BUDGET_S", 0.2)
+    harness = Harness(replies("hello"), SlowOnceSearch(["a"]))
+    app = create_app(harness.factory)
+    async with app.router.lifespan_context(app):
+        transport = httpx.ASGITransport(app=app)
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            slow = await client.post("/chat", json=body("first"))
+            retry = await client.post("/chat", json=body("second"))
+
+    assert slow.status_code == 502
+    assert retry.status_code == 200

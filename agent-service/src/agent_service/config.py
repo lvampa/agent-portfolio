@@ -17,14 +17,14 @@ class Settings(BaseSettings):
 
     google_api_key: SecretStr = Field(min_length=1)
     pinecone_api_key: SecretStr = Field(min_length=1)
-    system_prompt: str = ""
+    system_prompt: SecretStr = SecretStr("")
     system_prompt_file: str = ""
     checkpoint_path: str = "/data/checkpoints.sqlite"
 
     def prompt(self) -> str:
         """Returns SYSTEM_PROMPT, or the contents of SYSTEM_PROMPT_FILE when it is empty."""
-        if self.system_prompt:
-            return self.system_prompt
+        if self.system_prompt.get_secret_value():
+            return self.system_prompt.get_secret_value()
         if self.system_prompt_file:
             return Path(self.system_prompt_file).read_text()
         raise ValueError("Set SYSTEM_PROMPT or SYSTEM_PROMPT_FILE")
