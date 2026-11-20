@@ -1,6 +1,7 @@
 CHAT_MODEL = "models/gemini-3.5-flash-lite"
 CHAT_TEMPERATURE = 0.6
 CHAT_MAX_OUTPUT_TOKENS = 1024
+CHAT_MAX_RETRIES = 1
 EMBEDDING_MODEL = "models/gemini-embedding-2"
 
 PINECONE_INDEX = "portfolio-rag"

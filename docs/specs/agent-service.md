@@ -62,7 +62,7 @@ Removed from the workflow: Get Previous Turns, Build Search Query, Search Knowle
 `POST /chat`
 
 ```json
-{ "chatInput": "string", "sessionId": "string", "name": "string" }
+{ "chatInput": "string", "sessionId": "string", "name": "string | null" }
 ```
 
 - `200 { "reply": "string" }`.
@@ -82,7 +82,7 @@ State:
 ```python
 class ChatState(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]  # checkpointed
-    name: str
+    name: str | None
     context: str       # this turn's retrieved chunks
     tool_rounds: int   # reset to 0 at the start of each turn
 ```

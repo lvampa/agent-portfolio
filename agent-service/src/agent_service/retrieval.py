@@ -21,7 +21,7 @@ def build_search_query(history: list[AnyMessage], new_message: str) -> str:
     previous_questions = [m for m in history if isinstance(m, HumanMessage)]
     if not previous_questions:
         return new_message
-    return f"{previous_questions[-1].content}\n{new_message}"
+    return f"{previous_questions[-1].text}\n{new_message}"
 
 
 def format_context(chunks: list[str]) -> str:
@@ -30,13 +30,13 @@ def format_context(chunks: list[str]) -> str:
 
 def make_pinecone_search(settings: Settings) -> SearchFn:
     embeddings = GoogleGenerativeAIEmbeddings(
-        model=EMBEDDING_MODEL, google_api_key=settings.google_api_key
+        model=EMBEDDING_MODEL, google_api_key=settings.google_api_key.get_secret_value()
     )
     store = PineconeVectorStore(
         index_name=PINECONE_INDEX,
         embedding=embeddings,
         namespace=PINECONE_NAMESPACE,
-        pinecone_api_key=settings.pinecone_api_key,
+        pinecone_api_key=settings.pinecone_api_key.get_secret_value(),
     )
 
     def search(query: str) -> list[str]:

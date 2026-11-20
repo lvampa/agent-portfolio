@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 
 class ChatState(TypedDict):
     messages: Annotated[list[AnyMessage], add_messages]
-    name: str
+    name: str | None
     context: str
     tool_rounds: int
 
@@ -15,7 +15,7 @@ class ChatState(TypedDict):
 class ChatRequest(BaseModel):
     chatInput: str = Field(min_length=1)
     sessionId: str = Field(min_length=1)
-    name: str
+    name: str | None = None
 
 
 class ChatResponse(BaseModel):
