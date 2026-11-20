@@ -12,6 +12,13 @@ class ChatState(TypedDict):
     tool_rounds: int
 
 
+class ChatInput(TypedDict):
+    """What a caller passes in. The graph fills in the rest of ChatState."""
+
+    messages: list[AnyMessage]
+    name: str | None
+
+
 class ChatRequest(BaseModel):
     chatInput: str = Field(min_length=1)
     sessionId: str = Field(min_length=1)

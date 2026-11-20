@@ -1,29 +1,35 @@
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
+from typing import Any, cast
 
 import pytest
+from langchain_core.language_models import BaseChatModel
 from langchain_core.language_models.fake_chat_models import GenericFakeChatModel
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage, ToolMessage
+from langchain_core.outputs import ChatResult
+from langchain_core.runnables import Runnable
 from langgraph.checkpoint.memory import InMemorySaver
+from langgraph.graph.state import CompiledStateGraph
 
 from agent_service.constants import TOOL_NAME
 from agent_service.graph import build_graph, reply_from
+from agent_service.types import ChatInput, ChatState
 
 
 class FakeChat(GenericFakeChatModel):
     """Records every model call as (tools_bound, messages)."""
 
-    calls: list = []
+    calls: list[tuple[bool, list[BaseMessage]]] = []
     tools_bound: bool = False
 
-    def bind_tools(self, tools, **kwargs):
+    def bind_tools(self, tools: Sequence[Any], **kwargs: Any) -> Runnable[Any, Any]:
         return self.model_copy(update={"tools_bound": True})
 
-    def _generate(self, messages, *args, **kwargs):
+    def _generate(self, messages: list[BaseMessage], *args: Any, **kwargs: Any) -> ChatResult:
         self.calls.append((self.tools_bound, list(messages)))
         return super()._generate(messages, *args, **kwargs)
 
 
-def tool_call(call_id: str) -> dict:
+def tool_call(call_id: str) -> dict[str, Any]:
     return {"name": TOOL_NAME, "args": {"query": "more"}, "id": call_id}
 
 
@@ -32,7 +38,7 @@ def fake_model(script: Iterator[AIMessage]) -> FakeChat:
 
 
 class RecordingSearch:
-    def __init__(self, chunks: list[str]):
+    def __init__(self, chunks: list[str]) -> None:
         self.chunks = chunks
         self.queries: list[str] = []
 
@@ -41,20 +47,25 @@ class RecordingSearch:
         return self.chunks
 
 
-def make_graph(model, search, prompt="CTX: {context}"):
+Graph = CompiledStateGraph[ChatState, None, ChatInput, ChatState]
+
+
+def make_graph(
+    model: BaseChatModel, search: RecordingSearch, prompt: str = "CTX: {context}"
+) -> Graph:
     return build_graph(model, search, prompt, InMemorySaver())
 
 
-async def ask(graph, text: str, thread: str = "t"):
+async def ask(graph: Graph, text: str, thread: str = "t") -> str:
     state = await graph.ainvoke(
         {"messages": [HumanMessage(text)], "name": None},
         config={"configurable": {"thread_id": thread}},
     )
-    return reply_from(state)
+    return reply_from(cast(ChatState, state))
 
 
-async def test_step_cap():
-    def script():
+async def test_step_cap() -> None:
+    def script() -> Iterator[AIMessage]:
         i = 0
         while True:
             i += 1
@@ -68,7 +79,7 @@ async def test_step_cap():
     assert len(search.queries) == 2
 
 
-async def test_only_first_tool_call_runs():
+async def test_only_first_tool_call_runs() -> None:
     script = iter([AIMessage("", tool_calls=[tool_call("c1"), tool_call("c2")]), AIMessage("done")])
     search = RecordingSearch(["a"])
     graph = make_graph(fake_model(script), search)
@@ -81,7 +92,7 @@ async def test_only_first_tool_call_runs():
     assert [len(m.tool_calls) for m in requested] == [1]
 
 
-async def test_retrieve_puts_context_in_system_prompt():
+async def test_retrieve_puts_context_in_system_prompt() -> None:
     model = fake_model(iter([AIMessage("ok")]))
     await ask(make_graph(model, RecordingSearch(["a"])), "hi")
     system = model.calls[0][1][0]
@@ -89,20 +100,20 @@ async def test_retrieve_puts_context_in_system_prompt():
     assert system.content == "CTX: a"
 
 
-async def test_prompt_braces_other_than_context_are_kept():
+async def test_prompt_braces_other_than_context_are_kept() -> None:
     model = fake_model(iter([AIMessage("ok")]))
     await ask(make_graph(model, RecordingSearch(["a"]), '{"k": 1} {context}'), "hi")
     assert model.calls[0][1][0].content == '{"k": 1} a'
 
 
-async def test_empty_search_still_answers():
+async def test_empty_search_still_answers() -> None:
     model = fake_model(iter([AIMessage("ok")]))
     reply = await ask(make_graph(model, RecordingSearch([])), "hi")
     assert reply == "ok"
     assert model.calls[0][1][0].content == "CTX: "
 
 
-async def test_history_trimmed_to_user_and_final_replies():
+async def test_history_trimmed_to_user_and_final_replies() -> None:
     script = [AIMessage(f"r{n}") for n in range(1, 5)]
     script += [AIMessage("", tool_calls=[tool_call("c5")]), AIMessage("r5")]
     script += [AIMessage("r6"), AIMessage("r7")]
@@ -119,7 +130,7 @@ async def test_history_trimmed_to_user_and_final_replies():
     assert not any(isinstance(m, AIMessage) and m.tool_calls for m in sent)
 
 
-async def test_second_turn_query_includes_previous_question():
+async def test_second_turn_query_includes_previous_question() -> None:
     search = RecordingSearch(["a"])
     graph = make_graph(fake_model(iter([AIMessage("1"), AIMessage("2")])), search)
     await ask(graph, "first")
@@ -127,7 +138,7 @@ async def test_second_turn_query_includes_previous_question():
     assert search.queries == ["first", "first\nsecond"]
 
 
-async def test_second_turn_can_search_after_first_used_tool():
+async def test_second_turn_can_search_after_first_used_tool() -> None:
     script = iter(
         [
             AIMessage("", tool_calls=[tool_call("c1")]),
@@ -143,6 +154,6 @@ async def test_second_turn_can_search_after_first_used_tool():
     assert [bound for bound, _ in model.calls] == [True, False, True, False]
 
 
-def test_prompt_without_context_placeholder_is_rejected():
+def test_prompt_without_context_placeholder_is_rejected() -> None:
     with pytest.raises(ValueError):
         make_graph(fake_model(iter([])), RecordingSearch([]), "no placeholder")

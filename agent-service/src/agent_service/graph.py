@@ -1,4 +1,5 @@
 import asyncio
+from typing import Any
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, SystemMessage
@@ -16,7 +17,7 @@ from agent_service.constants import (
     TURN_WINDOW,
 )
 from agent_service.retrieval import SearchFn, build_search_query, format_context
-from agent_service.types import ChatState
+from agent_service.types import ChatInput, ChatState
 
 
 def reply_from(state: ChatState) -> str:
@@ -44,8 +45,8 @@ def build_graph(
     model: BaseChatModel,
     search: SearchFn,
     system_prompt: str,
-    checkpointer: BaseCheckpointSaver,
-) -> CompiledStateGraph:
+    checkpointer: BaseCheckpointSaver[Any],
+) -> CompiledStateGraph[ChatState, None, ChatInput, ChatState]:
     """Invoke with the new HumanMessage and name. Each turn resets its own tool budget."""
     if "{context}" not in system_prompt:
         raise ValueError("system_prompt must contain {context}")
@@ -59,13 +60,13 @@ def build_graph(
     model_with_tools = model.bind_tools([knowledge_tool])
     tool_node = ToolNode([knowledge_tool])
 
-    async def retrieve(state: ChatState) -> dict:
+    async def retrieve(state: ChatState) -> dict[str, Any]:
         *history, new_message = state["messages"]
         query = build_search_query(history, new_message.text)
         chunks = await asyncio.to_thread(search, query)
         return {"context": format_context(chunks), "tool_rounds": 0}
 
-    async def agent(state: ChatState, config: RunnableConfig) -> dict:
+    async def agent(state: ChatState, config: RunnableConfig) -> dict[str, Any]:
         can_search = state["tool_rounds"] < MAX_TOOL_ROUNDS
         prompt = SystemMessage(system_prompt.replace("{context}", state["context"]))
         messages = [prompt, *trim_history(state["messages"])]
@@ -76,8 +77,9 @@ def build_graph(
             reply = reply.model_copy(update={"tool_calls": []})
         return {"messages": [reply]}
 
-    async def tools(state: ChatState, config: RunnableConfig) -> dict:
+    async def tools(state: ChatState, config: RunnableConfig) -> dict[str, Any]:
         requested = state["messages"][-1]
+        assert isinstance(requested, AIMessage)
         # Only the first call runs, to hold the cap on embedding calls.
         first_call_only = requested.model_copy(update={"tool_calls": requested.tool_calls[:1]})
         result = await tool_node.ainvoke({"messages": [first_call_only]}, config)
@@ -86,7 +88,7 @@ def build_graph(
             "tool_rounds": state["tool_rounds"] + 1,
         }
 
-    graph = StateGraph(ChatState)
+    graph = StateGraph(ChatState, input_schema=ChatInput)
     graph.add_node("retrieve", retrieve)
     graph.add_node("agent", agent)
     graph.add_node("tools", tools)
