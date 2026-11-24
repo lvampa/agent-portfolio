@@ -1,14 +1,25 @@
-from langchain_core.messages import AIMessage, HumanMessage, ToolMessage
+from types import SimpleNamespace
+from typing import Any
 
-from agent_service.retrieval import build_search_query, format_context
+import pytest
+from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, ToolMessage
+
+from agent_service import retrieval
+from agent_service.config import Settings
+from agent_service.retrieval import (
+    TimedGoogleEmbeddings,
+    build_search_query,
+    format_context,
+    make_pinecone_search,
+)
 
 
-def test_first_turn_uses_message_alone():
+def test_first_turn_uses_message_alone() -> None:
     assert build_search_query([], "hi") == "hi"
 
 
-def test_later_turn_prepends_previous_user_message():
-    history = [
+def test_later_turn_prepends_previous_user_message() -> None:
+    history: list[AnyMessage] = [
         HumanMessage("what at Acme?"),
         AIMessage("..."),
         ToolMessage("chunk", tool_call_id="1"),
@@ -16,14 +27,60 @@ def test_later_turn_prepends_previous_user_message():
     assert build_search_query(history, "tell me more") == "what at Acme?\ntell me more"
 
 
-def test_later_turn_uses_the_latest_previous_user_message():
-    history = [HumanMessage("first"), AIMessage("a"), HumanMessage("second"), AIMessage("b")]
+def test_later_turn_uses_the_latest_previous_user_message() -> None:
+    history: list[AnyMessage] = [
+        HumanMessage("first"),
+        AIMessage("a"),
+        HumanMessage("second"),
+        AIMessage("b"),
+    ]
     assert build_search_query(history, "and?") == "second\nand?"
 
 
-def test_format_context_joins_with_separator():
+def test_format_context_joins_with_separator() -> None:
     assert format_context(["a", "b"]) == "a\n\n---\n\nb"
 
 
-def test_format_context_empty():
+def test_format_context_empty() -> None:
     assert format_context([]) == ""
+
+
+class FakeStore:
+    constructed = 0
+
+    def __init__(self, **kwargs: Any) -> None:
+        FakeStore.constructed += 1
+
+    def similarity_search(self, query: str, k: int) -> list[Any]:
+        return []
+
+
+def test_pinecone_store_is_built_on_first_search_not_at_startup(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("GOOGLE_API_KEY", "g")
+    monkeypatch.setenv("PINECONE_API_KEY", "p")
+    monkeypatch.setattr(retrieval, "PineconeVectorStore", FakeStore)
+    FakeStore.constructed = 0
+
+    search = make_pinecone_search(Settings(_env_file=None))
+    assert FakeStore.constructed == 0
+
+    search("one")
+    search("two")
+    assert FakeStore.constructed == 1
+
+
+def test_embedding_requests_carry_a_timeout(monkeypatch: pytest.MonkeyPatch) -> None:
+    received: dict[str, Any] = {}
+
+    def fake_embed_content(**kwargs: Any) -> Any:
+        received.update(kwargs)
+        return SimpleNamespace(embeddings=[SimpleNamespace(values=[0.1])])
+
+    embeddings = TimedGoogleEmbeddings(model="models/gemini-embedding-2", google_api_key="g")
+    monkeypatch.setattr(embeddings.client.models, "embed_content", fake_embed_content)
+
+    embeddings.embed_query("x")
+
+    assert received["config"].http_options.timeout == 5000

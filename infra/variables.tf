@@ -38,6 +38,41 @@ variable "n8n_encryption_key" {
   ephemeral   = true
 }
 
+# Agent service secrets, also set in tfvars (gitignored).
+variable "gemini_api_key" {
+  description = "Gemini API key for the agent service"
+  type        = string
+  sensitive   = true
+  ephemeral   = true
+}
+
+variable "pinecone_api_key" {
+  description = "Pinecone API key for the agent service"
+  type        = string
+  sensitive   = true
+  ephemeral   = true
+}
+
+variable "langsmith_api_key" {
+  description = "LangSmith API key for the agent service"
+  type        = string
+  sensitive   = true
+  ephemeral   = true
+}
+
+variable "agent_system_prompt" {
+  description = "System prompt for the agent service, with a {context} placeholder"
+  type        = string
+  sensitive   = true
+  ephemeral   = true
+}
+
+# No default, because the tag is the git SHA of a published image. Set it in tfvars.
+variable "agent_service_image" {
+  description = "Agent service image, e.g. ghcr.io/owner/agent-service:<git sha>"
+  type        = string
+}
+
 variable "n8n_timezone" {
   description = "n8n timezone"
   type        = string

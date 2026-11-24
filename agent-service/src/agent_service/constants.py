@@ -1,7 +1,17 @@
+"""Model, retrieval, and prompt values that must match the n8n workflow they replace."""
+
 CHAT_MODEL = "models/gemini-3.5-flash-lite"
 CHAT_TEMPERATURE = 0.6
 CHAT_MAX_OUTPUT_TOKENS = 1024
-CHAT_MAX_RETRIES = 1
+# langchain-google-genai treats max_retries as attempts: 1 means one try and no retry, and 0 means
+# the SDK default of 5 retries. 2 gives the one retry the spec asks for.
+CHAT_MAX_ATTEMPTS = 2
+CHAT_TIMEOUT_S = 8
+EMBED_TIMEOUT_S = 5
+
+# A whole turn can make 2 chat calls and 2 embedding calls. This stays under n8n's 25 s HTTP
+# timeout, so the service answers 502 before n8n gives up on it.
+TURN_BUDGET_S = 22
 EMBEDDING_MODEL = "models/gemini-embedding-2"
 
 PINECONE_INDEX = "portfolio-rag"

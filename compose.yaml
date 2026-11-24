@@ -1,0 +1,95 @@
+# Keeps the project name the stack had when it lived in n8n-local/, so existing volumes are reused.
+name: n8n-local
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  n8n:
+    image: docker.n8n.io/n8nio/n8n:latest
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${DB_NAME}
+      - DB_POSTGRESDB_USER=${DB_USER}
+      - DB_POSTGRESDB_PASSWORD=${DB_PASSWORD}
+      - N8N_HOST=${N8N_HOST}
+      - N8N_PORT=${N8N_PORT}
+      - N8N_PROTOCOL=${N8N_PROTOCOL}
+      - N8N_CORS_ORIGIN=${N8N_CORS_ORIGIN}
+      - NODE_ENV=${NODE_ENV}
+    ports:
+      - "5678:5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
+  agent-service:
+    build: ./agent-service
+    environment:
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY:?set in .env}
+      - PINECONE_API_KEY=${PINECONE_API_KEY:?set in .env}
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY:?set in .env}
+      - SYSTEM_PROMPT_FILE=/app/system-prompt.local.md
+      - LANGSMITH_TRACING=true
+      - LANGSMITH_PROJECT=portfolio-agent-local
+      - CHECKPOINT_PATH=/data/checkpoints.sqlite
+    command:
+      [
+        "uvicorn",
+        "agent_service.app:app",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8000",
+        "--reload",
+        "--reload-dir",
+        "/app/src",
+      ]
+    develop:
+      watch:
+        - action: sync
+          path: ./agent-service/src
+          target: /app/src
+          ignore:
+            - __pycache__/
+        - action: rebuild
+          path: ./agent-service/pyproject.toml
+        - action: rebuild
+          path: ./agent-service/uv.lock
+        - action: rebuild
+          path: ./agent-service/Dockerfile
+        # The prompt is read once at startup and lives outside src, so uvicorn won't reload for it.
+        - action: restart
+          path: ./agent-service/system-prompt.local.md
+    volumes:
+      - type: bind
+        source: ./agent-service/system-prompt.local.md
+        target: /app/system-prompt.local.md
+        read_only: true
+        bind:
+          create_host_path: false
+      - agent_data:/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  n8n_data:
+  agent_data:
