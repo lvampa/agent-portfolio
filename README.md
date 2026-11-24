@@ -99,19 +99,14 @@ If you have the old layout, move `n8n-local/.env` to `.env` at the root.
 
 ### Environment variables
 
-Create or update `.env` at the repo root with:
+Copy the example and fill in the three API keys:
 
-- `DB_USER`
-- `DB_PASSWORD`
-- `DB_NAME`
-- `N8N_HOST`
-- `N8N_PORT`
-- `N8N_PROTOCOL`
-- `N8N_CORS_ORIGIN`
-- `NODE_ENV`
-- `GOOGLE_API_KEY`
-- `PINECONE_API_KEY`
-- `LANGSMITH_API_KEY`
+```bash
+cp .env.example .env
+```
+
+`.env` is gitignored.
+If you already have local Postgres and n8n volumes, keep the database values they were created with.
 
 The agent service also reads its system prompt from the gitignored `agent-service/system-prompt.local.md`.
 
