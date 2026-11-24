@@ -130,7 +130,8 @@ n8n's HTTP Request node uses a 25 s timeout.
 
 Every upstream call is bounded, and a whole turn is capped below n8n's timeout:
 
-- Chat calls time out at 8 s.
+- Chat calls time out at 10 s, the shortest deadline Gemini accepts.
+  A shorter one fails every call with 400 INVALID_ARGUMENT.
 - Embedding requests time out at 5 s.
   The installed library has no working option for this: `request_options` is never read, and a `timeout` in `client_args` is overridden by the SDK.
   A small `TimedGoogleEmbeddings` subclass sets the timeout on each request by overriding the library's private `_build_config`.
