@@ -2,7 +2,7 @@
 # Deletes every chunk of one training file from Pinecone, so the file can be re-uploaded without duplicates.
 #
 # Usage:
-#   read -rs PINECONE_API_KEY && export PINECONE_API_KEY   # keeps the key out of shell history
+#   PINECONE_API_KEY comes from .env via direnv, or: read -rs PINECONE_API_KEY && export PINECONE_API_KEY
 #   ./n8n/scripts/delete-source.sh cv.md
 set -euo pipefail
 # shellcheck source-path=SCRIPTDIR source=lib.sh

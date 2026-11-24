@@ -133,7 +133,7 @@ docker compose down
 ### Training data
 
 Training files live in the gitignored `n8n-local/training-data/` and are uploaded one at a time through the n8n form.
-The scripts in `n8n/scripts/` read `PINECONE_API_KEY` from your shell (`read -rs PINECONE_API_KEY && export PINECONE_API_KEY`):
+The scripts in `n8n/scripts/` read `PINECONE_API_KEY` from your shell. The root `.envrc` loads it from `.env` with [direnv](https://direnv.net) (run `direnv allow` once); without direnv, `read -rs PINECONE_API_KEY && export PINECONE_API_KEY`.
 
 - `check-index-coverage.sh` lists chunks per file and any headings missing from the index.
 - `delete-source.sh <file>` deletes one file's chunks, for example before re-uploading it.
