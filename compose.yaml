@@ -76,6 +76,9 @@ services:
           path: ./agent-service/uv.lock
         - action: rebuild
           path: ./agent-service/Dockerfile
+        # The prompt is read once at startup and lives outside src, so uvicorn won't reload for it.
+        - action: restart
+          path: ./agent-service/system-prompt.local.md
     volumes:
       - type: bind
         source: ./agent-service/system-prompt.local.md
