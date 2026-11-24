@@ -14,6 +14,7 @@ This repository contains three related projects:
 ├── infra/          # OpenTofu modules for AWS and Cloudflare resources
 ├── agent-service/  # Python chat agent (FastAPI + LangGraph)
 ├── compose.yaml    # Local stack: n8n, Postgres, agent service
+├── n8n/scripts/    # Pinecone helpers for the training data
 └── n8n-local/      # Workflow exports and training data (local only)
 ```
 
@@ -133,6 +134,14 @@ For editor autocomplete, point your Python interpreter at `agent-service/.venv` 
 ```bash
 docker compose down
 ```
+
+### Training data
+
+Training files live in the gitignored `n8n-local/training-data/` and are uploaded one at a time through the n8n form.
+The scripts in `n8n/scripts/` read `PINECONE_API_KEY` from your shell (`read -rs PINECONE_API_KEY && export PINECONE_API_KEY`):
+
+- `check-index-coverage.sh` lists chunks per file and any headings missing from the index.
+- `delete-source.sh <file>` deletes one file's chunks, for example before re-uploading it.
 
 ---
 
