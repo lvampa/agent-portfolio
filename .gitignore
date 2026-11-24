@@ -29,6 +29,7 @@ crash.log
 # Environment files
 .env
 .env.*
+!.env.example
 
 # OS junk
 .DS_Store
