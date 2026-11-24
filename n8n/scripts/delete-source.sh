@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deletes every chunk of one training file from Pinecone, so the file can be re-uploaded without duplicates.
+# Deletes every chunk of one training file from Pinecone. The upload form already replaces a re-uploaded file's chunks, so this is for renamed or removed files.
 #
 # Usage:
 #   PINECONE_API_KEY comes from .env via direnv, or: read -rs PINECONE_API_KEY && export PINECONE_API_KEY

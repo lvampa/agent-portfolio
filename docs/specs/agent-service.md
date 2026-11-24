@@ -18,7 +18,7 @@ The goals are an agent that lives in the repo, a retrieval path that reads as on
 ## Non-goals
 
 - Ingestion stays in n8n (form, splitter, Pinecone insert).
-  Resetting and re-indexing is a separate task.
+  The upload form deletes the file's old chunks (by `source`) before inserting, so a re-upload replaces them.
 - No change to the frontend, its payload, or the webhook URL.
 - No streaming.
   n8n returns the whole reply, as today.

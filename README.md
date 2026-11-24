@@ -136,7 +136,7 @@ Training files live in the gitignored `n8n-local/training-data/` and are uploade
 The scripts in `n8n/scripts/` read `PINECONE_API_KEY` from your shell. The root `.envrc` loads it from `.env` with [direnv](https://direnv.net) (run `direnv allow` once); without direnv, `read -rs PINECONE_API_KEY && export PINECONE_API_KEY`.
 
 - `check-index-coverage.sh` lists chunks per file and any headings missing from the index.
-- `delete-source.sh <file>` deletes one file's chunks, for example before re-uploading it.
+- `delete-source.sh <file>` deletes one file's chunks. Re-uploading through the form already replaces them, so this is for renamed or removed files.
 
 ---
 
