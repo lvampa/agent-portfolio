@@ -2,7 +2,7 @@
 # Reports what's in the Pinecone namespace and which training-data headings are missing from it.
 #
 # Usage:
-#   read -rs PINECONE_API_KEY && export PINECONE_API_KEY   # keeps the key out of shell history
+#   PINECONE_API_KEY comes from .env via direnv, or: read -rs PINECONE_API_KEY && export PINECONE_API_KEY
 #   ./n8n/scripts/check-index-coverage.sh
 #
 # Optional overrides: INDEX_NAME (default portfolio-rag), NAMESPACE (default portfolio),
