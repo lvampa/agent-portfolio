@@ -1,0 +1,639 @@
+{
+  "name": "Portfolio Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "modelName": "models/gemini-embedding-2"
+      },
+      "id": "25bf776e-5a99-473e-8490-546708b06224",
+      "name": "Embeddings Google Gemini",
+      "type": "@n8n/n8n-nodes-langchain.embeddingsGoogleGemini",
+      "position": [
+        -352,
+        -560
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "NvHGxN5BpSSEvwHs",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "pineconeIndex": {
+          "__rl": true,
+          "value": "portfolio-rag",
+          "mode": "list",
+          "cachedResultName": "portfolio-rag"
+        },
+        "options": {
+          "clearNamespace": false,
+          "pineconeNamespace": "portfolio"
+        }
+      },
+      "id": "49abcfe5-8424-4bcb-b61a-07d6bb222e4a",
+      "name": "Pinecone - Vector Store forr CV Content",
+      "type": "@n8n/n8n-nodes-langchain.vectorStorePinecone",
+      "position": [
+        -256,
+        -752
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "pineconeApi": {
+          "id": "FargkZDhBftFQ9KB",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "options": {
+          "metadata": {
+            "metadataValues": [
+              {
+                "name": "source",
+                "value": "={{ Object.values($binary)[0].fileName }}"
+              }
+            ]
+          }
+        }
+      },
+      "id": "96d5d97c-a94f-4951-9777-3dacf7b617b5",
+      "name": "CV File Data Loader",
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "position": [
+        -144,
+        -576
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "chunkOverlap": 100,
+        "options": {}
+      },
+      "id": "826d73bb-706e-487e-8262-ef9e087887e3",
+      "name": "CV content - Recursive Character Text Splitter",
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "position": [
+        -224,
+        -416
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "content": "## Rag Workflow\n",
+        "height": 528,
+        "width": 1232,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -880,
+        -800
+      ],
+      "typeVersion": 1,
+      "id": "465e685b-ba5a-4ca2-8112-9258227b81d4",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "formTitle": "Ingest Training Data",
+        "formDescription": "Upload one file. It replaces that file's chunks in Pinecone.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "File",
+              "fieldType": "file",
+              "acceptFileTypes": ".md, .txt, .pdf"
+            }
+          ]
+        },
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        -816,
+        -464
+      ],
+      "id": "1afab3b7-274b-4ef7-9810-a58cd437b941",
+      "name": "Submit RAG Document",
+      "webhookId": "20ae3ba8-1622-48ad-9806-f2c70fe2f8e1"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chat/webhooks",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "http://localhost:3000,http://localhost:3001"
+        }
+      },
+      "id": "7a829bdf-a310-4df0-a7af-7dab3d8e6ea7",
+      "name": "Chat API - webhook1",
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        -832,
+        32
+      ],
+      "webhookId": "3b67d073-6569-4b80-a54c-c06d59942569",
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "jsCode": "const body = $json.body ?? {};\n\n// Caps keep one request cheap on the free model tier.\nconst MAX = { chatInput: 2000, name: 100, field: 200 };\nconst UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;\n\nconst sessionId = String(body.sessionId ?? '');\nif (!UUID.test(sessionId)) {\n  throw new Error('Invalid sessionId');\n}\n\nconst chatInput = String(body.chatInput ?? '').trim();\nif (!chatInput) {\n  throw new Error('Empty chatInput');\n}\n\nconst cap = (value, max) => (typeof value === 'string' ? value.slice(0, max) : null);\n\nconst client = body.client ?? {};\nconst fields = ['city', 'country', 'organization', 'browser', 'os', 'device', 'referer', 'botRisk'];\nconst cappedClient = Object.fromEntries(fields.map((key) => [key, cap(client[key], MAX.field)]));\n\nreturn [\n  {\n    json: {\n      chatInput: chatInput.slice(0, MAX.chatInput),\n      sessionId,\n      name: cap(body.name, MAX.name),\n      client: cappedClient,\n    },\n  },\n];"
+      },
+      "id": "b7078658-518c-4431-aa8b-0b783277f3f7",
+      "name": "Validate Request1",
+      "type": "n8n-nodes-base.code",
+      "position": [
+        -640,
+        32
+      ],
+      "typeVersion": 2
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ [{ output: $json.reply }] }}",
+        "options": {}
+      },
+      "id": "34c7a28b-78e2-4d7d-a4f6-18682af2e8e3",
+      "name": "Chat API Response - Webhook1",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        32,
+        -80
+      ],
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "value": "hj6OQErNpNudSZCu",
+          "mode": "list",
+          "cachedResultName": "conversations",
+          "cachedResultUrl": "/projects/Vtlu521LFpPas7Yb/datatables/hj6OQErNpNudSZCu"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "sessionId": "={{ $('Validate Request1').item.json.sessionId }}",
+            "question": "={{ $('Validate Request1').item.json.chatInput }}",
+            "answer": "={{ $json.reply }}",
+            "name": "={{ $('Validate Request1').item.json.name }}",
+            "city": "={{ $('Validate Request1').item.json.client.city }}",
+            "country": "={{ $('Validate Request1').item.json.client.country }}",
+            "organization": "={{ $('Validate Request1').item.json.client.organization }}",
+            "browser": "={{ $('Validate Request1').item.json.client.browser }}",
+            "os": "={{ $('Validate Request1').item.json.client.os }}",
+            "device": "={{ $('Validate Request1').item.json.client.device }}",
+            "referer": "={{ $('Validate Request1').item.json.client.referer }}",
+            "botRisk": "={{ $('Validate Request1').item.json.client.botRisk }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "sessionId",
+              "displayName": "sessionId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "question",
+              "displayName": "question",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "answer",
+              "displayName": "answer",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "city",
+              "displayName": "city",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "country",
+              "displayName": "country",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "organization",
+              "displayName": "organization",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "browser",
+              "displayName": "browser",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "os",
+              "displayName": "os",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "device",
+              "displayName": "device",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "referer",
+              "displayName": "referer",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "botRisk",
+              "displayName": "botRisk",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "id": "f565df03-d271-43ba-be77-ee00a3a79cbc",
+      "name": "Insert row1",
+      "type": "n8n-nodes-base.dataTable",
+      "position": [
+        32,
+        112
+      ],
+      "typeVersion": 1.1,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "content": "## Chat Agent\n",
+        "height": 844,
+        "width": 1928
+      },
+      "id": "57eb190b-0e10-4fbc-9cd2-5e8293a41bb9",
+      "name": "Sticky Note2",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -880,
+        -192
+      ],
+      "typeVersion": 1
+    },
+    {
+      "parameters": {
+        "jsCode": "// The HTTP node drops the uploaded file, so hand the insert the form's original item.\nreturn $('Submit RAG Document').all();"
+      },
+      "id": "4877acda-ec65-4fd8-ada2-de5435adfda5",
+      "name": "Restore File",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -480,
+        -720
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://portfolio-rag-xn53v7n.svc.aped-4627-b74a.pinecone.io/vectors/delete",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "pineconeApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-Pinecone-Api-Version",
+              "value": "2025-04"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { namespace: 'portfolio', filter: { source: { '$eq': Object.values($binary)[0].fileName } } } }}",
+        "options": {}
+      },
+      "id": "6f830595-2b61-4e35-af67-a7d01b7af2ce",
+      "name": "Delete Old Chunks1",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -656,
+        -640
+      ],
+      "credentials": {
+        "pineconeApi": {
+          "id": "FargkZDhBftFQ9KB",
+          "name": "PineconeApi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://agent-service:8000/chat",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ { chatInput: $json.chatInput, sessionId: $json.sessionId, name: $json.name } }}",
+        "options": {
+          "timeout": 25000
+        }
+      },
+      "id": "4edaf196-a91a-40b5-ab39-fe7b0162436d",
+      "name": "Call Agent Service",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -400,
+        32
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "b2e4c6d8-1a3f-4b5c-8d7e-9f0a1b2c3d4e",
+              "leftValue": "={{ String($json.error?.httpCode ?? '') === '429' || String($json.error?.message ?? '').includes('429') }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "93a251d2-bb24-4bd8-96b9-dbaa1541c764",
+      "name": "Is Rate Limited",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -176,
+        384
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\":\"rate_limited\"}",
+        "options": {
+          "responseCode": 429
+        }
+      },
+      "id": "a04e1869-5535-45a4-849b-b5dbe6fd1e4f",
+      "name": "Respond 429",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        32,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"error\":\"upstream_error\"}",
+        "options": {
+          "responseCode": 502
+        }
+      },
+      "id": "763e11c5-80ff-4552-9eda-e78e587b8af8",
+      "name": "Respond 502",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        32,
+        464
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Embeddings Google Gemini": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Pinecone - Vector Store forr CV Content",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CV File Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Pinecone - Vector Store forr CV Content",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "CV content - Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "CV File Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Submit RAG Document": {
+      "main": [
+        [
+          {
+            "node": "Delete Old Chunks1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat API - webhook1": {
+      "main": [
+        [
+          {
+            "node": "Validate Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Request1": {
+      "main": [
+        [
+          {
+            "node": "Call Agent Service",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete Old Chunks1": {
+      "main": [
+        [
+          {
+            "node": "Restore File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Restore File": {
+      "main": [
+        [
+          {
+            "node": "Pinecone - Vector Store forr CV Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call Agent Service": {
+      "main": [
+        [
+          {
+            "node": "Chat API Response - Webhook1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Insert row1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Is Rate Limited",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Rate Limited": {
+      "main": [
+        [
+          {
+            "node": "Respond 429",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 502",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "b8f14009-24ca-41c2-9fc4-1822fa77c082",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "8789b0ccc130e67d8fd2e6d94ae62f2e2e3890f3aff850840660a827af8aa182"
+  },
+  "nodeGroups": [],
+  "id": "rHrek9WVyLpQH0T1",
+  "tags": []
+}
