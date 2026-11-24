@@ -123,6 +123,10 @@ docker compose up -d
 
 n8n is exposed on `http://localhost:5678`.
 
+While editing the agent service, run `docker compose watch` instead.
+It syncs `agent-service/src` into the container, where uvicorn reloads, and rebuilds the image when `pyproject.toml`, `uv.lock`, or the `Dockerfile` changes.
+For editor autocomplete, point your Python interpreter at `agent-service/.venv` (run `uv sync` in `agent-service/` first).
+
 ### Stop the stack
 
 ```bash

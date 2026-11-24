@@ -169,7 +169,8 @@ If a month goes over, traces past the limit are the cost, not chat.
 A third service in `compose.yaml` at the repo root:
 
 - Builds from `./agent-service`.
-- Bind-mounts the source and runs `uvicorn --reload`.
+- Runs `uvicorn --reload` under Compose Watch: `docker compose watch` syncs `src` into the container and rebuilds on `pyproject.toml`, `uv.lock`, or `Dockerfile` changes.
+  The image copies `src` owned by uid 1000, because the sync writes as that user.
 - Reads `GOOGLE_API_KEY`, `PINECONE_API_KEY`, and `LANGSMITH_API_KEY` from the gitignored `.env` at the repo root.
 - n8n calls `http://agent-service:8000/chat`.
 - No published port, unless publishing 8000 helps when curling from the host.

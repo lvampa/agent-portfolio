@@ -63,8 +63,20 @@ services:
         "--reload-dir",
         "/app/src",
       ]
+    develop:
+      watch:
+        - action: sync
+          path: ./agent-service/src
+          target: /app/src
+          ignore:
+            - __pycache__/
+        - action: rebuild
+          path: ./agent-service/pyproject.toml
+        - action: rebuild
+          path: ./agent-service/uv.lock
+        - action: rebuild
+          path: ./agent-service/Dockerfile
     volumes:
-      - ./agent-service/src:/app/src
       - type: bind
         source: ./agent-service/system-prompt.local.md
         target: /app/system-prompt.local.md

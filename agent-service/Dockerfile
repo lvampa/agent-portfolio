@@ -19,14 +19,15 @@ COPY pyproject.toml uv.lock .python-version ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-install-project
 
-COPY src ./src
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev
-
 # A named volume copies this ownership on first use, so uid 1000 can write checkpoints.
 RUN useradd --uid 1000 --create-home app \
     && mkdir /data \
     && chown app:app /data
+
+# Compose Watch syncs edits into src as uid 1000, so the app user has to own it.
+COPY --chown=app:app src ./src
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev
 
 USER 1000
 
